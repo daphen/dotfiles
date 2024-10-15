@@ -1,0 +1,10 @@
+Failed to match debug category: 3
+no sessions
+]11;?fish: No matches for wildcard '~/.config/fish/conf.d/*.fish'. See `help wildcards-globbing`.
+source ~/.config/fish/conf.d/*.fish
+       ^~~~~~~~~~~~~~~~~~~~~~~~~~~^
+error: Error reading script file 'exit':
+error: No such file or directory
+no current client
+no sessions
+no sessions

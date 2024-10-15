@@ -1,0 +1,10 @@
+{
+	"optOut": false,
+	"lastUpdateCheck": 1580993104898,
+	"update": {
+		"latest": "3.0.0",
+		"current": "1.1.0",
+		"type": "major",
+		"name": "del-cli"
+	}
+}

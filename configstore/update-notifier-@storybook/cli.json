@@ -1,0 +1,10 @@
+{
+	"optOut": false,
+	"lastUpdateCheck": 1609255740117,
+	"update": {
+		"latest": "6.1.11",
+		"current": "5.3.21",
+		"type": "major",
+		"name": "@storybook/cli"
+	}
+}

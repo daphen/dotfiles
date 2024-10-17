@@ -2,7 +2,6 @@ return {
 	"j-morano/buffer_manager.nvim",
 	config = function()
 		require("buffer_manager").setup({
-			line_keys = "wfedrtyhlbcvnm1234567890",
 			order_buffers = "lastused",
 		})
 

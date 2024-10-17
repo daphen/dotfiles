@@ -5,6 +5,9 @@ end
 abbr -a vim nvim
 abbr -a vi nvim
 abbr -a lsa ls -la
+abbr -a prd pnpm run dev
+abbr -a nrd npm run dev
+
 set -g fish_clipboard_copy_cmd pbcopy
 set -g fish_clipboard_paste_cmd pbpaste
 

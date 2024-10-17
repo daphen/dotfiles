@@ -29,7 +29,7 @@ return {
 			desc = "Location List (Trouble)",
 		},
 		{
-			"<leader>xQ",
+			"<leader>q",
 			"<cmd>Trouble qflist toggle<cr>",
 			desc = "Quickfix List (Trouble)",
 		},

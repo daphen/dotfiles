@@ -5,11 +5,11 @@ config.enable_tab_bar = false
 config.window_decorations = "RESIZE"
 
 config.font = wezterm.font("BerkeleyMono Nerd Font")
-config.font_size = 19
+config.font_size = 21
 
 config.color_scheme = "rose-pine"
 
-config.window_background_opacity = 0.95
+config.window_background_opacity = 0.93
 config.macos_window_background_blur = 100
 
 config.colors = {

@@ -6,7 +6,6 @@ return {
 			require("mini.comment").setup()
 			require("mini.colors").setup()
 			require("mini.surround").setup()
-			require("mini.pairs").setup()
 		end,
 	},
 }

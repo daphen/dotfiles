@@ -1,5 +1,5 @@
 return {
-	"daphen/colorscheme",
+	dir = vim.fn.expand("~/.config/colorscheme"),
 	lazy = false,
 	priority = 1000,
 	config = function()

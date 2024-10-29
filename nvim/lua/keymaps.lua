@@ -37,9 +37,12 @@ keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 
 -- we have telescope fuzzy find in current buffer on / so we're remapping normal search
 -- keymap.set("n", "<leader>/", "/")
--- Hej hej
 
 keymap.set("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })
+
+-- Leader p/P to force new line for paste
+vim.keymap.set("n", "<leader>p", "o" .. "<ESC>" .. "p" .. "V" .. "=" .. "<ESC>", { noremap = true })
+vim.keymap.set("n", "<leader>P", "O" .. "<ESC>" .. "p" .. "V" .. "=" .. "<ESC>", { noremap = true })
 
 -- too many typos
 vim.cmd(":command W w")
@@ -50,3 +53,24 @@ vim.cmd(":command Wqa wqa")
 vim.cmd(":command Q q")
 vim.cmd(":command QA qa")
 vim.cmd(":command Qa qa")
+
+keymap.set("n", "<leader>rc", ":ReloadColors<CR>", { noremap = true, silent = true, desc = "Reload colorscheme" })
+vim.api.nvim_create_user_command("ReloadColors", function()
+	-- Reload the colorscheme plugin configuration
+	package.loaded["plugins.colorscheme"] = nil
+
+	-- Reload the colorscheme itself
+	package.loaded["rose-pine"] = nil
+
+	-- Re-require your colorscheme configuration
+	require("plugins.colorscheme")
+	vim.cmd.colorscheme("rose-pine")
+
+	-- Reload lualine
+	package.loaded["lualine"] = nil
+	require("lualine").setup()
+
+	-- Reload color highlighter
+	require("nvim-highlight-colors").turnOff()
+	require("nvim-highlight-colors").turnOn()
+end, {})

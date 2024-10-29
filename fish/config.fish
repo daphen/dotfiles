@@ -22,7 +22,7 @@ if type -q fzf
   source /opt/homebrew/opt/fzf/shell/key-bindings.fish
   set -gx FZF_DEFAULT_COMMAND 'fd --type f --hidden --follow --exclude .git'
   set -gx FZF_CTRL_T_COMMAND "$FZF_DEFAULT_COMMAND"
-  set -gx FZF_CTRL_E_COMMAND 'fd --type d --hidden --follow --exclude .git'
+  set -gx FZF_ALT_C_COMMAND 'fd --type d --hidden --follow --exclude .git'
 end
 
 # Set prompt colors

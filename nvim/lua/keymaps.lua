@@ -41,8 +41,8 @@ keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 keymap.set("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })
 
 -- Leader p/P to force new line for paste
-vim.keymap.set("n", "<leader>p", "o" .. "<ESC>" .. "p" .. "V" .. "=" .. "<ESC>", { noremap = true })
-vim.keymap.set("n", "<leader>P", "O" .. "<ESC>" .. "p" .. "V" .. "=" .. "<ESC>", { noremap = true })
+vim.keymap.set("n", "<leader>p", "o" .. "<ESC>" .. "p" .. "V" .. "=" .. "<ESC>" .. "$", { noremap = true })
+vim.keymap.set("n", "<leader>P", "O" .. "<ESC>" .. "p" .. "V" .. "=" .. "<ESC>" .. "$", { noremap = true })
 
 -- too many typos
 vim.cmd(":command W w")
@@ -53,6 +53,35 @@ vim.cmd(":command Wqa wqa")
 vim.cmd(":command Q q")
 vim.cmd(":command QA qa")
 vim.cmd(":command Qa qa")
+
+-- ShadCN HSL conversion command:
+vim.api.nvim_create_user_command("HSL", function(opts)
+	local range = opts.range
+	if range == 0 then
+		-- If no range specified, operate on current line
+		vim.cmd([[.s/hsl(\s*\(\d\+\)deg,\s*\(\d\+\.\?\d*\)%,\s*\(\d\+\.\?\d*\)%)/\1 \2% \3%/g]])
+	else
+		-- If range specified (visual selection), operate on those lines
+		vim.cmd([['<,'>s/hsl(\s*\(\d\+\)deg,\s*\(\d\+\.\?\d*\)%,\s*\(\d\+\.\?\d*\)%)/\1 \2% \3%/g]])
+	end
+end, { range = true })
+vim.cmd([[cnoreabbrev hsl HSL]])
+
+-- Reverse HSL conversion command:
+vim.api.nvim_create_user_command("ToHSL", function(opts)
+	local range = opts.range
+	if range == 0 then
+		-- If no range specified, operate on current line
+		vim.cmd([[.s/\(\d\+\) \(\d\+\.\?\d*\)% \(\d\+\.\?\d*\)%/hsl(\1deg, \2%, \3%)/g]])
+	else
+		-- If range specified (visual selection), operate on those lines
+		vim.cmd([['<,'>s/\(\d\+\) \(\d\+\.\?\d*\)% \(\d\+\.\?\d*\)%/hsl(\1deg, \2%, \3%)/g]])
+	end
+
+	-- Clear search highlights
+	vim.cmd("nohlsearch")
+end, { range = true })
+vim.cmd([[cnoreabbrev tohsl ToHSL]])
 
 keymap.set("n", "<leader>rc", ":ReloadColors<CR>", { noremap = true, silent = true, desc = "Reload colorscheme" })
 vim.api.nvim_create_user_command("ReloadColors", function()
@@ -74,3 +103,31 @@ vim.api.nvim_create_user_command("ReloadColors", function()
 	require("nvim-highlight-colors").turnOff()
 	require("nvim-highlight-colors").turnOn()
 end, {})
+
+-- FORMAT WHEN PASTING
+-- Function to indent the range of pasted text
+local function indent_after_paste()
+	-- Indent the lines between the marks `[` and `]`
+	vim.cmd("normal! `[v`]=")
+end
+
+-- Override the default paste mappings to include indentation
+vim.keymap.set("n", "p", function()
+	vim.cmd("normal! p")
+	indent_after_paste()
+end, { noremap = true, silent = true })
+
+vim.keymap.set("n", "P", function()
+	vim.cmd("normal! P")
+	indent_after_paste()
+end, { noremap = true, silent = true })
+
+vim.keymap.set("v", "p", function()
+	vim.cmd("normal! p")
+	indent_after_paste()
+end, { noremap = true, silent = true })
+
+vim.keymap.set("v", "P", function()
+	vim.cmd("normal! P")
+	indent_after_paste()
+end, { noremap = true, silent = true })

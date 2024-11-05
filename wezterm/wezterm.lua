@@ -7,38 +7,37 @@ config.window_decorations = "RESIZE"
 config.font = wezterm.font("BerkeleyMono Nerd Font")
 config.font_size = 21
 
-config.window_background_opacity = 0.98
+config.window_background_opacity = 0.96
 config.macos_window_background_blur = 100
 
 config.color_scheme = "CustomScheme"
 config.color_schemes = {
 	["CustomScheme"] = {
-		foreground = "#DDDDED", -- text
-		background = "#161616", -- base
-		cursor_bg = "#DAD1CE", -- subtle
-		cursor_border = "#DAD1CE", -- subtle
-		cursor_fg = "#161616", -- base
-		selection_bg = "#403d52", -- highlight_med
-		selection_fg = "#DDDDED", -- text
-
+		foreground = "#FFFFFF",
+		background = "#0E0E0E",
+		cursor_bg = "#D0D4E0",
+		cursor_border = "#D0D4E0",
+		cursor_fg = "#0E0E0E",
+		selection_bg = "#545168",
+		selection_fg = "#FFFFFF",
 		ansi = {
 			"#1E1E1E",
-			"#D09D8A",
-			"#D6B9A9",
-			"#D9AE93",
-			"#698893",
-			"#CE9079",
-			"#697A86",
-			"#DAD1CE",
+			"#F0B0A5",
+			"#E2B8A0",
+			"#E9A595",
+			"#8A9AA6",
+			"#F0B0A5",
+			"#8A9AA6",
+			"#FFFFFF",
 		},
 		brights = {
-			"#DAD1CE",
-			"#D09D8A",
-			"#D6B9A9",
-			"#D9AE93",
-			"#698893",
-			"#CE9079",
-			"#697A86",
+			"#FFFFFF",
+			"#F0B0A5",
+			"#E2B8A0",
+			"#E9A595",
+			"#8A9AA6",
+			"#F0B0A5",
+			"#8A9AA6",
 			"#FFFFFF",
 		},
 	},

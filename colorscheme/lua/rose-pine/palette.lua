@@ -1,5 +1,25 @@
 local options = require("rose-pine.config").options
 local variants = {
+	--raised contrast:
+	main = {
+		_nc = "#16141f",
+		base = "#0E0E0E",
+		surface = "#0E0E0E",
+		overlay = "#45434F",
+		muted = "#FFFFFF",
+		subtle = "#D0D4E0",
+		text = "#FFFFFF",
+		love = "#FF995D",
+		gold = "#D9D3C3",
+		rose = "#8A9AA6",
+		pine = "#9FB3C4",
+		foam = "#C0E3F0",
+		iris = "#E8A07D",
+		highlight_low = "#2A2939",
+		highlight_med = "#545168",
+		highlight_high = "#6F6C85",
+		none = "NONE",
+	},
 	-- default/
 	-- main = {
 	-- 	_nc = "#16141f",
@@ -41,27 +61,6 @@ local variants = {
 	-- 	highlight_high = "#524f67",
 	-- 	none = "NONE",
 	-- },
-	--raised contrast:
-	main = {
-		_nc = "#16141f",
-		base = "#0E0E0E",
-		surface = "#0E0E0E",
-		overlay = "#45434F",
-		muted = "#FFFFFF",
-		subtle = "#D0D4E0",
-		text = "#FFFFFF",
-		love = "#FF995D",
-		gold = "#E2B8A0",
-		rose = "#8A9AA6",
-		pine = "#9FB3C4",
-		foam = "#C0E3F0",
-		iris = "#E8A07D",
-		highlight_low = "#2A2939",
-		highlight_med = "#545168",
-		highlight_high = "#6F6C85",
-		none = "NONE",
-	},
-
 	-- Nice
 	-- main = {
 	-- 	_nc = "#16141f",

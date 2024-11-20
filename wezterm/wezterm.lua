@@ -5,9 +5,10 @@ config.enable_tab_bar = false
 config.window_decorations = "RESIZE"
 
 config.font = wezterm.font("BerkeleyMono Nerd Font")
-config.font_size = 21
+config.font_size = 19
+config.max_fps = 120
 
-config.window_background_opacity = 0.96
+config.window_background_opacity = 0.98
 config.macos_window_background_blur = 100
 
 config.color_scheme = "CustomScheme"
@@ -22,22 +23,22 @@ config.color_schemes = {
 		selection_fg = "#FFFFFF",
 		ansi = {
 			"#1E1E1E",
-			"#F0B0A5",
+			"#FF995D",
 			"#E2B8A0",
-			"#E9A595",
+			"#FF995D",
 			"#8A9AA6",
-			"#F0B0A5",
-			"#8A9AA6",
+			"#E8A07D",
+			"#C0E3F0",
 			"#FFFFFF",
 		},
 		brights = {
 			"#FFFFFF",
-			"#F0B0A5",
+			"#FF995D",
 			"#E2B8A0",
-			"#E9A595",
+			"#FF995D",
 			"#8A9AA6",
-			"#F0B0A5",
-			"#8A9AA6",
+			"#E8A07D",
+			"#C0E3F0",
 			"#FFFFFF",
 		},
 	},

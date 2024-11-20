@@ -119,7 +119,6 @@ alt-o = 'workspace O'
 alt-p = 'workspace P'
 alt-q = 'workspace Q'
 alt-r = 'workspace R'
-alt-s = 'workspace S'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
 alt-shift-a = 'move-node-to-workspace A'
@@ -136,7 +135,6 @@ alt-shift-o = 'move-node-to-workspace O'
 alt-shift-p = 'move-node-to-workspace P'
 alt-shift-q = 'move-node-to-workspace Q'
 alt-shift-r = 'move-node-to-workspace R'
-alt-shift-s = 'move-node-to-workspace S'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#workspace-back-and-forth
 alt-tab = 'workspace-back-and-forth'
@@ -151,7 +149,6 @@ alt-shift-semicolon = 'mode service'
 [mode.service.binding]
 esc = ['reload-config', 'mode main']
 r = ['flatten-workspace-tree', 'mode main'] # reset layout
-#s = ['layout sticky tiling', 'mode main'] # sticky is not yet supported https://github.com/nikitabobko/AeroSpace/issues/2
 f = ['layout floating tiling', 'mode main'] # Toggle between floating and tiling layout
 backspace = ['close-all-windows-but-current', 'mode main']
 
@@ -171,6 +168,14 @@ run = 'move-node-to-workspace M'
 [[on-window-detected]]
 if.app-id = 'company.thebrowser.Browser'
 run = 'move-node-to-workspace A'
+
+[[on-window-detected]]
+if.app-id = 'com.figma.Desktop'
+run = 'move-node-to-workspace F'
+
+[[on-window-detected]]
+if.app-id = 'com.adobe.lightroomCC'
+run = 'move-node-to-workspace P'
 
 # Chat =================================================
 [[on-window-detected]]
@@ -192,7 +197,6 @@ run = 'move-node-to-workspace C'
 [[on-window-detected]]
 if.app-id = 'com.apple.mail'
 run = 'move-node-to-workspace C'
-# /Chat =================================================
 
 [[on-window-detected]]
 if.app-id = 'com.apple.MobileSMS'
@@ -201,5 +205,6 @@ run = 'layout floating'
 [[on-window-detected]]
 if.app-id = 'com.apple.mail'
 run = 'layout floating'
+# /Chat =================================================
 
 

@@ -1,0 +1,52 @@
+background = #141414
+font-family = BerkeleyMono Nerd Font
+font-size = 20
+
+cursor-color = #ff7f33
+
+# black
+palette = 0=#1E1E1E
+palette = 8=#FFFFFF
+
+# red
+palette = 1=#FF995D
+palette = 9=#FF995D
+
+# green
+palette = 2=#E2B8A0
+palette = 10=#E2B8A0
+
+# yellow
+palette = 3=#FF995D
+palette = 11=#FF995D
+
+# blue
+palette = 4=#8A9AA6
+palette = 12=#8A9AA6
+
+# purple
+palette = 5=#E8A07D
+palette = 13=#E8A07D
+
+# aqua
+palette = 6=#C0E3F0
+palette = 14=#C0E3F0
+
+# white
+palette = 7=#FFFFFF
+palette = 15=#FFFFFF
+
+# "transparent", "tabs", and "hidden".
+macos-titlebar-style=hidden
+
+window-padding-balance=true
+
+adjust-cursor-thickness=4
+
+mouse-hide-while-typing=true
+
+keybind = cmd+s>t=toggle_quick_terminal
+quick-terminal-animation-duration=0
+quick-terminal-position=center
+
+keybind = cmd+s>r=reload_config

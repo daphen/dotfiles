@@ -3,8 +3,8 @@ vim.g.mapleader = " "
 local keymap = vim.keymap
 
 -- center cursor after jumping vertically
-keymap.set("n", "<C-d>", "<C-d>zz")
-keymap.set("n", "<C-u>", "<C-u>zz")
+-- keymap.set("n", "<C-d>", "<C-d>zz")
+-- keymap.set("n", "<C-u>", "<C-u>zz")
 
 -- center cursor after search
 keymap.set("n", "n", "nzzzv")
@@ -50,7 +50,6 @@ vim.cmd(":command Wa wa")
 vim.cmd(":command WQ wq")
 vim.cmd(":command Wq wq")
 vim.cmd(":command Wqa wqa")
-vim.cmd(":command Q q")
 vim.cmd(":command QA qa")
 vim.cmd(":command Qa qa")
 

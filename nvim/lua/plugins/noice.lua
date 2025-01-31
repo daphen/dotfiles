@@ -8,7 +8,6 @@ return {
 	config = function()
 		require("notify").setup({
 			stages = "static",
-			timeout = 2000,
 			background_colour = "#000000",
 		})
 
@@ -17,6 +16,18 @@ return {
 				lsp_doc_border = true,
 				command_palette = true,
 				long_message_to_split = true,
+			},
+			views = {
+				hover = {
+					border = {
+						style = "rounded",
+					},
+				},
+			},
+			lsp = {
+				override = {
+					["vim.lsp.buf.code_action"] = false,
+				},
 			},
 			routes = {
 				{

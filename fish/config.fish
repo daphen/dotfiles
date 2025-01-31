@@ -2,6 +2,11 @@ if status is-interactive
   fish_add_path /opt/homebrew/bin $HOME/bin /usr/local/bin
 end
 
+if test -f ~/.config/fish/secrets.fish
+  source ~/.config/fish/secrets.fish
+end
+
+
 abbr -a vim nvim
 abbr -a vi nvim
 abbr -a lsa ls -la

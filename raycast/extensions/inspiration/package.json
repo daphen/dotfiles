@@ -1,0 +1,115 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "inspiration",
+  "title": "Inspiration",
+  "description": "Allows you to save and manage items found anywhere online in form of images and links.",
+  "icon": "extension-icon.png",
+  "author": "david_karlsson",
+  "license": "MIT",
+  "applicationId": "com.david_karlsson.inspiration",
+  "preferences": [
+    {
+      "name": "NEXT_APP_URL",
+      "type": "textfield",
+      "required": true,
+      "default": "https://raycast-inspiration.vercel.app",
+      "description": "The URL of your Next.js application",
+      "title": "Next.js App URL"
+    },
+    {
+      "name": "API_KEY",
+      "type": "password",
+      "required": true,
+      "description": "API key for authentication with the backend",
+      "title": "API Key"
+    }
+  ],
+  "categories": [
+    "Design Tools"
+  ],
+  "commands": [
+    {
+      "name": "index",
+      "title": "View Inspiration",
+      "description": "View saved inspiration items",
+      "mode": "view"
+    },
+    {
+      "name": "saveInspiration",
+      "title": "Save Inspiration",
+      "description": "Save selected content to inspiration collection",
+      "mode": "view",
+      "arguments": [
+        {
+          "name": "url",
+          "type": "text",
+          "placeholder": "URL to save",
+          "required": true
+        },
+        {
+          "name": "category",
+          "type": "dropdown",
+          "placeholder": "Select Category",
+          "data": [
+            {
+              "title": "UI/UX",
+              "value": "UI/UX"
+            },
+            {
+              "title": "Photography",
+              "value": "Photography"
+            },
+            {
+              "title": "AI",
+              "value": "AI"
+            },
+            {
+              "title": "interior/architecture",
+              "value": "interior/architecture"
+            },
+            {
+              "title": "tattoos",
+              "value": "tattoos"
+            }
+          ],
+          "required": false
+        }
+      ],
+      "external": [
+        "save-image",
+        "save-link",
+        "context-menu"
+      ]
+    }
+  ],
+  "permissions": [
+    "clipboard",
+    "filesystem",
+    "commands"
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.86.1",
+    "@raycast/utils": "^1.17.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@microlink/mql": "^0.13.10",
+    "@raycast/eslint-config": "^1.0.11",
+    "@types/node": "20.8.10",
+    "@types/react": "18.3.3",
+    "@types/uuid": "^9.0.1",
+    "eslint": "^8.57.0",
+    "node-fetch": "^3.3.2",
+    "open-graph-scraper": "^6.8.2",
+    "prettier": "^3.3.3",
+    "typescript": "^5.4.5"
+  },
+  "scripts": {
+    "build": "ray build",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
+    "publish": "npx @raycast/api@latest publish"
+  }
+}

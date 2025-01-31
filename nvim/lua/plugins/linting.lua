@@ -13,18 +13,15 @@ return {
 			vue = { "eslint_d" },
 		}
 
-		local lint_augroup = vim.api.nvim_create_augroup("lint", { clear = true })
-		local eslint = lint.linters.eslint_d
+		-- Add back LintInfo command
+		vim.api.nvim_create_user_command("LintInfo", function()
+			local ft = vim.bo.filetype
+			local linters = lint.linters_by_ft[ft] or {}
+			print("Current filetype: " .. ft)
+			print("Configured linters: " .. vim.inspect(linters))
+		end, {})
 
-		eslint.args = {
-			"--format",
-			"json",
-			"--stdin",
-			"--stdin-filename",
-			function()
-				return vim.api.nvim_buf_get_name(0)
-			end,
-		}
+		local lint_augroup = vim.api.nvim_create_augroup("lint", { clear = true })
 
 		vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
 			group = lint_augroup,

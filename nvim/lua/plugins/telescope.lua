@@ -33,6 +33,11 @@ return {
 						},
 					},
 				},
+				pickers = {
+					find_files = {
+						hidden = true,
+					},
+				},
 			})
 
 			telescope.load_extension("fzf")
@@ -63,19 +68,6 @@ return {
 					prompt_title = "Live Grep in Open Files",
 				})
 			end, { desc = "Find in open files" })
-		end,
-	},
-	{
-		"nvim-telescope/telescope-ui-select.nvim",
-		config = function()
-			require("telescope").setup({
-				extensions = {
-					["ui-select"] = {
-						require("telescope.themes").get_dropdown({}),
-					},
-				},
-			})
-			require("telescope").load_extension("ui-select")
 		end,
 	},
 }

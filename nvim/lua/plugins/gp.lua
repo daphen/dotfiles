@@ -1,40 +1,64 @@
 return {
 	"robitx/gp.nvim",
 	config = function()
-		local conf = {
-			default_provider = "ollama",
-			default_command_agent = "qwen2.5-coder:7b",
-			default_chat_agent = "qwen2.5-coder:7b",
-			command_prompt_prefix_template = "Prompt:",
-
+		local config = {
 			providers = {
-				ollama = {
-					disable = false,
-					endpoint = "http://localhost:11434/v1/chat/completions",
+				openai = {
+					endpoint = "https://openrouter.ai/api/v1/chat/completions",
+					secret = os.getenv("LLM_KEY"),
+					additional_request_headers = {
+						["HTTP-Referer"] = "http://localhost:8080",
+						["X-Title"] = "Neovim",
+					},
 				},
 			},
 			agents = {
 				{
-					provider = "ollama",
-					name = "qwen2.5-coder:7b",
+					name = "ChatGPT4o",
+					disable = true,
+				},
+				{
+					name = "ChatGPT4o-mini",
+					disable = true,
+				},
+				{
+					name = "ChatGPT4",
+					disable = true,
+				},
+				{
+					name = "ChatGPT3-5",
+					disable = true,
+				},
+				{
+					name = "ChatGPTMini",
+					disable = true,
+				},
+				{
+					name = "claude",
+					provider = "openai",
 					chat = true,
 					command = true,
-					model = "qwen2.5-coder:7b",
-					system_prompt = "You are a general AI assistant.",
+					model = { model = "anthropic/claude-3.5-sonnet" },
+					system_prompt = "You are a helpful AI assistant specialized in explaining and working with code.",
 				},
 			},
-			hooks = {
-				-- example of making :%GpChatNew a dedicated command which
-				-- opens new chat with the entire current buffer as a context
-				BufferChatNew = function(gp, _)
-					-- call GpChatNew command in range mode on whole buffer
-					vim.api.nvim_command("%" .. gp.config.cmd_prefix .. "ChatToggle popup")
-				end,
-			},
+			default_agent = "claude",
+			chat_agent = "claude",
+			command_agent = "claude",
+			style_popup_border = "rounded",
+			style_popup_prefix = "  ",
+			chat_dir = vim.fn.stdpath("state") .. "/gp/chats",
 		}
-		require("gp").setup(conf)
+		require("gp").setup(config)
 
-		vim.keymap.set({ "n", "i" }, "<C-g>g", "<cmd>GpBufferChatNew<cr>")
-		vim.keymap.set("v", "<C-g><C-g>", ":<C-u>'<,'>GpRewrite<cr>")
+		-- Normal mode mappings
+		vim.keymap.set("n", "<C-g>g", "<cmd>GpChatToggle vsplit<cr>") -- Toggle chat
+		vim.keymap.set("n", "<C-g>n", "<cmd>GpChatNew vsplit<cr>") -- New chat
+		vim.keymap.set("n", "<C-g>q", "<cmd>GpStop<cr>") -- Close current chat
+		vim.keymap.set("n", "<C-g>f", "<cmd>GpChatFinder<cr>") -- Chat finder
+
+		-- Visual mode mappings
+		vim.keymap.set("v", "<C-g>n", ":'<,'>GpChatNew popup<cr>") -- New chat with selection
+		vim.keymap.set("v", "<C-g>g", ":'<,'>GpChatPaste<cr>") -- Paste selection into current chat
 	end,
 }

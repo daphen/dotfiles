@@ -13,9 +13,21 @@ return {
 		quickfile = { enabled = true },
 		scroll = { enabled = false },
 		statuscolumn = { enabled = false },
+		picker = { enabled = true },
 		words = { enabled = false },
+		terminal = {
+			style = "terminal",
+		},
 	},
 	keys = {
+		{
+			mode = { "n", "t" },
+			"<c-t>",
+			function()
+				Snacks.terminal()
+			end,
+			desc = "Toggle Terminal",
+		},
 		{
 			"<leader>z",
 			function()
@@ -102,47 +114,103 @@ return {
 			desc = "Dismiss All Notifications",
 		},
 		{
-			"<c-a>",
+			"<leader>ff",
 			function()
-				Snacks.terminal()
+				Snacks.picker.files()
 			end,
-			desc = "Toggle Terminal",
-			mode = { "n" },
+			desc = "Find Files",
 		},
 		{
-			"]]",
+			"<leader>fg",
 			function()
-				Snacks.words.jump(vim.v.count1)
+				Snacks.picker.grep()
 			end,
-			desc = "Next Reference",
-			mode = { "n", "t" },
+			desc = "Find Grep",
 		},
 		{
-			"[[",
+			"<leader>fh",
 			function()
-				Snacks.words.jump(-vim.v.count1)
+				Snacks.picker.help()
 			end,
-			desc = "Prev Reference",
-			mode = { "n", "t" },
+			desc = "Search Help",
+		},
+		{
+			"<leader>fd",
+			function()
+				Snacks.picker.diagnostics()
+			end,
+			desc = "Search Diagnostics",
+		},
+		{
+			"<leader>fb",
+			function()
+				Snacks.picker.buffers()
+			end,
+			desc = "Find Buffers",
+		},
+		{
+			"<leader>fa",
+			function()
+				Snacks.picker.recent()
+			end,
+			desc = "Recent Files",
+		},
+		{
+			"<leader>fr",
+			function()
+				Snacks.picker.lsp_references()
+			end,
+			desc = "LSP References",
+		},
+		{
+			"<leader>fj",
+			function()
+				Snacks.picker.jumps()
+			end,
+			desc = "Search Jumplist",
+		},
+		{
+			"<leader>fq",
+			function()
+				Snacks.picker.qflist()
+			end,
+			desc = "Search Quickfix",
+		},
+		{
+			"<leader>fM",
+			function()
+				Snacks.picker.marks()
+			end,
+			desc = "Search Marks",
+		},
+		{
+			"<leader>fw",
+			function()
+				Snacks.picker.lines()
+			end,
+			desc = "Search Current Buffer",
+		},
+		{
+			"<leader>fo",
+			function()
+				Snacks.picker.grep_buffers()
+			end,
+			desc = "Search Open Files",
+		},
+		-- Additional useful picker mappings you might want
+		{
+			"<leader>fs",
+			function()
+				Snacks.picker.lsp_symbols()
+			end,
+			desc = "LSP Symbols",
+		},
+		{
+			"<leader>gc",
+			function()
+				Snacks.picker.git_commits()
+			end,
+			desc = "Git Commits",
 		},
 	},
-	init = function()
-		vim.api.nvim_create_autocmd("User", {
-			pattern = "VeryLazy",
-			callback = function()
-				-- Setup some globals for debugging (lazy-loaded)
-				_G.dd = function(...)
-					Snacks.debug.inspect(...)
-				end
-				_G.bt = function()
-					Snacks.debug.backtrace()
-				end
-				vim.print = _G.dd -- Override print to use snacks for `:=` command
-
-				-- Create some toggle mappings
-				Snacks.toggle.diagnostics():map("<leader>ud")
-				Snacks.toggle.inlay_hints():map("<leader>uh")
-			end,
-		})
-	end,
 }

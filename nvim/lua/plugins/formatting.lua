@@ -82,7 +82,9 @@ return {
 							for _, config in ipairs(prettier_configs) do
 								local config_path = root_path .. sep .. config
 								if vim.fn.filereadable(config_path) ~= 0 then
-									return args .. { "--config", config_path }
+									-- Use vim.list_extend to combine the tables
+									vim.list_extend(args, { "--config", config_path })
+									break
 								end
 							end
 						end

@@ -116,11 +116,11 @@ return {
 				end,
 			})
 
-			vim.keymap.set("n", "<leader>O", function()
+			vim.keymap.set("n", "<leader>E", function()
 				mini_files.open(vim.api.nvim_buf_get_name(0))
 			end, { desc = "Open file explorer" })
 
-			vim.keymap.set("n", "<leader>o", function()
+			vim.keymap.set("n", "<leader>e", function()
 				mini_files.open()
 			end, { desc = "Open file explorer (cwd)" })
 		end,

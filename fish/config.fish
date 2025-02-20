@@ -1,4 +1,6 @@
 if status is-interactive
+    # Clean Neovim swap files on shell start
+    clean_nvim_swap
   fish_add_path /opt/homebrew/bin $HOME/bin /usr/local/bin
 end
 

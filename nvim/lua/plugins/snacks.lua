@@ -16,7 +16,16 @@ return {
 		picker = { enabled = true },
 		words = { enabled = false },
 		terminal = {
-			style = "terminal",
+			win = {
+				style = {
+					position = "float",
+					backdrop = 60,
+					height = 0.9,
+					width = 0.9,
+					zindex = 50,
+					border = "rounded",
+				},
+			},
 		},
 	},
 	keys = {
@@ -24,9 +33,25 @@ return {
 			mode = { "n", "t" },
 			"<c-t>",
 			function()
-				Snacks.terminal()
+				Snacks.terminal(nil)
 			end,
 			desc = "Toggle Terminal",
+		},
+		term_normal = {
+			"<esc>",
+			function(self)
+				if not self.esc_timer then
+					self.esc_timer = vim.defer_fn(function()
+						self.esc_timer = nil
+					end, 200)
+					return "<esc>"
+				end
+				self.esc_timer = nil
+				return "<C-\\><C-n>"
+			end,
+			mode = "t",
+			expr = true,
+			desc = "Double escape to normal mode",
 		},
 		{
 			"<leader>z",
@@ -182,6 +207,13 @@ return {
 				Snacks.picker.marks()
 			end,
 			desc = "Search Marks",
+		},
+		{
+			"<C-f>",
+			function()
+				Snacks.picker.smart()
+			end,
+			desc = "Smart find files",
 		},
 		{
 			"<leader>fw",

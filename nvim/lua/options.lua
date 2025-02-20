@@ -46,3 +46,11 @@ vim.opt.hlsearch = true
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
 
 opt.showcmd = false
+opt.laststatus = 3 -- Global statusline
+
+-- Swap file settings
+opt.swapfile = true -- Keep swapfiles for recovery
+opt.directory = vim.fn.expand("~/.local/share/nvim/swap//")
+opt.updatetime = 300 -- Faster swap file writing
+opt.backup = false -- Don't keep backup files
+opt.writebackup = false -- Don't write backup files

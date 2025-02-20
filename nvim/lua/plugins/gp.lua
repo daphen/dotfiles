@@ -52,13 +52,13 @@ return {
 		require("gp").setup(config)
 
 		-- Normal mode mappings
-		vim.keymap.set("n", "<C-g>g", "<cmd>GpChatToggle vsplit<cr>") -- Toggle chat
-		vim.keymap.set("n", "<C-g>n", "<cmd>GpChatNew vsplit<cr>") -- New chat
-		vim.keymap.set("n", "<C-g>q", "<cmd>GpStop<cr>") -- Close current chat
-		vim.keymap.set("n", "<C-g>f", "<cmd>GpChatFinder<cr>") -- Chat finder
-
-		-- Visual mode mappings
-		vim.keymap.set("v", "<C-g>n", ":'<,'>GpChatNew popup<cr>") -- New chat with selection
-		vim.keymap.set("v", "<C-g>g", ":'<,'>GpChatPaste<cr>") -- Paste selection into current chat
+		-- vim.keymap.set("n", "<C-g>g", "<cmd>GpChatToggle vsplit<cr>") -- Toggle chat
+		-- vim.keymap.set("n", "<C-g>n", "<cmd>GpChatNew vsplit<cr>") -- New chat
+		-- vim.keymap.set("n", "<C-g>q", "<cmd>GpStop<cr>") -- Close current chat
+		-- vim.keymap.set("n", "<C-g>f", "<cmd>GpChatFinder<cr>") -- Chat finder
+		--
+		-- -- Visual mode mappings
+		-- vim.keymap.set("v", "<C-g>n", ":'<,'>GpChatNew popup<cr>") -- New chat with selection
+		-- vim.keymap.set("v", "<C-g>g", ":'<,'>GpChatPaste<cr>") -- Paste selection into current chat
 	end,
 }

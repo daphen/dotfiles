@@ -23,13 +23,13 @@ keymap.set("n", "<C-l>", "<C-w>l")
 keymap.set("n", "<leader>sv", "<C-w>v") -- split vertically
 keymap.set("n", "<leader>sh", "<C-w>s") -- split horizontally
 keymap.set("n", "<leader>se", "<C-w>=") -- make split windows equal width
-keymap.set("n", "<leader>sx", ":close<CR>") -- close current split window
+keymap.set("n", "<C-x>", ":close<CR>") -- close current split window
 
 -- resize splits
-keymap.set("n", "<leader>[", "<cmd>vertical resize +15<CR>")
-keymap.set("n", "<leader>]", "<cmd>vertical resize -15<CR>")
-keymap.set("n", "<leader>s[", "<cmd>horizontal resize -15<CR>")
-keymap.set("n", "<leader>s/", "<cmd>horizontal resize +15<CR>")
+-- keymap.set("n", "<leader>[", "<cmd>vertical resize +15<CR>")
+-- keymap.set("n", "<leader>]", "<cmd>vertical resize -15<CR>")
+-- keymap.set("n", "<leader>s[", "<cmd>horizontal resize -15<CR>")
+-- keymap.set("n", "<leader>s/", "<cmd>horizontal resize +15<CR>")
 
 -- move highlighted
 keymap.set("v", "J", ":m '>+1<CR>gv=gv")

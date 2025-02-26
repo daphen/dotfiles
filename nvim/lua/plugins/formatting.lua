@@ -29,6 +29,7 @@ return {
 				markdown = { "prettier" },
 				json = { "prettier" },
 				yaml = { "prettier" },
+				svg = { "prettier" },
 				lua = { "stylua" },
 				python = { "black" },
 			},
@@ -76,6 +77,11 @@ return {
 						local current_path = utils.current_path()
 						local root_path = utils.find_root_with_markers(current_path, root_markers)
 						local args = { "--stdin-filepath", ctx.filename }
+
+						if vim.fn.fnamemodify(ctx.filename, ":e") == "svg" then
+							table.insert(args, "--parser")
+							table.insert(args, "html")
+						end
 
 						if root_path then
 							local sep = package.config:sub(1, 1)

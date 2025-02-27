@@ -26,7 +26,7 @@ return {
 			},
 			lsp = {
 				override = {
-					["vim.lsp.buf.code_action"] = false,
+					["vim.lsp.buf.code_action"] = true,
 				},
 			},
 			routes = {

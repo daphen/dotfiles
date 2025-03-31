@@ -25,6 +25,7 @@ return {
 					},
 					mappings = {
 						go_in_plus = "<CR>",
+						synchronize = ";",
 						close = "q",
 					},
 				})
@@ -33,9 +34,7 @@ return {
 			local function is_preview_window(win_id)
 				local buf_id = vim.api.nvim_win_get_buf(win_id)
 				local ok, lines = pcall(vim.api.nvim_buf_get_lines, buf_id, 0, -1, false)
-				if not ok or #lines == 0 then
-					return false
-				end
+				if not ok or #lines == 0 then return false end
 				return not vim.startswith(lines[1], "/")
 			end
 
@@ -64,9 +63,7 @@ return {
 					local total_height = vim.o.lines
 					local total_width = vim.o.columns
 
-					if not vim.api.nvim_win_is_valid(win_id) then
-						return
-					end
+					if not vim.api.nvim_win_is_valid(win_id) then return end
 
 					if is_preview_window(win_id) then
 						config.width = total_width
@@ -82,12 +79,21 @@ return {
 				end,
 			})
 
-			vim.keymap.set("n", "<leader>E", function()
+			vim.keymap.set("n", "<leader>e", function()
 				setup_mini_files()
 				mini_files.open(vim.api.nvim_buf_get_name(0))
+
+				-- Navigate to parent directories and back to create a two level context view
+				for _ = 1, 2 do
+					mini_files.go_out()
+				end
+
+				for _ = 1, 2 do
+					mini_files.go_in()
+				end
 			end, { desc = "Open file explorer" })
 
-			vim.keymap.set("n", "<leader>e", function()
+			vim.keymap.set("n", "<leader>E", function()
 				setup_mini_files()
 				mini_files.open()
 			end, { desc = "Open file explorer (cwd)" })

@@ -2,10 +2,6 @@ vim.g.mapleader = " "
 
 local keymap = vim.keymap
 
--- center cursor after jumping vertically
--- keymap.set("n", "<C-d>", "<C-d>zz")
--- keymap.set("n", "<C-u>", "<C-u>zz")
-
 -- center cursor after search
 keymap.set("n", "n", "nzzzv")
 keymap.set("n", "N", "Nzzzv")
@@ -38,7 +34,8 @@ keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 -- we have telescope fuzzy find in current buffer on / so we're remapping normal search
 -- keymap.set("n", "<leader>/", "/")
 
-keymap.set("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })
+keymap.set("n", "<m-j>", "<cmd>cnext<CR>", { desc = "Next quickfix item" })
+keymap.set("n", "<m-k>", "<cmd>cprev<CR>", { desc = "Prev quickfix item" })
 
 -- Leader p/P to force new line for paste
 vim.keymap.set("n", "<leader>p", "o" .. "<ESC>" .. "p" .. "V" .. "=" .. "<ESC>" .. "$", { noremap = true })
@@ -130,3 +127,16 @@ vim.keymap.set("v", "P", function()
 	vim.cmd("normal! P")
 	indent_after_paste()
 end, { noremap = true, silent = true })
+
+-- Search and replace word under cursor
+vim.keymap.set("n", "SR", function()
+	local word = vim.fn.expand("<cword>")
+	-- Escape special characters in the word
+	local escaped_word = vim.fn.escape(word, "/\\")
+	-- Create the command string
+	local cmd = ":%s/" .. escaped_word .. "//g"
+	-- Feed the command to the command line without executing it
+	vim.api.nvim_feedkeys(":" .. cmd, "n", false)
+	-- Move cursor left twice (before the last slash)
+	vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Left><Left>", true, false, true), "n", false)
+end, { noremap = true, desc = "Search and replace word under cursor" })

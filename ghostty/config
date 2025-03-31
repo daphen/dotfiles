@@ -1,11 +1,11 @@
-background = #141414
+background = #09090A
 font-family = BerkeleyMono Nerd Font
 font-size = 20
 
 cursor-color = #ff7f33
 
 # black
-palette = 0=#1E1E1E
+palette = 0=#1F1F1F
 palette = 8=#FFFFFF
 
 # red
@@ -50,3 +50,5 @@ quick-terminal-animation-duration=0
 quick-terminal-position=center
 
 keybind = cmd+s>r=reload_config
+
+clipboard-paste-protection=false

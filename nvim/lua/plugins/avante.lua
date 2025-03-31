@@ -16,6 +16,7 @@ return {
 			-- model = "claude-3-5-haiku-20241022",
 			temperature = 0,
 			max_tokens = 8192,
+			disable_tools = true,
 		},
 		dual_boost = {
 			enabled = false,
@@ -89,14 +90,13 @@ return {
 			},
 			ask = {
 				floating = false, -- Open the 'AvanteAsk' prompt in a floating window
-				start_insert = true, -- Start insert mode when opening the ask window
+				start_insert = false, -- Start insert mode when opening the ask window
 				border = "rounded",
 				---@type "ours" | "theirs"
 				focus_on_apply = "ours", -- which diff to focus after applying
 			},
 		},
 		highlights = {
-			---@type AvanteConflictHighlights
 			diff = {
 				current = "DiffText",
 				incoming = "DiffAdd",

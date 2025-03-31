@@ -81,7 +81,15 @@ return {
     highlight DiagnosticSignError guifg=#ff7f33
     highlight DiagnosticSignWarn guifg=#E8A07D
     highlight DiagnosticSignHint guifg=#E8A07D
+
+    " Fix URL highlighting issues
+    highlight link Underlined Normal
+    highlight Underlined gui=NONE cterm=NONE
     ]])
+
+			-- Disable concealing which can cause URL highlighting issues
+			vim.opt.conceallevel = 0
+			vim.opt.concealcursor = ""
 
 			local border = {
 				{ "╭", "FloatBorder" },

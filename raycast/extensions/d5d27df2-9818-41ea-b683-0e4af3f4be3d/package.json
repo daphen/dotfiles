@@ -6,10 +6,12 @@
   "icon": "slack-icon-rounded.png",
   "author": "mommertf",
   "contributors": [
-    "Elliot67",
     "stelo",
     "thomaslombart",
     "Rob"
+  ],
+  "pastContributors": [
+    "Elliot67"
   ],
   "categories": [
     "Communication",
@@ -93,9 +95,107 @@
       "default": true
     }
   ],
+  "tools": [
+    {
+      "title": "Slack Channels",
+      "name": "get-channels",
+      "description": "Lists all channels in the Slack team",
+      "confirmation": false
+    },
+    {
+      "title": "Slack Channel History",
+      "name": "get-channel-history",
+      "description": "Fetches a channel's history of messages and events.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "type": "string",
+            "description": "The id of the channel to fetch history (eg. messages) for. Use `getChannels` to get the list of channels with their ids."
+          },
+          "after": {
+            "type": "string",
+            "description": "Only messages after this Unix timestamp will be included in results. If ommited, the last 30 messages of the channel will be returned.\n\nExample: \"1234567890.123456\""
+          }
+        },
+        "required": [
+          "channelId"
+        ]
+      },
+      "confirmation": false
+    },
+    {
+      "title": "Slack Users",
+      "name": "get-users",
+      "description": "List all users in the Slack team",
+      "confirmation": false
+    },
+    {
+      "title": "Set Status",
+      "name": "set-status",
+      "description": "Set or unset the status of the current user",
+      "input": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "A string value for status text, should be short and sweet, with no punctuation, e.g. \"Working out\", \"Listening to Drake's new album\", \"Coffe break\". It should not include the status duration for example \"Working out\" instead of \"Working out for 2 hours\" or \"Working out until tomorrow\".\n\nTo unset the status, provide an empty string."
+          },
+          "emoji": {
+            "type": "string",
+            "description": "A Slack-compatible string for single emoji matching the text of the status. Emojis should be in the form: :<emoji identifier>:. If the user doesn't specify an emoji, come up with one that matches the text.\n\nTo unset the status, provide an empty string."
+          },
+          "duration": {
+            "type": "number",
+            "description": "An integer representing the duration of the status in seconds. Only provide it if the user has specified a time or the end of status"
+          }
+        },
+        "required": [
+          "text",
+          "emoji"
+        ]
+      },
+      "confirmation": false
+    }
+  ],
+  "ai": {
+    "evals": [
+      {
+        "input": "@slack set my status to away",
+        "expected": [
+          {
+            "callsTool": {
+              "name": "set-status",
+              "arguments": {
+                "text": {
+                  "includes": "away"
+                }
+              }
+            }
+          }
+        ],
+        "mocks": {
+          "set-status": "success"
+        }
+      },
+      {
+        "input": "@slack summarize what happened in #general yesterday",
+        "expected": [
+          {
+            "callsTool": {
+              "name": "get-channels"
+            }
+          }
+        ],
+        "mocks": {
+          "get-channels": []
+        }
+      }
+    ]
+  },
   "dependencies": {
-    "@raycast/api": "^1.76.0",
-    "@raycast/utils": "^1.16.0",
+    "@raycast/api": "^1.87.0",
+    "@raycast/utils": "^1.18.0",
     "@slack/web-api": "^7.0.4",
     "date-fns": "^3.6.0",
     "date-fns-tz": "^3.1.3",

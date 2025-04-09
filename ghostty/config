@@ -1,40 +1,5 @@
-background = #09090A
 font-family = BerkeleyMono Nerd Font
 font-size = 20
-
-cursor-color = #ff7f33
-
-# black
-palette = 0=#1F1F1F
-palette = 8=#FFFFFF
-
-# red
-palette = 1=#FF995D
-palette = 9=#FF995D
-
-# green
-palette = 2=#E2B8A0
-palette = 10=#E2B8A0
-
-# yellow
-palette = 3=#FF995D
-palette = 11=#FF995D
-
-# blue
-palette = 4=#8A9AA6
-palette = 12=#8A9AA6
-
-# purple
-palette = 5=#E8A07D
-palette = 13=#E8A07D
-
-# aqua
-palette = 6=#C0E3F0
-palette = 14=#C0E3F0
-
-# white
-palette = 7=#FFFFFF
-palette = 15=#FFFFFF
 
 # "transparent", "tabs", and "hidden".
 macos-titlebar-style=hidden
@@ -49,6 +14,15 @@ keybind = cmd+s>t=toggle_quick_terminal
 quick-terminal-animation-duration=0
 quick-terminal-position=center
 
+# Keybind that triggers ctrl+s>T (prefix in tmux + T to trigger Sesh)
+keybind = cmd+k=text:\x13T
+
+# Switch to last tmux session with Cmd+L (sends Ctrl+S followed by L)
+keybind = cmd+l=text:\x13L
+
 keybind = cmd+s>r=reload_config
 
 clipboard-paste-protection=false
+
+theme = light:light,dark:dark
+

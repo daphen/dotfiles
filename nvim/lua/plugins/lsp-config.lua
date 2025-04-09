@@ -1,17 +1,16 @@
 return {
 	{
 		"williamboman/mason.nvim",
-		config = function()
-			require("mason").setup({
-				ui = {
-					icons = {
-						package_installed = "✓",
-						package_pending = "➜",
-						package_uninstalled = "✗",
-					},
+		build = ":MasonUpdate",
+		opts = {
+			ui = {
+				icons = {
+					package_installed = "✓",
+					package_pending = "➜",
+					package_uninstalled = "✗",
 				},
-			})
-		end,
+			},
+		},
 	},
 	{
 		"williamboman/mason-lspconfig.nvim",
@@ -190,14 +189,14 @@ return {
 
 			-- KEYMAPS
 			vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Show description" })
-			vim.keymap.set("n", "gD", vim.lsp.buf.declaration, { desc = "Go to definition" })
+			vim.keymap.set("n", "gD", vim.lsp.buf.declaration, { desc = "Go to declaration" })
 			vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, { desc = "Rename" })
 			vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Open diagnostics" })
 			vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "Go to definition" })
 			vim.keymap.set("n", "gs", ":vsplit | lua vim.lsp.buf.definition()<CR>") -- open defining buffer in vertical split
 			vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { desc = "Code action" })
-			vim.keymap.set("n", "[d", vim.diagnostic.goto_next, { desc = "Go to next diagnostics" })
-			vim.keymap.set("n", "]d", vim.diagnostic.goto_prev, { desc = "Go to prev diagnostics" })
+			vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Go to next diagnostics" })
+			vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Go to prev diagnostics" })
 		end,
 	},
 }

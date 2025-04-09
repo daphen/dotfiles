@@ -1,0 +1,22 @@
+background = #09090A
+cursor-color = #ff7f33
+
+# Set default
+palette = 0=#1F1F1F  
+palette = 1=#FF995D  
+palette = 2=#E2B8A0  
+palette = 3=#FF995D  
+palette = 4=#8A9AA6  
+palette = 5=#E8A07D  
+palette = 6=#FDF6E3  
+palette = 7=#FFFFFF  
+
+# Set bright
+palette = 8=#F2E9E1 
+palette = 9=#FF995D 
+palette = 10=#E2B8A0
+palette = 11=#FF995D
+palette = 12=#8A9AA6
+palette = 13=#E8A07D
+palette = 14=#FDF6E3
+palette = 15=#F2E9E1

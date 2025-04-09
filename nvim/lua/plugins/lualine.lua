@@ -38,58 +38,14 @@ return {
 			end
 		end
 
-		local custom_theme = {
-			normal = {
-				a = { fg = "#121214", bg = "#899AA6", bold = true },
-				b = { fg = "#DBDBD9", bg = "#121214" },
-				c = { fg = "#FF995E", bg = "#121214", bold = true },
-				x = { fg = "#DBDBD9", bg = "#121214" },
-				z = { fg = "#121214", bg = "#899AA6", bold = true },
-			},
-			insert = {
-				a = { fg = "#121214", bg = "#FF995E", bold = true },
-				b = { fg = "#DBDBD9", bg = "#121214" },
-				c = { fg = "#FF995E", bg = "#121214", bold = true },
-				x = { fg = "#DBDBD9", bg = "#121214" },
-				z = { fg = "#121214", bg = "#FF995E", bold = true },
-			},
-			visual = {
-				a = { fg = "#121214", bg = "#E6E7A3", bold = true },
-				b = { fg = "#DBDBD9", bg = "#121214" },
-				c = { fg = "#54C0A3", bg = "#121214", bold = true },
-				x = { fg = "#DBDBD9", bg = "#121214" },
-				z = { fg = "#121214", bg = "#E6E7A3", bold = true },
-			},
-			replace = {
-				a = { fg = "#121214", bg = "#f7768e", bold = true },
-				b = { fg = "#DBDBD9", bg = "#121214" },
-				c = { fg = "#FF995E", bg = "#121214", bold = true },
-				x = { fg = "#DBDBD9", bg = "#121214" },
-				z = { fg = "#121214", bg = "#f7768e", bold = true },
-			},
-			command = {
-				a = { fg = "#121214", bg = "#698893", bold = true },
-				b = { fg = "#DBDBD9", bg = "#121214" },
-				c = { fg = "#FF995E", bg = "#121214", bold = true },
-				x = { fg = "#DBDBD9", bg = "#121214" },
-				z = { fg = "#121214", bg = "#698893", bold = true },
-			},
-			inactive = {
-				a = { fg = "#DBDBD9", bg = "#121214", bold = true },
-				b = { fg = "#DBDBD9", bg = "#121214" },
-				c = { fg = "#FF995E", bg = "#121214", bold = true },
-				x = { fg = "#DBDBD9", bg = "#121214" },
-				z = { fg = "#DBDBD9", bg = "#121214", bold = true },
-			},
-		}
-
 		-- Set the StatusLine highlight for consistent background
 		vim.api.nvim_set_hl(0, "StatusLine", { bg = "#121214" })
 		vim.api.nvim_set_hl(0, "StatusLineNC", { bg = "#121214" })
 
 		require("lualine").setup({
 			options = {
-				theme = custom_theme,
+				-- theme = custom_theme,
+				theme = "auto",
 				globalstatus = true,
 				icons_enabled = true,
 				-- component_separators = { left = "│", right = "│" },
@@ -140,3 +96,48 @@ return {
 		})
 	end,
 }
+
+-- local custom_theme = {
+-- 	normal = {
+-- 		a = { fg = "#121214", bg = "#899AA6", bold = true },
+-- 		b = { fg = "#DBDBD9", bg = "#121214" },
+-- 		c = { fg = "#FF995E", bg = "#121214", bold = true },
+-- 		x = { fg = "#DBDBD9", bg = "#121214" },
+-- 		z = { fg = "#121214", bg = "#899AA6", bold = true },
+-- 	},
+-- 	insert = {
+-- 		a = { fg = "#121214", bg = "#FF995E", bold = true },
+-- 		b = { fg = "#DBDBD9", bg = "#121214" },
+-- 		c = { fg = "#FF995E", bg = "#121214", bold = true },
+-- 		x = { fg = "#DBDBD9", bg = "#121214" },
+-- 		z = { fg = "#121214", bg = "#FF995E", bold = true },
+-- 	},
+-- 	visual = {
+-- 		a = { fg = "#121214", bg = "#E6E7A3", bold = true },
+-- 		b = { fg = "#DBDBD9", bg = "#121214" },
+-- 		c = { fg = "#54C0A3", bg = "#121214", bold = true },
+-- 		x = { fg = "#DBDBD9", bg = "#121214" },
+-- 		z = { fg = "#121214", bg = "#E6E7A3", bold = true },
+-- 	},
+-- 	replace = {
+-- 		a = { fg = "#121214", bg = "#f7768e", bold = true },
+-- 		b = { fg = "#DBDBD9", bg = "#121214" },
+-- 		c = { fg = "#FF995E", bg = "#121214", bold = true },
+-- 		x = { fg = "#DBDBD9", bg = "#121214" },
+-- 		z = { fg = "#121214", bg = "#f7768e", bold = true },
+-- 	},
+-- 	command = {
+-- 		a = { fg = "#121214", bg = "#698893", bold = true },
+-- 		b = { fg = "#DBDBD9", bg = "#121214" },
+-- 		c = { fg = "#FF995E", bg = "#121214", bold = true },
+-- 		x = { fg = "#DBDBD9", bg = "#121214" },
+-- 		z = { fg = "#121214", bg = "#698893", bold = true },
+-- 	},
+-- 	inactive = {
+-- 		a = { fg = "#DBDBD9", bg = "#121214", bold = true },
+-- 		b = { fg = "#DBDBD9", bg = "#121214" },
+-- 		c = { fg = "#FF995E", bg = "#121214", bold = true },
+-- 		x = { fg = "#DBDBD9", bg = "#121214" },
+-- 		z = { fg = "#DBDBD9", bg = "#121214", bold = true },
+-- 	},
+-- }

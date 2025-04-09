@@ -1,0 +1,23 @@
+background =  #FDF6E3
+foreground = #1F1F1F
+cursor-color = #ff7f33
+
+# Set default
+palette = 0=#EBE4D1  
+palette = 1=#FF995D  
+palette = 2=#8A9AA6  
+palette = 3=#FF995D  
+palette = 4=#8A9AA6  
+palette = 5=#6A8396  
+palette = 6=#8A9AA6  
+palette = 7=#1F1F1F  
+
+# Set bright
+palette = 8=#6A8396 
+palette = 9=#FF995D 
+palette = 10=#6F7C84
+palette = 11=#FF995D
+palette = 12=#8A9AA6
+palette = 13=#E8A07D
+palette = 14=#6F7C84
+palette = 15=#FDF6E3

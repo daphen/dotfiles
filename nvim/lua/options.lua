@@ -5,6 +5,7 @@ opt.relativenumber = true
 opt.number = true
 
 opt.scrolloff = 5
+opt.sidescrolloff = 15
 
 -- tabs & indent
 opt.tabstop = 2
@@ -30,7 +31,6 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 
 -- Color options
 opt.termguicolors = true
-opt.background = "dark"
 opt.fillchars = { eob = " " }
 
 opt.backspace = "indent,eol,start"

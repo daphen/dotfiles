@@ -1,0 +1,33 @@
+2025-07-12T20:41:45.040864+02:00 INFO kanata-tray [version=v0.7.0, commit=92c9f53124f20c105c6c841d400590f540fc1b70, build_date=Wed Jul  2 16:53:59 UTC 2025] starting
+2025-07-12T20:41:45.041189+02:00 INFO kanata-tray config folder: /Users/daphen/.config/kanata/tray-config
+2025-07-12T20:41:45.042155+02:00 INFO loading status icon: /Users/daphen/.config/kanata/tray-config/status_icons/default.ico
+2025-07-12T20:41:45.042358+02:00 INFO loading status icon: /Users/daphen/.config/kanata/tray-config/status_icons/crash.ico
+2025-07-12T20:41:45.042571+02:00 INFO loading status icon: /Users/daphen/.config/kanata/tray-config/status_icons/pause.ico
+2025-07-12T20:41:45.042779+02:00 INFO loading status icon: /Users/daphen/.config/kanata/tray-config/status_icons/live-reload.ico
+2025-07-12T20:41:45.120955+02:00 INFO Running preset 'Homerow Mods'
+2025-07-12T20:41:45.122727+02:00 INFO Running command: /opt/homebrew/bin/kanata -c=/Users/daphen/.config/kanata/kanata.kbd --port 5829
+2025-07-12T20:41:45.124143+02:00 INFO Started kanata (pid=9886)
+2025-07-12T20:41:47.628647+02:00 ERROR Failed to connect to kanata via TCP: dial tcp [::1]:5829: connect: connection refused
+2025-07-12T20:41:47.826735+02:00 ERROR Failed to send ClientMessage: timeouted after 200 ms
+2025-07-12T20:41:47.827078+02:00 INFO Waiting for all post-start-async hooks to exit
+2025-07-12T20:41:47.827104+02:00 INFO All post-start-async hooks exited
+2025-07-12T20:41:47.827347+02:00 ERROR Kanata runner terminated with an error: signal: abort trap
+2025-07-12T20:41:47.833739+02:00 INFO [autorestart-on-crash] Restarting [1/2]
+2025-07-12T20:41:47.833855+02:00 INFO Running preset 'Homerow Mods'
+2025-07-12T20:41:47.838269+02:00 INFO Running command: /opt/homebrew/bin/kanata -c=/Users/daphen/.config/kanata/kanata.kbd --port 5829
+2025-07-12T20:41:47.84262+02:00 INFO Started kanata (pid=9907)
+2025-07-12T20:41:50.345164+02:00 ERROR Failed to connect to kanata via TCP: dial tcp [::1]:5829: connect: connection refused
+2025-07-12T20:41:50.545188+02:00 ERROR Failed to send ClientMessage: timeouted after 200 ms
+2025-07-12T20:41:50.545407+02:00 INFO Waiting for all post-start-async hooks to exit
+2025-07-12T20:41:50.545428+02:00 INFO All post-start-async hooks exited
+2025-07-12T20:41:50.545506+02:00 ERROR Kanata runner terminated with an error: signal: abort trap
+2025-07-12T20:41:50.546809+02:00 INFO [autorestart-on-crash] Restarting [2/2]
+2025-07-12T20:41:50.54685+02:00 INFO Running preset 'Homerow Mods'
+2025-07-12T20:41:50.548942+02:00 INFO Running command: /opt/homebrew/bin/kanata -c=/Users/daphen/.config/kanata/kanata.kbd --port 5829
+2025-07-12T20:41:50.551886+02:00 INFO Started kanata (pid=9938)
+2025-07-12T20:41:53.054023+02:00 ERROR Failed to connect to kanata via TCP: dial tcp [::1]:5829: connect: connection refused
+2025-07-12T20:41:53.254186+02:00 ERROR Failed to send ClientMessage: timeouted after 200 ms
+2025-07-12T20:41:53.254455+02:00 INFO Waiting for all post-start-async hooks to exit
+2025-07-12T20:41:53.254477+02:00 INFO All post-start-async hooks exited
+2025-07-12T20:41:53.25455+02:00 ERROR Kanata runner terminated with an error: signal: abort trap
+2025-07-12T20:41:53.255734+02:00 WARN [autorestart-on-crash] Restarts have been triggering too rapidly. Stopping futher attempts.

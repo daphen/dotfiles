@@ -1,0 +1,17 @@
+;; Simple test configuration to verify Kanata is working
+;; This will map 'a' key to output 'b' - should be very obvious
+
+(defcfg
+  process-unmapped-keys yes
+  log-layer-changes no
+)
+
+;; Only remap the 'a' key for testing
+(defsrc
+  a
+)
+
+;; Map 'a' to 'b' - when you press 'a', you should get 'b'
+(deflayer test
+  b
+)

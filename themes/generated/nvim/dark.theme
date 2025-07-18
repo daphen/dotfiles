@@ -1,0 +1,66 @@
+local options = require("rose-pine.config").options
+local variants = {
+	main = {
+		_nc = "#2B3339",
+		base = "#2B3339",
+		surface = "#323A40",
+		overlay = "#323A40",
+		muted = "#C3C8C6",
+		subtle = "#707B84",
+		text = "#CCD5E4",
+		love = "#FF7B72",
+		gold = "#DDDCDC",
+		rose = "#8A92A7",
+		pine = "#97B5A6",
+		foam = "#CCD5E4",
+		iris = "#8A9AA6",
+		highlight_low = "#2F2E3E",
+		highlight_med = "#545168",
+		highlight_high = "#6F6C85",
+		none = "NONE",
+	},
+	dawn = {
+		_nc = "#FDF6E3",
+		base = "#FDF6E3",
+		surface = "#F9F2DF",
+		overlay = "#F9F2DF",
+		muted = "#575279",
+		subtle = "#9893a5",
+		text = "#2D4A3D",
+		love = "#ED333B",
+		gold = "#69756C",
+		rose = "#8A92A7",
+		pine = "#5E7270",
+		foam = "#4A7C59",
+		iris = "#286983",
+		highlight_low = "#E8EAED",
+		highlight_med = "#D5D8DD",
+		highlight_high = "#C2C6CC",
+		none = "NONE",
+	},
+	moon = {
+		_nc = "#1f1d30",
+		base = "#232136",
+		surface = "#2a273f",
+		overlay = "#393552",
+		muted = "#6e6a86",
+		subtle = "#908caa",
+		text = "#e0def4",
+		love = "#eb6f92",
+		gold = "#f6c177",
+		rose = "#ea9a97",
+		pine = "#3e8fb0",
+		foam = "#d7f9f8",
+		iris = "#c4a7e7",
+		highlight_low = "#2a283e",
+		highlight_med = "#44415a",
+		highlight_high = "#56526e",
+		none = "NONE",
+	},
+}
+
+if variants[options.variant] ~= nil then
+	return variants[options.variant]
+end
+
+return vim.o.background == "light" and variants.dawn or variants[options.dark_variant or "main"]

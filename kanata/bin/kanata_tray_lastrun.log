@@ -1,0 +1,16 @@
+2025-07-12T19:22:04.53768+02:00 INFO kanata-tray [version=v0.7.0, commit=92c9f53124f20c105c6c841d400590f540fc1b70, build_date=Wed Jul  2 16:53:59 UTC 2025] starting
+2025-07-12T19:22:04.538425+02:00 INFO kanata-tray config folder: /Users/daphen/.config/kanata/tray-config
+2025-07-12T19:22:04.539164+02:00 INFO Config file doesn't exist. Creating default config. Path: '/Users/daphen/.config/kanata/tray-config/kanata-tray.toml'
+2025-07-12T19:22:04.539656+02:00 INFO status_icons dir doesn't exist. Creating it and populating with the default icons.
+2025-07-12T19:22:04.540541+02:00 INFO loading status icon: /Users/daphen/.config/kanata/tray-config/status_icons/default.ico
+2025-07-12T19:22:04.540584+02:00 INFO loading status icon: /Users/daphen/.config/kanata/tray-config/status_icons/crash.ico
+2025-07-12T19:22:04.540629+02:00 INFO loading status icon: /Users/daphen/.config/kanata/tray-config/status_icons/pause.ico
+2025-07-12T19:22:04.540683+02:00 INFO loading status icon: /Users/daphen/.config/kanata/tray-config/status_icons/live-reload.ico
+2025-07-12T19:26:19.484755+02:00 INFO Running preset 'Default Preset'
+2025-07-12T19:26:19.490638+02:00 INFO Running command: /opt/homebrew/bin/kanata  --port 5829
+2025-07-12T19:26:19.493448+02:00 INFO Started kanata (pid=35085)
+2025-07-12T19:26:21.995909+02:00 ERROR Failed to connect to kanata via TCP: dial tcp [::1]:5829: connect: connection refused
+2025-07-12T19:26:22.195735+02:00 ERROR Failed to send ClientMessage: timeouted after 200 ms
+2025-07-12T19:26:22.195903+02:00 INFO Waiting for all post-start-async hooks to exit
+2025-07-12T19:26:22.19593+02:00 INFO All post-start-async hooks exited
+2025-07-12T19:26:22.19604+02:00 ERROR Kanata runner terminated with an error: exit status 2

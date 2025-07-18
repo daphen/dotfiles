@@ -1,0 +1,121 @@
+;; Kanata configuration with homerow mods
+;; Basic setup for QWERTY layout with homerow modifiers
+
+(defcfg
+  process-unmapped-keys yes
+  log-layer-changes no
+  rapid-event-delay 5
+  concurrent-tap-hold yes
+  chords-v2-min-idle 25
+  macos-dev-names-include ("Ada" "Apple Internal Keyboard / Trackpad" "QK ALICE")
+)
+
+;; Define chord for ; and ' keys (which map to ö and ä) to make '
+(defchordsv2
+  (; ') @quote_char 35 first-release ()
+)
+
+
+
+
+
+
+
+;; Define source layer (Standard layout for both keyboards)
+(defsrc
+  esc  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
+  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  lctl a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  fn   caps lalt lmet           spc            rmet ralt left down up rght
+)
+
+;; Define layer switching and symbol aliases
+(defalias
+  ;; Layer switches
+  f_sym (tap-hold-release 250 250 f (layer-while-held symbols))
+  d_sym (tap-hold-release 250 250 d (layer-while-held braces))
+  c_nav (tap-hold-release 250 250 c (layer-while-held navigation))
+  j_sym (tap-hold-release 250 250 j (layer-while-held extra-symbols))
+  
+  ;; Swedish characters as default
+  aa (unicode å)  ;; å
+  ae (unicode ä)  ;; ä
+  oe (unicode ö)  ;; ö
+  
+  ;; Chord output
+  quote_char '
+  
+  
+  
+  
+  ;; Special semicolon key: ö normally, : with right shift
+  oe_colon (fork @oe S-; (rsft))
+  
+  ;; Caps lock as escape when tapped, control when held
+  esc_ctl (tap-hold-press 200 200 esc lctl)
+  
+  ;; Media key mappings for function keys
+  ;; These map function keys to their media equivalents by default, F-keys when holding fn
+  f1_bright_down (fork brdn f1 (fn))
+  f2_bright_up (fork brup f2 (fn))
+  f7_prev (fork prev f7 (fn))
+  f8_pp (fork pp f8 (fn))
+  f9_next (fork next f9 (fn))
+  f10_mute (fork mute f10 (fn))
+  f11_vold (fork vold f11 (fn))
+  f12_volu (fork volu f12 (fn))
+)
+
+;; Define the main layer (Standard layout)
+(deflayer base
+  esc  @f1_bright_down @f2_bright_up f3 f4 f5 f6 @f7_prev @f8_pp @f9_next @f10_mute @f11_vold @f12_volu
+  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    @aa  ]    \
+  @esc_ctl a    s    @d_sym @f_sym g    h    @j_sym k    l    @oe_colon @ae  ret
+  lsft z    x    @c_nav v    b    n    m    ,    .    /    rsft
+  fn   @esc_ctl lalt lmet           spc            rmet ralt left down up rght
+)
+
+;; Define symbols layer (activated when holding f)
+(deflayer symbols
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    S-2  S-3  _    C-6  _    _    _    _    S-9  S-0  _    _
+  _    _    S-2  S-3  S-5  _    _    _    S-9  S-0  _    bspc _    _
+  _    _    _    _    _    _    S-6  S-[  S-]  S-4  ;    S-'  _
+  _    _    _    _    _    _    _    _    -    =    \    _
+  _    _    _    _              _              _    _    _    _    _    _
+)
+
+;; Define braces layer (activated when holding d)
+(deflayer braces
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    [    ]    _    _    grv  _
+  _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _              _              _    _    _    _    _    _
+)
+
+;; Define navigation layer (activated when holding c)
+(deflayer navigation
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    left down up   rght _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _              _              _    _    _    _    _    _
+)
+
+;; Define extra symbols layer (activated when holding j)
+(deflayer extra-symbols
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    S-1  S-2  S-3  S-5  _    _    _    _    _    _    _    _    _
+  _    S-7  S-8  _    S-6  _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    S-grv _    _    _    _    _
+  _    _    _    _              _              _    _    _    _    _    _
+)
+
+

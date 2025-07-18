@@ -1,0 +1,26 @@
+# Ghostty terminal theme
+# Generated from centralized theme system
+
+background = #2B3339
+foreground = #CCD5E4
+cursor-color = #ED333B
+
+# ANSI colors (0-7)
+palette = 0=#202529
+palette = 1=#FF7B72
+palette = 2=#899F9D
+palette = 3=#DDDCDC
+palette = 4=#8A9AA6
+palette = 5=#8A92A7
+palette = 6=#CCD5E4
+palette = 7=#C3C8C6
+
+# Bright ANSI colors (8-15)
+palette = 8=#282F38
+palette = 9=#FF7B72
+palette = 10=#899F9D
+palette = 11=#DDDCDC
+palette = 12=#8A9AA6
+palette = 13=#8A92A7
+palette = 14=#CCD5E4
+palette = 15=#C3C8C6

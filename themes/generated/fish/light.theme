@@ -1,0 +1,38 @@
+# Fish shell theme colors
+# Generated from centralized theme system
+
+set -g fish_color_normal #2D4A3D
+set -g fish_color_command #286983
+set -g fish_color_keyword #d7827e
+set -g fish_color_quote #56949f
+set -g fish_color_redirection #B8713A
+set -g fish_color_end #56949f
+set -g fish_color_error #b4637a
+set -g fish_color_param #2D4A3D
+set -g fish_color_comment #9893a5
+set -g fish_color_selection --background=#f4eeee
+set -g fish_color_operator #56949f
+set -g fish_color_escape #B8713A
+set -g fish_color_autosuggestion #9893a5
+set -g fish_color_cancel #b4637a
+set -g fish_color_cwd #286983
+set -g fish_color_user #5E7270
+set -g fish_color_host #4A7C59
+set -g fish_color_host_remote #ED333B
+set -g fish_color_status #b4637a
+
+# Pager colors
+set -g fish_pager_color_progress #9893a5
+set -g fish_pager_color_prefix #56949f
+set -g fish_pager_color_completion #2D4A3D
+set -g fish_pager_color_description #9893a5
+set -g fish_pager_color_selected_background --background=#f4eeee
+set -g fish_pager_color_selected_prefix #4A7C59
+set -g fish_pager_color_selected_completion #2D4A3D
+set -g fish_pager_color_selected_description #9893a5
+
+# Search match highlighting
+set -g fish_color_search_match --background=#f4eeee
+
+# History search highlighting
+set -g fish_color_history_current #4A7C59

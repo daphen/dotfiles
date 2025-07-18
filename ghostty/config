@@ -1,10 +1,14 @@
 font-family = BerkeleyMono Nerd Font
 font-size = 20
+adjust-cell-height = 25%
+
 
 # "transparent", "tabs", and "hidden".
 macos-titlebar-style=hidden
 
 window-padding-balance=true
+window-padding-y=20
+window-padding-x=30
 
 adjust-cursor-thickness=4
 
@@ -19,10 +23,14 @@ keybind = cmd+k=text:\x13T
 
 # Switch to last tmux session with Cmd+L (sends Ctrl+S followed by L)
 keybind = cmd+l=text:\x13L
+# Switch to last tmux session with Cmd+L (sends Ctrl+S followed by L)
+keybind = cmd+e=text:\x13E
 
 keybind = cmd+s>r=reload_config
 
 clipboard-paste-protection=false
 
-theme = light:light,dark:dark
+# Disabled auto-switching to prevent conflicts with theme-watcher
+# theme = light:light,dark:dark
+# Theme is now managed by the centralized theme system
 

@@ -1,0 +1,5 @@
+# Allow password-less execution of kanata and pkill for kanata
+daphen ALL=(ALL) NOPASSWD: /opt/homebrew/bin/kanata *
+daphen ALL=(ALL) NOPASSWD: /usr/bin/pkill kanata
+daphen ALL=(ALL) NOPASSWD: /usr/bin/killall kanata
+daphen ALL=(ALL) NOPASSWD: /usr/bin/nohup /opt/homebrew/bin/kanata *

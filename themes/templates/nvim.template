@@ -1,0 +1,66 @@
+local options = require("rose-pine.config").options
+local variants = {
+	main = {
+		_nc = "{{dark.background.primary}}",
+		base = "{{dark.background.primary}}",
+		surface = "{{dark.background.surface}}",
+		overlay = "{{dark.background.overlay}}",
+		muted = "{{dark.foreground.secondary}}",
+		subtle = "{{dark.foreground.muted}}",
+		text = "{{dark.foreground.primary}}",
+		love = "{{dark.accent.red}}",
+		gold = "{{dark.accent.yellow}}",
+		rose = "{{dark.accent.pink}}",
+		pine = "{{dark.accent.green}}",
+		foam = "{{dark.accent.cyan}}",
+		iris = "{{dark.accent.blue}}",
+		highlight_low = "{{dark.highlights.low}}",
+		highlight_med = "{{dark.highlights.medium}}",
+		highlight_high = "{{dark.highlights.high}}",
+		none = "NONE",
+	},
+	dawn = {
+		_nc = "{{light.background.primary}}",
+		base = "{{light.background.primary}}",
+		surface = "{{light.background.surface}}",
+		overlay = "{{light.background.overlay}}",
+		muted = "{{light.foreground.secondary}}",
+		subtle = "{{light.foreground.muted}}",
+		text = "{{light.foreground.primary}}",
+		love = "{{light.accent.red}}",
+		gold = "{{light.accent.yellow}}",
+		rose = "{{light.accent.pink}}",
+		pine = "{{light.accent.green}}",
+		foam = "{{light.accent.cyan}}",
+		iris = "{{light.accent.blue}}",
+		highlight_low = "{{light.highlights.low}}",
+		highlight_med = "{{light.highlights.medium}}",
+		highlight_high = "{{light.highlights.high}}",
+		none = "NONE",
+	},
+	moon = {
+		_nc = "#1f1d30",
+		base = "#232136",
+		surface = "#2a273f",
+		overlay = "#393552",
+		muted = "#6e6a86",
+		subtle = "#908caa",
+		text = "#e0def4",
+		love = "#eb6f92",
+		gold = "#f6c177",
+		rose = "#ea9a97",
+		pine = "#3e8fb0",
+		foam = "#d7f9f8",
+		iris = "#c4a7e7",
+		highlight_low = "#2a283e",
+		highlight_med = "#44415a",
+		highlight_high = "#56526e",
+		none = "NONE",
+	},
+}
+
+if variants[options.variant] ~= nil then
+	return variants[options.variant]
+end
+
+return vim.o.background == "light" and variants.dawn or variants[options.dark_variant or "main"]

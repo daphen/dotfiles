@@ -10,7 +10,7 @@ set -g fish_color_end {{semantic.operator}}
 set -g fish_color_error {{semantic.error}}
 set -g fish_color_param {{foreground.primary}}
 set -g fish_color_comment {{semantic.comment}}
-set -g fish_color_selection --background={{background.selection}}
+set -g fish_color_selection --background={{background.prompt}}
 set -g fish_color_operator {{semantic.operator}}
 set -g fish_color_escape {{accent.purple}}
 set -g fish_color_autosuggestion {{semantic.comment}}
@@ -26,13 +26,13 @@ set -g fish_pager_color_progress {{semantic.comment}}
 set -g fish_pager_color_prefix {{semantic.operator}}
 set -g fish_pager_color_completion {{foreground.primary}}
 set -g fish_pager_color_description {{semantic.comment}}
-set -g fish_pager_color_selected_background --background={{background.selection}}
+set -g fish_pager_color_selected_background --background={{background.prompt}}
 set -g fish_pager_color_selected_prefix {{accent.cyan}}
 set -g fish_pager_color_selected_completion {{foreground.primary}}
 set -g fish_pager_color_selected_description {{semantic.comment}}
 
 # Search match highlighting
-set -g fish_color_search_match --background={{background.selection}}
+set -g fish_color_search_match --background={{background.prompt}}
 
 # History search highlighting
 set -g fish_color_history_current {{accent.cyan}}

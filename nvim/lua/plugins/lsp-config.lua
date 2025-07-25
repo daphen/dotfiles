@@ -15,6 +15,10 @@ return {
 	{
 		"williamboman/mason-lspconfig.nvim",
 		config = function()
+			local lspconfig = require("lspconfig")
+			local cmp_nvim_lsp = require("cmp_nvim_lsp")
+			local capabilities = cmp_nvim_lsp.default_capabilities()
+
 			require("mason-lspconfig").setup({
 				ensure_installed = {
 					"ts_ls",
@@ -26,10 +30,94 @@ return {
 					"svelte",
 					"graphql",
 					"pylsp",
-					"volar",
 					"glint",
 				},
 				automatic_installation = true,
+				handlers = {
+					-- Default handler for servers without custom config
+					function(server_name)
+						lspconfig[server_name].setup({
+							capabilities = capabilities,
+						})
+					end,
+					-- Custom handlers for servers with specific configs
+					["html"] = function()
+						lspconfig.html.setup({
+							capabilities = capabilities,
+							filetypes = { "hbs" },
+						})
+					end,
+					["ts_ls"] = function()
+						lspconfig.ts_ls.setup({
+							capabilities = capabilities,
+							handlers = {
+								["textDocument/publishDiagnostics"] = function(_, result, ctx, config)
+									result.diagnostics = vim.tbl_filter(function(diagnostic)
+										local code = diagnostic.code
+										return code ~= 6133 and code ~= 6196 and code ~= 6198 and code ~= 6192
+									end, result.diagnostics)
+									vim.lsp.handlers["textDocument/publishDiagnostics"](_, result, ctx, config)
+								end,
+							},
+						})
+					end,
+					["cssls"] = function()
+						lspconfig.cssls.setup({
+							capabilities = capabilities,
+							settings = {
+								css = { lint = { unknownAtRules = "ignore" } },
+							},
+						})
+					end,
+					["tailwindcss"] = function()
+						lspconfig.tailwindcss.setup({
+							capabilities = capabilities,
+							settings = {
+								tailwindCSS = {
+									experimental = {
+										classRegex = {
+											{ "cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]" },
+											{ "cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
+										},
+									},
+								},
+							},
+						})
+					end,
+					["lua_ls"] = function()
+						lspconfig.lua_ls.setup({
+							capabilities = capabilities,
+							settings = {
+								Lua = {
+									telemetry = { enable = false },
+									diagnostics = { globals = { "vim" } },
+									workspace = {
+										checkThirdParty = false,
+										library = {
+											[vim.fn.expand("$VIMRUNTIME/lua")] = true,
+											[vim.fn.stdpath("config") .. "/lua"] = true,
+										},
+									},
+								},
+							},
+						})
+					end,
+					["emmet_ls"] = function()
+						lspconfig.emmet_ls.setup({
+							capabilities = capabilities,
+							filetypes = {
+								"html",
+								"typescriptreact",
+								"javascriptreact",
+								"css",
+								"sass",
+								"scss",
+								"less",
+								"svelte",
+							},
+						})
+					end,
+				},
 			})
 		end,
 	},
@@ -41,10 +129,6 @@ return {
 			{ "antosha417/nvim-lsp-file-operations", config = true },
 		},
 		config = function()
-			local lspconfig = require("lspconfig")
-			local cmp_nvim_lsp = require("cmp_nvim_lsp")
-			local capabilities = cmp_nvim_lsp.default_capabilities()
-
 			-- Configure diagnostics globally
 			vim.diagnostic.config({
 				virtual_text = {
@@ -90,103 +174,6 @@ return {
 			vim.opt.conceallevel = 0
 			vim.opt.concealcursor = ""
 
-			local border = {
-				{ "╭", "FloatBorder" },
-				{ "─", "FloatBorder" },
-				{ "╮", "FloatBorder" },
-				{ "│", "FloatBorder" },
-				{ "╯", "FloatBorder" },
-				{ "─", "FloatBorder" },
-				{ "╰", "FloatBorder" },
-				{ "│", "FloatBorder" },
-			}
-
-			local on_attach = function(client, bufnr)
-				vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, {
-					border = border,
-				})
-				vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, {
-					border = border,
-				})
-			end
-
-			-- Server Configurations
-			local servers = {
-				html = { filetypes = { "hbs" } },
-				ts_ls = {
-					handlers = {
-						["textDocument/publishDiagnostics"] = function(_, result, ctx, config)
-							result.diagnostics = vim.tbl_filter(function(diagnostic)
-								local code = diagnostic.code
-								return code ~= 6133 and code ~= 6196 and code ~= 6198 and code ~= 6192
-							end, result.diagnostics)
-							vim.lsp.handlers["textDocument/publishDiagnostics"](_, result, ctx, config)
-						end,
-					},
-				},
-				cssls = {
-					settings = {
-						css = { lint = { unknownAtRules = "ignore" } },
-					},
-				},
-				tailwindcss = {
-					settings = {
-						tailwindCSS = {
-							experimental = {
-								classRegex = {
-									{ "cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]" },
-									{ "cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
-								},
-							},
-						},
-					},
-				},
-				lua_ls = {
-					settings = {
-						Lua = {
-							telemetry = { enable = false },
-							diagnostics = { globals = { "vim" } },
-							workspace = {
-								checkThirdParty = false,
-								library = {
-									[vim.fn.expand("$VIMRUNTIME/lua")] = true,
-									[vim.fn.stdpath("config") .. "/lua"] = true,
-								},
-							},
-						},
-					},
-				},
-				emmet_ls = {
-					filetypes = {
-						"html",
-						"typescriptreact",
-						"javascriptreact",
-						"css",
-						"sass",
-						"scss",
-						"less",
-						"svelte",
-					},
-				},
-			}
-
-			-- Setup all servers
-			for server, config in pairs(servers) do
-				lspconfig[server].setup(vim.tbl_deep_extend("force", {
-					capabilities = capabilities,
-					on_attach = on_attach,
-				}, config or {}))
-			end
-
-			-- Simple server setups
-			local simple_servers = { "volar", "pylsp", "svelte", "glint" }
-			for _, server in ipairs(simple_servers) do
-				lspconfig[server].setup({
-					capabilities = capabilities,
-					on_attach = on_attach,
-				})
-			end
-
 			-- KEYMAPS
 			vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Show description" })
 			vim.keymap.set("n", "gD", vim.lsp.buf.declaration, { desc = "Go to declaration" })
@@ -194,9 +181,9 @@ return {
 			vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Open diagnostics" })
 			vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "Go to definition" })
 			vim.keymap.set("n", "gs", ":vsplit | lua vim.lsp.buf.definition()<CR>") -- open defining buffer in vertical split
-			vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { desc = "Code action" })
-			vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Go to next diagnostics" })
-			vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Go to prev diagnostics" })
+			-- vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { desc = "Code action" })
+			vim.keymap.set("n", "]d", function() vim.diagnostic.jump({ count = 1, float = true }) end, { desc = "Go to next diagnostics" })
+			vim.keymap.set("n", "[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, { desc = "Go to prev diagnostics" })
 		end,
 	},
 }

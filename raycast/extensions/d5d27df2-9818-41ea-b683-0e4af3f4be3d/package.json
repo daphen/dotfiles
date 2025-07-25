@@ -8,7 +8,8 @@
   "contributors": [
     "stelo",
     "thomaslombart",
-    "Rob"
+    "Rob",
+    "syh"
   ],
   "pastContributors": [
     "Elliot67"
@@ -48,6 +49,13 @@
       "mode": "view"
     },
     {
+      "name": "send-message",
+      "title": "Send Message",
+      "subtitle": "Slack",
+      "description": "Send a message to a channel or user in Slack.",
+      "mode": "view"
+    },
+    {
       "name": "open-unread-messages",
       "title": "Open Unread Messages",
       "subtitle": "Slack",
@@ -74,6 +82,13 @@
       "subtitle": "Slack",
       "description": "Let Slack decide automatically how to show your presence status or force it to be shown as offline.",
       "mode": "view"
+    },
+    {
+      "name": "search-emojis",
+      "title": "Search Emojis",
+      "subtitle": "Slack",
+      "description": "Search custom emojis in your Slack team.",
+      "mode": "view"
     }
   ],
   "preferences": [
@@ -97,35 +112,33 @@
   ],
   "tools": [
     {
-      "title": "Slack Channels",
+      "title": "Get Channels",
       "name": "get-channels",
       "description": "Lists all channels in the Slack team",
       "confirmation": false
     },
     {
-      "title": "Slack Channel History",
+      "title": "Get Channel History",
       "name": "get-channel-history",
       "description": "Fetches a channel's history of messages and events.",
       "input": {
         "type": "object",
         "properties": {
-          "channelId": {
+          "text": {
             "type": "string",
             "description": "The id of the channel to fetch history (eg. messages) for. Use `getChannels` to get the list of channels with their ids."
           },
           "after": {
             "type": "string",
-            "description": "Only messages after this Unix timestamp will be included in results. If ommited, the last 30 messages of the channel will be returned.\n\nExample: \"1234567890.123456\""
+            "description": "Only messages after this ISO 8601 timestamp will be included in results. If ommited, the last 30 messages of the channel will be returned.\n\n@example \"2025-03-26T00:00:00Z\""
           }
         },
-        "required": [
-          "channelId"
-        ]
+        "required": []
       },
       "confirmation": false
     },
     {
-      "title": "Slack Users",
+      "title": "Get Users",
       "name": "get-users",
       "description": "List all users in the Slack team",
       "confirmation": false
@@ -143,7 +156,7 @@
           },
           "emoji": {
             "type": "string",
-            "description": "A Slack-compatible string for single emoji matching the text of the status. Emojis should be in the form: :<emoji identifier>:. If the user doesn't specify an emoji, come up with one that matches the text.\n\nTo unset the status, provide an empty string."
+            "description": "A Slack-compatible string for single emoji matching the text of the status. Emojis should be in the form: :<emoji identifier>:. If the user doesn't specify an emoji, come up with one that matches the text.\n\nYou can call the `get-emojis` tool to get a list of all custom emojis in the workspace. Do this only if you think the user is using a custom emoji.\n\nTo unset the status, provide an empty string."
           },
           "duration": {
             "type": "number",
@@ -153,6 +166,36 @@
         "required": [
           "text",
           "emoji"
+        ]
+      },
+      "confirmation": false
+    },
+    {
+      "title": "Get Emojis",
+      "name": "get-emojis",
+      "description": "List all custom emojis in the Slack team",
+      "confirmation": false
+    },
+    {
+      "title": "Search Messages",
+      "name": "search-messages",
+      "description": "Search all Messages in the Slack team",
+      "input": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "timestamp",
+              "score"
+            ]
+          }
+        },
+        "required": [
+          "query"
         ]
       },
       "confirmation": false
@@ -190,12 +233,31 @@
         "mocks": {
           "get-channels": []
         }
+      },
+      {
+        "input": "@ask summary the #product-team-issue-notification channel yesterday",
+        "expected": [
+          {
+            "callsTool": {
+              "name": "get-channels"
+            }
+          },
+          {
+            "callsTool": {
+              "name": "get-channel-history",
+              "arguments": {
+                "text": "C12345678",
+                "after": "2025-05-19T15:00:00Z"
+              }
+            }
+          }
+        ]
       }
     ]
   },
   "dependencies": {
-    "@raycast/api": "^1.87.0",
-    "@raycast/utils": "^1.18.0",
+    "@raycast/api": "^1.99.4",
+    "@raycast/utils": "^2.0.0",
     "@slack/web-api": "^7.0.4",
     "date-fns": "^3.6.0",
     "date-fns-tz": "^3.1.3",
@@ -205,12 +267,11 @@
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.8",
     "@types/lodash": "^4.17.5",
-    "@types/node": "^20.8.10",
+    "@types/node": "^22.13.10",
     "@types/node-emoji": "^2.1.0",
-    "@types/react": "^18.2.27",
+    "@types/react": "^19.0.10",
     "eslint": "^8.57.0",
     "prettier": "^3.3.2",
-    "react": "^18.2.0",
     "typescript": "^5.4.5"
   },
   "scripts": {
@@ -223,5 +284,9 @@
   "volta": {
     "node": "18.16.0",
     "npm": "9.6.4"
-  }
+  },
+  "platforms": [
+    "macOS",
+    "Windows"
+  ]
 }

@@ -130,6 +130,11 @@ apply_tool_theme() {
             cp "$generated_file" "$HOME/.config/colorscheme/lua/rose-pine/palette.lua"
             log_success "Applied Neovim theme"
             ;;
+        "nvim-custom")
+            # Copy generated colors to custom theme directory
+            cp "$generated_file" "$HOME/.config/nvim/lua/theme/colors.lua"
+            log_success "Applied custom Neovim theme"
+            ;;
         "fish")
             # Fish themes are applied by Fish itself, not by bash
             # Just log success since Fish will source it when needed

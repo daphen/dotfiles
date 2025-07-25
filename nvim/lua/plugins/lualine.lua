@@ -8,6 +8,30 @@ return {
 	event = { "BufReadPost", "BufNewFile", "VeryLazy" },
 	config = function()
 		-- local icons = require("config.icons")
+		local function get_scrollbar()
+			local sbar_chars = {
+				"▔",
+				"🮂",
+				"🬂",
+				"🮃",
+				"▀",
+				"▄",
+				"▃",
+				"🬭",
+				"▂",
+				"▁",
+			}
+
+			local cur_line = vim.api.nvim_win_get_cursor(0)[1]
+			local lines = vim.api.nvim_buf_line_count(0)
+
+			local i = math.floor((cur_line - 1) / lines * #sbar_chars) + 1
+			if i > #sbar_chars then i = #sbar_chars end
+			local sbar = string.rep(sbar_chars[i], 2)
+
+			-- Just return the raw characters
+			return sbar
+		end
 
 		-- Function to find project root based on package.json
 		local function get_project_root()
@@ -38,33 +62,55 @@ return {
 			end
 		end
 
-		-- Set the StatusLine highlight for consistent background
-		vim.api.nvim_set_hl(0, "StatusLine", { bg = "#121214" })
-		vim.api.nvim_set_hl(0, "StatusLineNC", { bg = "#121214" })
+		-- Define a custom theme that removes background colors from sections
+		-- Define dark and light themes
+		local dark_theme = {
+			normal = {
+				a = { fg = "#DBDBD9", bg = "NONE" },
+				b = { fg = "#DBDBD9", bg = "NONE" },
+				c = { fg = "#DBDBD9", bg = "NONE" },
+				x = { fg = "#DBDBD9", bg = "NONE" },
+				y = { fg = "#DBDBD9", bg = "NONE" },
+				z = { fg = "#ED333B", bg = "#37393F" },
+			},
+		}
+
+		local light_theme = {
+			normal = {
+				a = { fg = "#333333", bg = "NONE" },
+				b = { fg = "#333333", bg = "NONE" },
+				c = { fg = "#333333", bg = "NONE" },
+				x = { fg = "#333333", bg = "NONE" },
+				y = { fg = "#333333", bg = "NONE" },
+				z = { fg = "#ED333B", bg = "#D3D3D3" },
+			},
+		}
+
+		-- Function to determine current theme based on background
+		local function get_theme()
+			-- Force a refresh of background detection
+			local bg = vim.fn.eval("&background")
+			if bg == "dark" then
+				return dark_theme
+			else
+				return light_theme
+			end
+		end
 
 		require("lualine").setup({
 			options = {
-				-- theme = custom_theme,
-				theme = "auto",
+				theme = get_theme(),
 				globalstatus = true,
 				icons_enabled = true,
-				-- component_separators = { left = "│", right = "│" },
 				component_separators = { left = "│", right = "│" },
 				section_separators = { left = "", right = "" },
 			},
 			sections = {
-				lualine_a = {
-					{ "fancy_mode", width = 8 },
-				},
+				lualine_a = {},
 				lualine_b = {
-					{ "fancy_branch" },
+					{ "fancy_branch", padding = { left = 0, right = 2 } },
 					{
 						"filename",
-						symbols = {
-							modified = "  ",
-							readonly = "  ",
-							unnamed = "  ",
-						},
 					},
 					{
 						"fancy_diagnostics",
@@ -72,72 +118,102 @@ return {
 						symbols = { error = " ", warn = " ", info = " " },
 					},
 					{ "fancy_searchcount" },
+				},
+				lualine_c = {
 					{
 						"macro_recording",
 						fmt = function(str) return string.upper(str) end,
-						color = { fg = "#121214", bg = "#FF995E", gui = "bold" },
+						color = { fg = "#121214", bg = "#ED333B", gui = "bold" },
 						padding = { left = 2, right = 2 },
 					},
 				},
-				lualine_c = {},
 				lualine_x = {
 					"filetype",
 					"fancy_diff",
-					"progress",
+					{
+						function() return get_project_root() end,
+						padding = { left = 0, right = 0 },
+					},
 				},
 				lualine_y = {},
 				lualine_z = {
 					{
-						function() return get_project_root() end,
+						function() return " " end, -- Return a single space
+						padding = { left = 0, right = 0 },
+						color = { bg = "NONE" }, -- Transparent background
+					},
+					{
+						get_scrollbar,
+						padding = { left = 0, right = 0 },
+						separator = "",
 					},
 				},
 			},
 			extensions = { "lazy" },
 		})
+
+		vim.api.nvim_create_autocmd("OptionSet", {
+			pattern = "background",
+			callback = function()
+				vim.defer_fn(function()
+					require("lualine").setup({
+						options = {
+							theme = get_theme(),
+							globalstatus = true,
+							icons_enabled = true,
+							component_separators = { left = "│", right = "│" },
+							section_separators = { left = "", right = "" },
+							disabled_filetypes = {
+								statusline = {},
+								winbar = {},
+							},
+						},
+						sections = {
+							lualine_a = {},
+							lualine_b = {
+								{ "fancy_branch", padding = { left = 0, right = 2 } },
+								{ "filename" },
+								{
+									"fancy_diagnostics",
+									sources = { "nvim_lsp" },
+									symbols = { error = " ", warn = " ", info = " " },
+								},
+								{ "fancy_searchcount" },
+							},
+							lualine_c = {
+								{
+									"macro_recording",
+									fmt = function(str) return string.upper(str) end,
+									color = { fg = "#121214", bg = "#ED333B", gui = "bold" },
+									padding = { left = 2, right = 2 },
+								},
+							},
+							lualine_x = {
+								"filetype",
+								"fancy_diff",
+								{
+									function() return get_project_root() end,
+									padding = { left = 0, right = 0 },
+								},
+							},
+							lualine_y = {},
+							lualine_z = {
+								{
+									function() return " " end,
+									padding = { left = 0, right = 0 },
+									color = { bg = "NONE" },
+								},
+								{
+									get_scrollbar,
+									padding = { left = 0, right = 0 },
+									separator = "",
+								},
+							},
+						},
+						extensions = { "lazy" },
+					})
+				end, 50)
+			end,
+		})
 	end,
 }
-
--- local custom_theme = {
--- 	normal = {
--- 		a = { fg = "#121214", bg = "#899AA6", bold = true },
--- 		b = { fg = "#DBDBD9", bg = "#121214" },
--- 		c = { fg = "#FF995E", bg = "#121214", bold = true },
--- 		x = { fg = "#DBDBD9", bg = "#121214" },
--- 		z = { fg = "#121214", bg = "#899AA6", bold = true },
--- 	},
--- 	insert = {
--- 		a = { fg = "#121214", bg = "#FF995E", bold = true },
--- 		b = { fg = "#DBDBD9", bg = "#121214" },
--- 		c = { fg = "#FF995E", bg = "#121214", bold = true },
--- 		x = { fg = "#DBDBD9", bg = "#121214" },
--- 		z = { fg = "#121214", bg = "#FF995E", bold = true },
--- 	},
--- 	visual = {
--- 		a = { fg = "#121214", bg = "#E6E7A3", bold = true },
--- 		b = { fg = "#DBDBD9", bg = "#121214" },
--- 		c = { fg = "#54C0A3", bg = "#121214", bold = true },
--- 		x = { fg = "#DBDBD9", bg = "#121214" },
--- 		z = { fg = "#121214", bg = "#E6E7A3", bold = true },
--- 	},
--- 	replace = {
--- 		a = { fg = "#121214", bg = "#f7768e", bold = true },
--- 		b = { fg = "#DBDBD9", bg = "#121214" },
--- 		c = { fg = "#FF995E", bg = "#121214", bold = true },
--- 		x = { fg = "#DBDBD9", bg = "#121214" },
--- 		z = { fg = "#121214", bg = "#f7768e", bold = true },
--- 	},
--- 	command = {
--- 		a = { fg = "#121214", bg = "#698893", bold = true },
--- 		b = { fg = "#DBDBD9", bg = "#121214" },
--- 		c = { fg = "#FF995E", bg = "#121214", bold = true },
--- 		x = { fg = "#DBDBD9", bg = "#121214" },
--- 		z = { fg = "#121214", bg = "#698893", bold = true },
--- 	},
--- 	inactive = {
--- 		a = { fg = "#DBDBD9", bg = "#121214", bold = true },
--- 		b = { fg = "#DBDBD9", bg = "#121214" },
--- 		c = { fg = "#FF995E", bg = "#121214", bold = true },
--- 		x = { fg = "#DBDBD9", bg = "#121214" },
--- 		z = { fg = "#DBDBD9", bg = "#121214", bold = true },
--- 	},
--- }

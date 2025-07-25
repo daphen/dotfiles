@@ -1,38 +1,38 @@
 # Fish shell theme colors
 # Generated from centralized theme system
 
-set -g fish_color_normal #CCD5E4
-set -g fish_color_command #8A9AA6
-set -g fish_color_keyword #FF7B72
-set -g fish_color_quote #DDDCDC
-set -g fish_color_redirection #8A92A7
-set -g fish_color_end #899F9D
-set -g fish_color_error #FF7B72
-set -g fish_color_param #CCD5E4
-set -g fish_color_comment #707B84
-set -g fish_color_selection --background=#282F38
-set -g fish_color_operator #899F9D
-set -g fish_color_escape #8A92A7
-set -g fish_color_autosuggestion #707B84
-set -g fish_color_cancel #FF7B72
-set -g fish_color_cwd #8A9AA6
-set -g fish_color_user #97B5A6
-set -g fish_color_host #CCD5E4
-set -g fish_color_host_remote #FF7B72
-set -g fish_color_status #FF7B72
+set -g fish_color_normal #EDEDED
+set -g fish_color_command #6A8BE3
+set -g fish_color_keyword #A9B9EF
+set -g fish_color_quote #74BAA8
+set -g fish_color_redirection #BCB6EC
+set -g fish_color_end #b09884
+set -g fish_color_error #F71735
+set -g fish_color_param #EDEDED
+set -g fish_color_comment #505050
+set -g fish_color_selection --background=#2A2F39
+set -g fish_color_operator #b09884
+set -g fish_color_escape #BCB6EC
+set -g fish_color_autosuggestion #505050
+set -g fish_color_cancel #F71735
+set -g fish_color_cwd #6A8BE3
+set -g fish_color_user #74BAA8
+set -g fish_color_host #74BAA8
+set -g fish_color_host_remote #B85B53
+set -g fish_color_status #F71735
 
 # Pager colors
-set -g fish_pager_color_progress #707B84
-set -g fish_pager_color_prefix #899F9D
-set -g fish_pager_color_completion #CCD5E4
-set -g fish_pager_color_description #707B84
-set -g fish_pager_color_selected_background --background=#282F38
-set -g fish_pager_color_selected_prefix #CCD5E4
-set -g fish_pager_color_selected_completion #CCD5E4
-set -g fish_pager_color_selected_description #707B84
+set -g fish_pager_color_progress #505050
+set -g fish_pager_color_prefix #b09884
+set -g fish_pager_color_completion #EDEDED
+set -g fish_pager_color_description #505050
+set -g fish_pager_color_selected_background --background=#2A2F39
+set -g fish_pager_color_selected_prefix #74BAA8
+set -g fish_pager_color_selected_completion #EDEDED
+set -g fish_pager_color_selected_description #505050
 
 # Search match highlighting
-set -g fish_color_search_match --background=#282F38
+set -g fish_color_search_match --background=#2A2F39
 
 # History search highlighting
-set -g fish_color_history_current #CCD5E4
+set -g fish_color_history_current #74BAA8

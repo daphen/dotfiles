@@ -48,8 +48,6 @@ return {
 			},
 		})
 
-		vim.keymap.set("n", "<leader>ne", function()
-			require("noice").cmd("errors")
-		end)
+		vim.keymap.set("n", "<leader>ne", function() require("noice").cmd("errors") end)
 	end,
 }

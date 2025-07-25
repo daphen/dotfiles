@@ -6,24 +6,16 @@ return {
 	opts = {
 		---@alias Provider "claude" | "openai" | "azure" | "gemini" | "cohere" | "copilot" | string
 		provider = "claude",
-		-- WARNING: Since auto-suggestions are a high-frequency operation and therefore expensive,
-		-- currently designating it as `copilot` provider is dangerous because: https://github.com/yetone/avante.nvim/issues/1048
-		-- Of course, you can reduce the request frequency by increasing `suggestion.debounce`.
-		auto_suggestions_provider = "claude",
-		claude = {
-			endpoint = "https://api.anthropic.com",
-			model = "claude-3-7-sonnet-20250219",
-			-- model = "claude-3-5-haiku-20241022",
-			temperature = 0,
-			max_tokens = 8192,
-			disable_tools = true,
-		},
-		dual_boost = {
-			enabled = false,
-			first_provider = "openai",
-			second_provider = "claude",
-			prompt = "Based on the two reference outputs below, generate a response that incorporates elements from both but reflects your own judgment and unique perspective. Do not provide any explanation, just give the response directly. Reference Output 1: [{{provider1_output}}], Reference Output 2: [{{provider2_output}}]",
-			timeout = 60000, -- Timeout in milliseconds
+		providers = {
+			claude = {
+				endpoint = "https://api.anthropic.com",
+				model = "claude-sonnet-4-20250514",
+				disable_tools = true,
+				extra_request_body = {
+					temperature = 0,
+					max_tokens = 32768,
+				},
+			},
 		},
 		behaviour = {
 			auto_suggestions = false, -- Experimental stage
@@ -117,18 +109,6 @@ return {
 			throttle = 600,
 		},
 	},
-	-- Local setup
-	-- opts = {
-	--   provider = "ollama",
-	--   vendors = {
-	--     ollama = {
-	--       __inherited_from = "openai",
-	--       api_key_name = "",
-	--       endpoint = "127.0.0.1:11434/v1",
-	--       model = "qwen2.5-coder:14b",
-	--     },
-	--   },
-	-- },
 	build = "make",
 	dependencies = {
 		"nvim-treesitter/nvim-treesitter",

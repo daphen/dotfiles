@@ -45,7 +45,7 @@ return {
 					local win_id = args.data.win_id
 					local config = vim.api.nvim_win_get_config(win_id)
 					config.border = "rounded"
-					config.height = math.floor(vim.o.lines * 0.46)
+					config.height = math.floor(vim.o.lines * 0.48)
 					config.title_pos = "right"
 					vim.wo[win_id].relativenumber = true
 					vim.wo[win_id].number = true
@@ -67,7 +67,7 @@ return {
 
 					if is_preview_window(win_id) then
 						config.width = total_width
-						config.height = math.floor(total_height * 0.46)
+						config.height = math.floor(total_height * 0.44)
 						config.row = total_height
 						config.col = 0
 					else

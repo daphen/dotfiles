@@ -96,6 +96,22 @@
                         "vendor_id": 21057
                     },
                     "manipulate_caps_lock_led": false
+                },
+                {
+                    "identifiers": {
+                        "is_keyboard": true,
+                        "product_id": 3,
+                        "vendor_id": 26477
+                    },
+                    "ignore": true
+                },
+                {
+                    "identifiers": {
+                        "is_keyboard": true,
+                        "product_id": 835,
+                        "vendor_id": 1452
+                    },
+                    "ignore": true
                 }
             ],
             "fn_function_keys": [

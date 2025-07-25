@@ -1,0 +1,29 @@
+[[session]]
+name = "SiS"
+path = "~/Documents/Sis/sis-frontend-repo/"
+startup_command = "nvim"
+
+[[session]]
+name = "Claude"
+path = "~/Documents/Sis/sis-frontend-repo/"
+startup_command = "claude"
+
+[[session]]
+name = "Nvim config"
+path = "~/.config/nvim"
+startup_command = "nvim"
+
+[[session]]
+name = "Playground"
+path = "~/Documents/Personal Projects/playground"
+startup_command = "nvim"
+
+[[session]]
+name = "Terminal"
+path = "~/.config/"
+startup_command = "ls -la"
+
+[[session]]
+name = "Tmux config"
+path = "~/.config/tmux"
+startup_command = "nvim tmux.conf"

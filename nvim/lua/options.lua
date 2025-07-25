@@ -22,6 +22,10 @@ opt.smartcase = true
 
 vim.opt.undofile = true
 
+-- Cursor settings
+-- Set cursor to blink in all modes while preserving terminal colors
+opt.guicursor = "n-c-sm:block-blinkon400-blinkoff250," .. "i-ci:ver25," .. "v-ve:hor20," .. "r-cr-o:hor20"
+
 -- Highlight when yanking (copying) text
 vim.api.nvim_create_autocmd("TextYankPost", {
 	desc = "Highlight when yanking (copying) text",
@@ -31,7 +35,16 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 
 -- Color options
 opt.termguicolors = true
-opt.fillchars = { eob = " " }
+opt.fillchars = {
+	horiz = "━",
+	horizup = "┻",
+	horizdown = "┳",
+	vert = "┃",
+	vertleft = "┫",
+	vertright = "┣",
+	verthoriz = "╋",
+	eob = " ",
+}
 
 opt.backspace = "indent,eol,start"
 
@@ -52,3 +65,14 @@ opt.directory = vim.fn.expand("~/.local/share/nvim/swap//")
 opt.updatetime = 300 -- Faster swap file writing
 opt.backup = false -- Don't keep backup files
 opt.writebackup = false -- Don't write backup files
+
+-- Auto-reload files when changed externally
+opt.autoread = true
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
+	pattern = "*",
+	command = "if mode() != 'c' | checktime | endif",
+})
+vim.api.nvim_create_autocmd("FileChangedShellPost", {
+	pattern = "*",
+	command = "echohl WarningMsg | echo 'File changed on disk. Buffer reloaded.' | echohl None",
+})

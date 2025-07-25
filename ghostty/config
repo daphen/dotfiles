@@ -30,7 +30,6 @@ keybind = cmd+s>r=reload_config
 
 clipboard-paste-protection=false
 
-# Disabled auto-switching to prevent conflicts with theme-watcher
-# theme = light:light,dark:dark
-# Theme is now managed by the centralized theme system
+# Auto-switching themes managed by centralized theme system
+theme = light:light,dark:dark
 

@@ -41,6 +41,9 @@ keymap.set("n", "<m-k>", "<cmd>cprev<CR>", { desc = "Prev quickfix item" })
 vim.keymap.set("n", "<leader>p", "o" .. "<ESC>" .. "p" .. "V" .. "=" .. "<ESC>" .. "$", { noremap = true })
 vim.keymap.set("n", "<leader>P", "O" .. "<ESC>" .. "p" .. "V" .. "=" .. "<ESC>" .. "$", { noremap = true })
 
+-- Copy entire file with <C-g><C-g>
+vim.keymap.set("n", "<C-g><C-g>", ":%y+<CR>", { noremap = true, silent = true, desc = "Copy entire file to clipboard" })
+
 -- too many typos
 vim.cmd(":command W w")
 vim.cmd(":command Wa wa")
@@ -81,15 +84,20 @@ vim.cmd([[cnoreabbrev tohsl ToHSL]])
 
 keymap.set("n", "<leader>rc", ":ReloadColors<CR>", { noremap = true, silent = true, desc = "Reload colorscheme" })
 vim.api.nvim_create_user_command("ReloadColors", function()
-	-- Reload the colorscheme plugin configuration
-	package.loaded["plugins.colorscheme"] = nil
-
-	-- Reload the colorscheme itself
-	package.loaded["rose-pine"] = nil
-
-	-- Re-require your colorscheme configuration
-	require("plugins.colorscheme")
-	vim.cmd.colorscheme("rose-pine")
+	-- Check which colorscheme is active
+	if vim.g.colors_name == "custom-theme" then
+		-- Reload custom theme
+		package.loaded["theme"] = nil
+		package.loaded["theme.colors"] = nil
+		package.loaded["theme.highlights"] = nil
+		require("theme").reload()
+	else
+		-- Fallback to rose-pine reload
+		package.loaded["plugins.colorscheme"] = nil
+		package.loaded["rose-pine"] = nil
+		require("plugins.colorscheme")
+		vim.cmd.colorscheme("rose-pine")
+	end
 
 	-- Reload lualine
 	package.loaded["lualine"] = nil
@@ -98,6 +106,8 @@ vim.api.nvim_create_user_command("ReloadColors", function()
 	-- Reload color highlighter
 	require("nvim-highlight-colors").turnOff()
 	require("nvim-highlight-colors").turnOn()
+	
+	vim.notify("Colorscheme reloaded", vim.log.levels.INFO)
 end, {})
 
 -- FORMAT WHEN PASTING

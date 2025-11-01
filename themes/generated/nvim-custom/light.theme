@@ -7,39 +7,48 @@ M.colors = {
   -- Dark theme colors
   dark = {
     -- Background colors
-    bg = "#191d23",
-    bg_secondary = "#1B1F25",
-    bg_tertiary = "#20252E",
-    bg_selection = "#121E42",
-    bg_surface = "#1C2127",
-    bg_overlay = "#2A2F39",
+    bg = "#181818",
+    bg_secondary = "#1B1B1B",
+    bg_tertiary = "#1B1B1B",
+    bg_selection = "#282F38",
+    bg_surface = "#1B1B1B",
+    bg_overlay = "#292826",
     
     -- Foreground colors
-    fg = "#CCD5E5",
-    fg_secondary = "#D6DDEA",
-    fg_muted = "#363848",
-    fg_subtle = "#7E8193",
+    fg = "#EDEDED",
+    fg_secondary = "#C3C8C6",
+    fg_muted = "#707B84",
+    fg_subtle = "#707B84",
     
     -- Accent colors
-    red = "#B85B53",
-    orange = "#E9B872",
-    yellow = "#E9B872",
-    green = "#74BAA8",
-    cyan = "#74BAA8",
-    blue = "#6A8BE3",
-    purple = "#BCB6EC",
-    pink = "#A9B9EF",
+    red = "#FF7B72",
+    orange = "#FF570D",
+    yellow = "#ff8a31",
+    green = "#97B5A6",
+    cyan = "#8A9AA6",
+    blue = "#CCD5E4",
+    purple = "#8A92A7",
+    pink = "#8A92A7",
     
     -- Semantic colors
-    error = "#F71735",
-    warning = "#FFA630",
-    success = "#0EC256",
-    info = "#1A8C9B",
-    keyword = "#A9B9EF",
-    command = "#6A8BE3",
-    operator = "#b09884",
-    comment = "#474B65",
-    string = "#74BAA8",
+    error = "#FF7B72",
+    warning = "#FF570D",
+    success = "#97B5A6",
+    info = "#CCD5E4",
+    keyword = "#97B5A6",
+    command = "#CCD5E4",
+    operator = "#ff8a31",
+    comment = "#707B84",
+    string = "#CCD5E4",
+    ["function"] = "#CCD5E4",
+    type = "#8A9AA6",
+    number = "#FF7B72",
+    boolean = "#8A92A7",
+    variable = "#EDEDED",
+    property = "#8A9AA6",
+    method = "#FF570D",
+    tag = "#CCD5E4",
+    attribute = "#8A9AA6",
     
     -- Highlights
     highlight_low = "#2F2E3E",
@@ -47,7 +56,7 @@ M.colors = {
     highlight_high = "#6F6C85",
     
     -- Special
-    cursor = "#ED333B",
+    cursor = "#FF570D",
     none = "NONE",
   },
   
@@ -59,7 +68,7 @@ M.colors = {
     bg_tertiary = "#FDF6E3",
     bg_selection = "#f4eeee",
     bg_surface = "#F9F2DF",
-    bg_overlay = "#F9F2DF",
+    bg_overlay = "#EBE4D6",
     
     -- Foreground colors
     fg = "#2D4A3D",
@@ -78,15 +87,24 @@ M.colors = {
     pink = "#8A92A7",
     
     -- Semantic colors
-    error = "#b4637a",
+    error = "#ED333B",
     warning = "#69756C",
     success = "#5E7270",
-    info = "#56949f",
-    keyword = "#d7827e",
+    info = "#4A7C59",
+    keyword = "#ED333B",
     command = "#286983",
-    operator = "#56949f",
+    operator = "#4A7C59",
     comment = "#9893a5",
-    string = "#56949f",
+    string = "#4A7C59",
+    ["function"] = "#286983",
+    type = "#4A7C59",
+    number = "#ED333B",
+    boolean = "#B8713A",
+    variable = "#2D4A3D",
+    property = "#4A7C59",
+    method = "#d7827e",
+    tag = "#286983",
+    attribute = "#4A7C59",
     
     -- Highlights
     highlight_low = "#E8EAED",
@@ -94,7 +112,7 @@ M.colors = {
     highlight_high = "#C2C6CC",
     
     -- Special
-    cursor = "#ED333B",
+    cursor = "#FF570D",
     none = "NONE",
   }
 }

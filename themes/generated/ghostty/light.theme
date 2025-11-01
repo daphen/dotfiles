@@ -3,24 +3,24 @@
 
 background = #FDF6E3
 foreground = #2D4A3D
-cursor-color = #ED333B
+cursor-color = #FF570D
 
 # ANSI colors (0-7)
-palette = 0=#FFFFFF
-palette = 1=#E05A50
-palette = 2=#5A6F6D
-palette = 3=#202529
-palette = 4=#5A7A96
-palette = 5=#5A6287
-palette = 6=#8A95A4
-palette = 7=#303539
+palette = 0=#2D4A3D
+palette = 1=#ED333B
+palette = 2=#5E7270
+palette = 3=#d7827e
+palette = 4=#286983
+palette = 5=#B8713A
+palette = 6=#4A7C59
+palette = 7=#FDF6E3
 
 # Bright ANSI colors (8-15)
-palette = 8=#D8DDE2
-palette = 9=#FF7B72
-palette = 10=#899F9D
-palette = 11=#404549
-palette = 12=#8A9AA6
-palette = 13=#8A92A7
-palette = 14=#6A75A4
-palette = 15=#F5F7F9
+palette = 8=#575279
+palette = 9=#ED333B
+palette = 10=#5E7270
+palette = 11=#69756C
+palette = 12=#286983
+palette = 13=#B8713A
+palette = 14=#4A7C59
+palette = 15=#F9F2DF

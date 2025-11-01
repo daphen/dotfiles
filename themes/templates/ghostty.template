@@ -3,7 +3,7 @@
 
 background = {{background.primary}}
 foreground = {{foreground.primary}}
-cursor-color = {{cursor}}
+cursor-color = {{semantic.cursor}}
 
 # ANSI colors (0-7)
 palette = 0={{terminal.black}}

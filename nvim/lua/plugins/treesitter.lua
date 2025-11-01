@@ -39,8 +39,8 @@ return {
 				},
 			})
 
-			-- Add keymapping for TreeSitter playground
-			vim.keymap.set("n", "<leader>tp", ":TSPlaygroundToggle<CR>", { desc = "Toggle TreeSitter playground" })
+		-- Add keymapping for TreeSitter playground
+		vim.keymap.set("n", "<leader>T", ":TSPlaygroundToggle<CR>", { desc = "Toggle TreeSitter playground" })
 		end,
 	},
 }

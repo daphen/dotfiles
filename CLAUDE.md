@@ -190,3 +190,19 @@ fisher update
 - Centralized keymaps in `lua/keymaps.lua`
 
 This configuration represents a highly integrated development environment optimized for productivity, with consistent theming, efficient navigation, and comprehensive tool integration.
+
+## Theme System
+
+This configuration uses a centralized theme management system. For complete documentation on:
+- Theme architecture and color definitions
+- Generation and application commands
+- Tool-specific integration details
+- Customization and troubleshooting
+
+See: `/themes/README.md`
+
+Key commands:
+- `cd ~/.config/themes && ./theme-manager.sh auto` - Auto-detect and apply system theme
+- `cd ~/.config/themes && ./theme-manager.sh toggle` - Toggle between light/dark
+- `:ReloadColors` in Neovim - Reload colorscheme
+- `set_dark_theme` / `set_light_theme` in Fish - Apply themes

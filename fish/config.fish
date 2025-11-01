@@ -1,9 +1,18 @@
+# Add local bin to PATH for custom scripts
+fish_add_path -p ~/.local/bin
 # Always set up paths
 fish_add_path /opt/homebrew/bin $HOME/bin /usr/local/bin
 
 if status is-interactive
-    # Clean Neovim swap files on shell start
-    clean_nvim_swap
+    # Keybindings
+    bind \e\cr 'reload'  # Alt+Ctrl+R to reload Fish
+    bind \e\ct 'toggle_theme'  # Alt+Ctrl+T to toggle theme
+    
+    # Aliases
+    alias r='reload'
+    alias rl='reload'
+    alias rr='reload_all'
+    alias tt='toggle_theme'
 end
 
 # Always apply themes (for both interactive and non-interactive sessions)
@@ -94,3 +103,9 @@ if type -q fzf
   set -gx FZF_ALT_C_COMMAND 'fd --type d --hidden --follow --exclude .git'
 end
 
+
+# Use sesh with theme support
+alias sesh='sesh_with_theme'
+set -gx PATH /opt/homebrew/bin $PATH
+nvm use system >/dev/null 2>&1
+abbr -a oc opencode

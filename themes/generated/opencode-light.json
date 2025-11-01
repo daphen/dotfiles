@@ -1,0 +1,226 @@
+{
+  "$schema": "https://opencode.ai/theme.json",
+  "defs": {
+    "base": "#FDF6E3",
+    "surface": "#F9F2DF",
+    "overlay": "#EBE4D6",
+    "muted": "#9893a5",
+    "subtle": "#8A92A7",
+    "text": "#2D4A3D",
+    "love": "#ED333B",
+    "gold": "#d7827e",
+    "rose": "#8A92A7",
+    "pine": "#5E7270",
+    "foam": "#4A7C59",
+    "iris": "#B8713A",
+    "highlightLow": "#F9F2DF",
+    "highlightMed": "#f4eeee",
+    "highlightHigh": "#EBE4D6",
+    "diffAddedBg": "#5E727020",
+    "diffRemovedBg": "#ED333B20",
+    "diffAddedLineNumberBg": "#5E727010",
+    "diffRemovedLineNumberBg": "#ED333B10"
+  },
+  "theme": {
+    "primary": {
+      "dark": "foam",
+      "light": "pine"
+    },
+    "secondary": {
+      "dark": "iris",
+      "light": "iris"
+    },
+    "accent": {
+      "dark": "rose",
+      "light": "foam"
+    },
+    "error": {
+      "dark": "love",
+      "light": "love"
+    },
+    "warning": {
+      "dark": "gold",
+      "light": "gold"
+    },
+    "success": {
+      "dark": "foam",
+      "light": "foam"
+    },
+    "info": {
+      "dark": "pine",
+      "light": "pine"
+    },
+    "text": {
+      "dark": "text",
+      "light": "text"
+    },
+    "textMuted": {
+      "dark": "muted",
+      "light": "muted"
+    },
+    "background": {
+      "dark": "base",
+      "light": "base"
+    },
+    "backgroundPanel": {
+      "dark": "surface",
+      "light": "surface"
+    },
+    "backgroundElement": {
+      "dark": "overlay",
+      "light": "overlay"
+    },
+    "border": {
+      "dark": "highlightMed",
+      "light": "highlightMed"
+    },
+    "borderActive": {
+      "dark": "highlightHigh",
+      "light": "highlightHigh"
+    },
+    "borderSubtle": {
+      "dark": "highlightLow",
+      "light": "highlightLow"
+    },
+    "diffAdded": {
+      "dark": "foam",
+      "light": "foam"
+    },
+    "diffRemoved": {
+      "dark": "love",
+      "light": "love"
+    },
+    "diffContext": {
+      "dark": "muted",
+      "light": "muted"
+    },
+    "diffHunkHeader": {
+      "dark": "subtle",
+      "light": "subtle"
+    },
+    "diffHighlightAdded": {
+      "dark": "foam",
+      "light": "foam"
+    },
+    "diffHighlightRemoved": {
+      "dark": "love",
+      "light": "love"
+    },
+    "diffAddedBg": {
+      "dark": "diffAddedBg",
+      "light": "diffAddedBg"
+    },
+    "diffRemovedBg": {
+      "dark": "diffRemovedBg",
+      "light": "diffRemovedBg"
+    },
+    "diffContextBg": {
+      "dark": "surface",
+      "light": "surface"
+    },
+    "diffLineNumber": {
+      "dark": "muted",
+      "light": "muted"
+    },
+    "diffAddedLineNumberBg": {
+      "dark": "diffAddedLineNumberBg",
+      "light": "diffAddedLineNumberBg"
+    },
+    "diffRemovedLineNumberBg": {
+      "dark": "diffRemovedLineNumberBg",
+      "light": "diffRemovedLineNumberBg"
+    },
+    "markdownText": {
+      "dark": "text",
+      "light": "text"
+    },
+    "markdownHeading": {
+      "dark": "iris",
+      "light": "iris"
+    },
+    "markdownLink": {
+      "dark": "foam",
+      "light": "foam"
+    },
+    "markdownLinkText": {
+      "dark": "pine",
+      "light": "pine"
+    },
+    "markdownCode": {
+      "dark": "rose",
+      "light": "rose"
+    },
+    "markdownBlockQuote": {
+      "dark": "muted",
+      "light": "muted"
+    },
+    "markdownEmph": {
+      "dark": "gold",
+      "light": "gold"
+    },
+    "markdownStrong": {
+      "dark": "love",
+      "light": "love"
+    },
+    "markdownHorizontalRule": {
+      "dark": "highlightMed",
+      "light": "highlightMed"
+    },
+    "markdownListItem": {
+      "dark": "pine",
+      "light": "pine"
+    },
+    "markdownListEnumeration": {
+      "dark": "foam",
+      "light": "foam"
+    },
+    "markdownImage": {
+      "dark": "iris",
+      "light": "iris"
+    },
+    "markdownImageText": {
+      "dark": "foam",
+      "light": "foam"
+    },
+    "markdownCodeBlock": {
+      "dark": "text",
+      "light": "text"
+    },
+    "syntaxComment": {
+      "dark": "muted",
+      "light": "muted"
+    },
+    "syntaxKeyword": {
+      "dark": "pine",
+      "light": "pine"
+    },
+    "syntaxFunction": {
+      "dark": "foam",
+      "light": "foam"
+    },
+    "syntaxVariable": {
+      "dark": "text",
+      "light": "text"
+    },
+    "syntaxString": {
+      "dark": "gold",
+      "light": "gold"
+    },
+    "syntaxNumber": {
+      "dark": "iris",
+      "light": "iris"
+    },
+    "syntaxType": {
+      "dark": "rose",
+      "light": "rose"
+    },
+    "syntaxOperator": {
+      "dark": "subtle",
+      "light": "subtle"
+    },
+    "syntaxPunctuation": {
+      "dark": "subtle",
+      "light": "subtle"
+    }
+  }
+}

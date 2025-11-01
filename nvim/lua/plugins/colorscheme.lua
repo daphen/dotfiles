@@ -1,38 +1,15 @@
 return {
-	-- Keep rose-pine for now as backup
-	{
-		dir = vim.fn.expand("~/.config/colorscheme"),
-		lazy = false,
-		priority = 1000,
-		enabled = false, -- Disable for now
-		config = function()
-			require("rose-pine").setup({
-				disable_background = true,
-				disable_float_background = true,
-				dark_variant = "main",
-				highlight_groups = {
-					StatusLine = { bg = "none" },
-					StatusLineNC = { bg = "none" },
-				},
-				styles = {
-					bold = true,
-					italic = false,
-					transparent = false,
-				},
-			})
-		end,
-	},
-	-- Our new custom theme
 	{
 		dir = vim.fn.expand("~/.config/nvim/lua/theme"),
 		name = "custom-theme",
 		lazy = false,
 		priority = 1000,
 		config = function()
-			-- Apply the colorscheme
+			local is_dark = vim.fn.system("defaults read -g AppleInterfaceStyle 2>/dev/null"):match("Dark") ~= nil
+			vim.o.background = is_dark and "dark" or "light"
 			vim.cmd.colorscheme("custom-theme")
-			
-			-- Additional highlight overrides if needed
+
+			-- Additional highlight overrides
 			vim.api.nvim_create_autocmd("ColorScheme", {
 				pattern = "custom-theme",
 				callback = function()

@@ -18,8 +18,8 @@ def load_all_colors(colors_file):
         data = json.load(f)
     return data['themes']
 
-def get_nested_color(colors, path):
-    """Get color value from nested path like 'background.primary' or 'dark.background.primary'."""
+def get_nested_color(colors, path, max_depth=5, theme_context=None):
+    """Get color value from nested path with recursive reference resolution."""
     keys = path.split('.')
     value = colors
     for key in keys:
@@ -27,6 +27,20 @@ def get_nested_color(colors, path):
             value = value[key]
         else:
             return None
+    
+    # If the value is a string that looks like another reference, resolve it recursively
+    if isinstance(value, str) and '.' in value and max_depth > 0:
+        # Check if this looks like a color reference (not a hex color)
+        if not value.startswith('#'):
+            # If we have a theme context and the reference doesn't include theme, prepend it
+            if theme_context and not any(theme in value for theme in ['dark', 'light']):
+                themed_reference = f"{theme_context}.{value}"
+                resolved = get_nested_color(colors, themed_reference, max_depth - 1, theme_context)
+            else:
+                resolved = get_nested_color(colors, value, max_depth - 1, theme_context)
+            if resolved:
+                return resolved
+    
     return value
 
 def process_template(template_file, colors_file, theme_mode, output_file):
@@ -52,7 +66,12 @@ def process_template(template_file, colors_file, theme_mode, output_file):
     
     # Replace each variable with actual color value
     for var in variables:
-        color_value = get_nested_color(colors, var)
+        # Extract theme context if the path starts with dark/light
+        theme_context = None
+        if var.startswith(('dark.', 'light.')):
+            theme_context = var.split('.')[0]
+        
+        color_value = get_nested_color(colors, var, 5, theme_context)
         if color_value:
             content = content.replace(f'{{{{{var}}}}}', color_value)
         else:

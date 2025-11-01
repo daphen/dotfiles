@@ -35,10 +35,35 @@ function set_light_theme --description "Set light theme"
   # Update FZF colors
   set_fzf_colors
 
+  # Update Tide prompt colors
+  set -l tide_theme_file ~/.config/themes/generated/tide/light.theme
+  if test -f $tide_theme_file
+      # Execute each line to ensure universal variables are updated
+      for line in (cat $tide_theme_file | grep "^set -U")
+          eval $line
+      end
+  end
+
   # Refresh tmux if running
   if tmux info &> /dev/null
     tmux source-file ~/.config/tmux/tmux.conf >/dev/null 2>&1
   end
 
   echo "☀️ Switched to light theme"
+  
+  # Force Tide to reload with new colors
+  # Clear tide prompt cache to force regeneration
+  set -e _tide_prompt_cache
+  set -e _tide_right_prompt_cache
+  
+  # If tide reload exists, use it
+  if type -q tide
+      tide reload >/dev/null 2>&1 || true
+  end
+  
+  # Force prompt redraw
+  commandline -f repaint
 end
+
+  # Sync OpenCode theme
+  sync_opencode_theme

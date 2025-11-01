@@ -20,6 +20,20 @@ function M.find_root_with_markers(starting_path, root_markers)
 	return nil
 end
 
+-- Get project root with git priority (useful for monorepos)
+-- Returns git root if available, otherwise falls back to closest project marker
+function M.get_project_root_git_priority(starting_path)
+	-- First try to find git root (for monorepo support)
+	local git_root = vim.fn.system("git rev-parse --show-toplevel 2>/dev/null"):gsub("\n", "")
+	if vim.v.shell_error == 0 and git_root ~= "" then
+		return git_root
+	end
+	
+	-- Fallback to finding project markers if not in git repo
+	local root_markers = { "package.json", "tsconfig.json", "Cargo.toml", "pyproject.toml", "go.mod" }
+	return M.find_root_with_markers(starting_path, root_markers)
+end
+
 function M.root_has_file(starting_path, root_markers, target_files)
 	local root_path = M.find_root_with_markers(starting_path, root_markers)
 	if root_path then

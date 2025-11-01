@@ -1,0 +1,6 @@
+{
+  "name": "claude-code-ai-tracker-hook",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Claude Code hook to track AI changes for Neovim integration"
+}

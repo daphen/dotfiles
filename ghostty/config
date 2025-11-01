@@ -1,4 +1,4 @@
-font-family = BerkeleyMono Nerd Font
+
 font-size = 20
 adjust-cell-height = 25%
 
@@ -27,6 +27,9 @@ keybind = cmd+l=text:\x13L
 keybind = cmd+e=text:\x13E
 
 keybind = cmd+s>r=reload_config
+
+# Fix Cmd+Backspace to delete line (send Ctrl+U)
+keybind = cmd+backspace=text:\x15
 
 clipboard-paste-protection=false
 

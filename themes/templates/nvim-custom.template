@@ -40,14 +40,23 @@ M.colors = {
     operator = "{{dark.semantic.operator}}",
     comment = "{{dark.semantic.comment}}",
     string = "{{dark.semantic.string}}",
+    ["function"] = "{{dark.semantic.function}}",
+    type = "{{dark.semantic.type}}",
+    number = "{{dark.semantic.number}}",
+    boolean = "{{dark.semantic.boolean}}",
+    variable = "{{dark.semantic.variable}}",
+    property = "{{dark.semantic.property}}",
+    method = "{{dark.semantic.method}}",
+    tag = "{{dark.semantic.tag}}",
+    attribute = "{{dark.semantic.attribute}}",
     
     -- Highlights
-    highlight_low = "{{dark.highlights.low}}",
-    highlight_med = "{{dark.highlights.medium}}",
-    highlight_high = "{{dark.highlights.high}}",
+    highlight_low = "{{dark.semantic.highlight_low}}",
+    highlight_med = "{{dark.semantic.highlight_medium}}",
+    highlight_high = "{{dark.semantic.highlight_high}}",
     
     -- Special
-    cursor = "{{dark.cursor}}",
+    cursor = "{{dark.semantic.cursor}}",
     none = "NONE",
   },
   
@@ -87,14 +96,23 @@ M.colors = {
     operator = "{{light.semantic.operator}}",
     comment = "{{light.semantic.comment}}",
     string = "{{light.semantic.string}}",
+    ["function"] = "{{light.semantic.function}}",
+    type = "{{light.semantic.type}}",
+    number = "{{light.semantic.number}}",
+    boolean = "{{light.semantic.boolean}}",
+    variable = "{{light.semantic.variable}}",
+    property = "{{light.semantic.property}}",
+    method = "{{light.semantic.method}}",
+    tag = "{{light.semantic.tag}}",
+    attribute = "{{light.semantic.attribute}}",
     
     -- Highlights
-    highlight_low = "{{light.highlights.low}}",
-    highlight_med = "{{light.highlights.medium}}",
-    highlight_high = "{{light.highlights.high}}",
+    highlight_low = "{{light.semantic.highlight_low}}",
+    highlight_med = "{{light.semantic.highlight_medium}}",
+    highlight_high = "{{light.semantic.highlight_high}}",
     
     -- Special
-    cursor = "{{light.cursor}}",
+    cursor = "{{light.semantic.cursor}}",
     none = "NONE",
   }
 }

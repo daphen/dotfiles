@@ -3,15 +3,15 @@
 
 set -gx FZF_DEFAULT_OPTS "
 --color=bg+:#1B1B1B
---color=bg:#0A0A0A
---color=spinner:#74BAA8
---color=hl:#B85B53
+--color=bg:#181818
+--color=spinner:#8A9AA6
+--color=hl:#FF7B72
 --color=fg:#EDEDED
---color=header:#B85B53
---color=info:#74BAA8
+--color=header:#FF7B72
+--color=info:#8A9AA6
 --color=pointer:#FF570D
 --color=marker:#FF570D
 --color=fg+:#EDEDED
---color=prompt:#74BAA8
---color=hl+:#B85B53
+--color=prompt:#8A9AA6
+--color=hl+:#FF7B72
 "

@@ -66,23 +66,23 @@ return {
 		-- Define dark and light themes
 		local dark_theme = {
 			normal = {
-				a = { fg = "#DBDBD9", bg = "NONE" },
-				b = { fg = "#DBDBD9", bg = "NONE" },
-				c = { fg = "#DBDBD9", bg = "NONE" },
-				x = { fg = "#DBDBD9", bg = "NONE" },
-				y = { fg = "#DBDBD9", bg = "NONE" },
-				z = { fg = "#ED333B", bg = "#37393F" },
+				a = { fg = "#EDEDED", bg = "NONE" },
+				b = { fg = "#EDEDED", bg = "NONE" },
+				c = { fg = "#EDEDED", bg = "NONE" },
+				x = { fg = "#EDEDED", bg = "NONE" },
+				y = { fg = "#EDEDED", bg = "NONE" },
+				z = { fg = "#ED333B", bg = "#1B1B1B" },
 			},
 		}
 
 		local light_theme = {
 			normal = {
-				a = { fg = "#333333", bg = "NONE" },
-				b = { fg = "#333333", bg = "NONE" },
-				c = { fg = "#333333", bg = "NONE" },
-				x = { fg = "#333333", bg = "NONE" },
-				y = { fg = "#333333", bg = "NONE" },
-				z = { fg = "#ED333B", bg = "#D3D3D3" },
+				a = { fg = "#2D4A3D", bg = "NONE" },
+				b = { fg = "#2D4A3D", bg = "NONE" },
+				c = { fg = "#2D4A3D", bg = "NONE" },
+				x = { fg = "#2D4A3D", bg = "NONE" },
+				y = { fg = "#2D4A3D", bg = "NONE" },
+				z = { fg = "#ED333B", bg = "#F9F2DF" },
 			},
 		}
 
@@ -116,6 +116,39 @@ return {
 						"fancy_diagnostics",
 						sources = { "nvim_lsp" },
 						symbols = { error = " ", warn = " ", info = " " },
+						diagnostics_color = {
+							error = function() 
+								local colors = require("theme.colors").get_colors()
+								return { fg = colors.error }
+							end,
+							warn = function() 
+								local colors = require("theme.colors").get_colors()
+								return { fg = colors.warning }
+							end,
+							info = function() 
+								local colors = require("theme.colors").get_colors()
+								return { fg = colors.info }
+							end,
+						},
+					},
+					{
+						"diagnostics",
+						sources = { "nvim_lsp" },
+						symbols = { error = "E:", warn = "W:", info = "I:" },
+						diagnostics_color = {
+							error = function() 
+								local colors = require("theme.colors").get_colors()
+								return { fg = colors.error }
+							end,
+							warn = function() 
+								local colors = require("theme.colors").get_colors()
+								return { fg = colors.warning }
+							end,
+							info = function() 
+								local colors = require("theme.colors").get_colors()
+								return { fg = colors.info }
+							end,
+						},
 					},
 					{ "fancy_searchcount" },
 				},
@@ -176,7 +209,21 @@ return {
 								{
 									"fancy_diagnostics",
 									sources = { "nvim_lsp" },
-									symbols = { error = " ", warn = " ", info = " " },
+									symbols = { error = "󰅚 ", warn = "󰀪 ", info = "󰋽 " },
+									diagnostics_color = {
+										error = function() 
+											local colors = require("theme.colors").get_colors()
+											return { fg = colors.error }
+										end,
+										warn = function() 
+											local colors = require("theme.colors").get_colors()
+											return { fg = colors.warning }
+										end,
+										info = function() 
+											local colors = require("theme.colors").get_colors()
+											return { fg = colors.info }
+										end,
+									},
 								},
 								{ "fancy_searchcount" },
 							},

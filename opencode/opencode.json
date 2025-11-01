@@ -1,0 +1,8 @@
+{
+  "theme": "customtheme",
+  "$schema": "https://opencode.ai/config.json",
+  "keybinds": {
+    "messages_half_page_up": "ctrl+y",
+    "messages_half_page_down": "ctrl+e"
+  }
+}

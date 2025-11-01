@@ -2,6 +2,8 @@ return {
 	{
 		"williamboman/mason.nvim",
 		build = ":MasonUpdate",
+		cmd = { "Mason", "MasonUpdate", "MasonInstall", "MasonUninstall" },
+		event = "VeryLazy", -- Load after startup to avoid session restoration conflicts
 		opts = {
 			ui = {
 				icons = {
@@ -10,10 +12,17 @@ return {
 					package_uninstalled = "✗",
 				},
 			},
+			-- Disable automatic registry update on startup
+			registries = {
+				"github:mason-org/mason-registry",
+			},
+			max_concurrent_installers = 4,
 		},
 	},
 	{
 		"williamboman/mason-lspconfig.nvim",
+		dependencies = { "williamboman/mason.nvim" },
+		event = "VeryLazy",
 		config = function()
 			local lspconfig = require("lspconfig")
 			local cmp_nvim_lsp = require("cmp_nvim_lsp")
@@ -22,6 +31,7 @@ return {
 			require("mason-lspconfig").setup({
 				ensure_installed = {
 					"ts_ls",
+					"eslint",
 					"html",
 					"cssls",
 					"tailwindcss",
@@ -30,7 +40,6 @@ return {
 					"svelte",
 					"graphql",
 					"pylsp",
-					"glint",
 				},
 				automatic_installation = true,
 				handlers = {
@@ -52,12 +61,38 @@ return {
 							capabilities = capabilities,
 							handlers = {
 								["textDocument/publishDiagnostics"] = function(_, result, ctx, config)
-									result.diagnostics = vim.tbl_filter(function(diagnostic)
-										local code = diagnostic.code
-										return code ~= 6133 and code ~= 6196 and code ~= 6198 and code ~= 6192
-									end, result.diagnostics)
+									-- Process diagnostics
+									for _, diagnostic in ipairs(result.diagnostics) do
+										-- Filter ESLint diagnostics from ts_ls to prevent duplicates
+										if diagnostic.source == "eslint" then
+											diagnostic = nil
+										-- Ensure TypeScript warnings show as warnings, not hints
+										elseif diagnostic.code == 6133 then
+											-- "declared but never read" should be a warning
+											diagnostic.severity = vim.lsp.protocol.DiagnosticSeverity.Warning
+										end
+									end
+
+									-- Filter out nil diagnostics
+									result.diagnostics = vim.tbl_filter(function(d) return d ~= nil end, result.diagnostics)
+
 									vim.lsp.handlers["textDocument/publishDiagnostics"](_, result, ctx, config)
 								end,
+							},
+						})
+					end,
+					["eslint"] = function()
+						lspconfig.eslint.setup({
+							capabilities = capabilities,
+							on_attach = function(client, bufnr)
+								-- Enable formatting via ESLint
+								vim.api.nvim_create_autocmd("BufWritePre", {
+									buffer = bufnr,
+									command = "EslintFixAll",
+								})
+							end,
+							settings = {
+								workingDirectories = { mode = "auto" },
 							},
 						})
 					end,
@@ -147,28 +182,17 @@ return {
 				severity_sort = true,
 			})
 
-			-- Set diagnostic highlights with your preferred colors
-			vim.cmd([[
-    highlight DiagnosticError guifg=#ff7f33
-    highlight DiagnosticWarn guifg=#E8A07D
-    highlight DiagnosticHint guifg=#E8A07D
+			-- Diagnostic highlights are handled by the theme system in lua/theme/highlights.lua
+			-- No need to set them here as they're already defined with proper theme colors
 
-    highlight DiagnosticVirtualTextError guifg=#ff7f33
-    highlight DiagnosticVirtualTextWarn guifg=#E8A07D
-    highlight DiagnosticVirtualTextHint guifg=#E8A07D
-
-    highlight DiagnosticFloatingError guifg=#ff7f33
-    highlight DiagnosticFloatingWarn guifg=#E8A07D
-    highlight DiagnosticFloatingHint guifg=#E8A07D
-
-    highlight DiagnosticSignError guifg=#ff7f33
-    highlight DiagnosticSignWarn guifg=#E8A07D
-    highlight DiagnosticSignHint guifg=#E8A07D
-
-    " Fix URL highlighting issues
-    highlight link Underlined Normal
-    highlight Underlined gui=NONE cterm=NONE
-    ]])
+			-- Debug command to check diagnostic severity
+			vim.api.nvim_create_user_command("DiagnosticInfo", function()
+				local diagnostics = vim.diagnostic.get(0)
+				for _, d in ipairs(diagnostics) do
+					local severity_name = vim.diagnostic.severity[d.severity]
+					print(string.format("[%s] %s (code: %s, source: %s)", severity_name, d.message:sub(1, 50), d.code or "none", d.source or "unknown"))
+				end
+			end, {})
 
 			-- Disable concealing which can cause URL highlighting issues
 			vim.opt.conceallevel = 0

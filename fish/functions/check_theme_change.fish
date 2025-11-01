@@ -1,11 +1,17 @@
 function check_theme_change --description "Check if theme was changed externally and sync"
-    set -l marker_file "$HOME/.config/fish/.theme_changed"
+    set -l theme_file ~/.config/themes/.current-theme
     
-    if test -f $marker_file
-        # Remove the marker file
-        rm -f $marker_file 2>/dev/null
+    if test -f $theme_file
+        set -l file_theme (cat $theme_file | string trim)
         
-        # Sync the theme without spawning a new process
-        sync_theme
+        # Check if theme has changed
+        if test "$file_theme" != "$THEME_MODE"
+            # Apply the new theme
+            if test "$file_theme" = "light"
+                set_light_theme
+            else if test "$file_theme" = "dark"
+                set_dark_theme
+            end
+        end
     end
 end

@@ -161,6 +161,20 @@ apply_tool_theme() {
             # Just log success since Fish will source it when needed
             log_success "FZF theme generated (will be applied by Fish shells)"
             ;;
+        "tide")
+            # Apply Tide prompt colors by directly executing the commands
+            if command -v fish &> /dev/null; then
+                # Execute each set command directly in fish
+                while IFS= read -r line; do
+                    if [[ "$line" =~ ^set[[:space:]] ]]; then
+                        fish -c "$line"
+                    fi
+                done < "$generated_file"
+                log_success "Applied Tide prompt theme"
+            else
+                log_warning "Fish shell not found, Tide theme not applied"
+            fi
+            ;;
         *)
             log_warning "Unknown tool: $tool"
             return 1

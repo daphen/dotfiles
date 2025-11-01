@@ -7,7 +7,7 @@ local M = {}
 local ok, colors = pcall(require, "theme.colors")
 if not ok then
   vim.notify("Failed to load theme colors", vim.log.levels.ERROR)
-  return
+  return M
 end
 
 -- Setup function
@@ -19,9 +19,13 @@ function M.setup(opts)
     vim.g.colors_name = "custom-theme"
   end
   
+  -- Debug: log which theme we're loading
+  local theme_colors = colors.get_colors()
+  vim.notify("Loading theme: " .. vim.o.background .. " mode", vim.log.levels.INFO)
+  
   -- Load and apply highlights
   local highlights = require("theme.highlights")
-  highlights.setup(colors.get_colors())
+  highlights.setup(theme_colors)
 end
 
 -- Helper to reload the colorscheme

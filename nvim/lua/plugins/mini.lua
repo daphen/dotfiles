@@ -25,7 +25,7 @@ return {
 					},
 					mappings = {
 						go_in_plus = "<CR>",
-						synchronize = ";",
+						synchronize = ":",
 						close = "q",
 					},
 				})

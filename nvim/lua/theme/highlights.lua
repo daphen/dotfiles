@@ -78,14 +78,14 @@ function M.setup(c)
   -- ************** SYNTAX **************
   hl["Comment"] = { fg = c.comment, italic = true }
   hl["Constant"] = { fg = c.purple }
-  hl["Function"] = { fg = c.blue }
+  hl["Function"] = { fg = c["function"] }
   hl["Keyword"] = { fg = c.keyword }
-  hl["Number"] = { fg = c.red }
+  hl["Number"] = { fg = c.number }
   hl["Operator"] = { fg = c.operator }
   hl["String"] = { fg = c.string }
-  hl["Type"] = { fg = c.blue }
+  hl["Type"] = { fg = c.type }
   
-  hl["Boolean"] = { link = "Constant" }
+  hl["Boolean"] = { fg = c.boolean }
   hl["Character"] = { link = "String" }
   hl["Conditional"] = { link = "Statement" }
   hl["Define"] = { link = "PreProc" }
@@ -171,6 +171,28 @@ function M.setup(c)
   hl["@text.uri"] = { fg = c.blue, underline = true }
   hl["@type.builtin"] = { link = "@type" }
   
+  -- JSX/TSX (Legacy treesitter)
+  hl["@tag"] = { fg = c.tag }
+  hl["@tag.tsx"] = { fg = c.tag }
+  hl["@tag.jsx"] = { fg = c.tag }
+  hl["@tag.delimiter"] = { fg = c.tag }
+  hl["@tag.delimiter.tsx"] = { fg = c.tag }
+  hl["@tag.delimiter.jsx"] = { fg = c.tag }
+  hl["@tag.attribute"] = { fg = c.attribute }
+  hl["@tag.attribute.tsx"] = { fg = c.attribute }
+  hl["@tag.attribute.jsx"] = { fg = c.attribute }
+  
+  -- JSX/TSX (New treesitter syntax)
+  hl["@tag.builtin"] = { fg = c.tag }
+  hl["@tag.component"] = { fg = c.tag }
+  hl["@tag.builtin.tsx"] = { fg = c.tag }
+  hl["@tag.component.tsx"] = { fg = c.tag }
+  hl["@tag.builtin.jsx"] = { fg = c.tag }
+  hl["@tag.component.jsx"] = { fg = c.tag }
+  hl["@markup.tag"] = { fg = c.tag }
+  hl["@markup.tag.delimiter"] = { fg = c.tag }
+  hl["@markup.tag.attribute"] = { fg = c.attribute }
+  
   -- Latex
   hl["@markup.link.label"] = { link = "String" }
   hl["@markup.link.latex"] = { link = "Keyword" }
@@ -214,7 +236,7 @@ function M.setup(c)
     Error = c.error,
     Warn = c.warning,
     Info = c.info,
-    Hint = c.fg,
+    Hint = c.cyan,
     Ok = c.green,
   }) do
     hl["Diagnostic" .. type] = { fg = color }

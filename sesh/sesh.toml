@@ -1,7 +1,7 @@
 [[session]]
 name = "SiS"
 path = "~/Documents/Sis/sis-frontend-repo/"
-startup_command = "nvim"
+startup_command = "bash ~/.config/tmux/sesh-sis-startup.sh"
 
 [[session]]
 name = "Claude"
@@ -11,12 +11,12 @@ startup_command = "claude"
 [[session]]
 name = "Nvim config"
 path = "~/.config/nvim"
-startup_command = "nvim"
+startup_command = "bash ~/.config/tmux/sesh-sis-startup.sh"
 
 [[session]]
 name = "Playground"
 path = "~/Documents/Personal Projects/playground"
-startup_command = "nvim"
+startup_command = "bash ~/.config/tmux/sesh-sis-startup.sh"
 
 [[session]]
 name = "Terminal"

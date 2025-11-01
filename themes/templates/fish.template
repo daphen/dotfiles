@@ -1,25 +1,25 @@
 # Fish shell theme colors
 # Generated from centralized theme system
 
-set -g fish_color_normal {{foreground.primary}}
-set -g fish_color_command {{semantic.command}}
-set -g fish_color_keyword {{semantic.keyword}}
-set -g fish_color_quote {{semantic.string}}
-set -g fish_color_redirection {{accent.purple}}
-set -g fish_color_end {{semantic.operator}}
-set -g fish_color_error {{semantic.error}}
-set -g fish_color_param {{foreground.primary}}
-set -g fish_color_comment {{semantic.comment}}
-set -g fish_color_selection --background={{background.prompt}}
-set -g fish_color_operator {{semantic.operator}}
-set -g fish_color_escape {{accent.purple}}
-set -g fish_color_autosuggestion {{semantic.comment}}
-set -g fish_color_cancel {{semantic.error}}
-set -g fish_color_cwd {{accent.blue}}
-set -g fish_color_user {{accent.green}}
-set -g fish_color_host {{accent.cyan}}
-set -g fish_color_host_remote {{accent.red}}
-set -g fish_color_status {{semantic.error}}
+set -U fish_color_normal {{foreground.primary}}
+set -U fish_color_command {{semantic.command}}
+set -U fish_color_keyword {{semantic.keyword}}
+set -U fish_color_quote {{semantic.string}}
+set -U fish_color_redirection {{accent.purple}}
+set -U fish_color_end {{semantic.operator}}
+set -U fish_color_error {{semantic.error}}
+set -U fish_color_param {{foreground.primary}}
+set -U fish_color_comment {{semantic.comment}}
+set -U fish_color_selection --background={{background.prompt}}
+set -U fish_color_operator {{semantic.operator}}
+set -U fish_color_escape {{accent.purple}}
+set -U fish_color_autosuggestion {{semantic.comment}}
+set -U fish_color_cancel {{semantic.error}}
+set -U fish_color_cwd {{accent.green}}
+set -U fish_color_user {{accent.green}}
+set -U fish_color_host {{accent.cyan}}
+set -U fish_color_host_remote {{accent.red}}
+set -U fish_color_status {{semantic.error}}
 
 # Pager colors
 set -g fish_pager_color_progress {{semantic.comment}}

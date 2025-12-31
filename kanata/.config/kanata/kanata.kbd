@@ -1,5 +1,5 @@
 ;; Kanata configuration - ported from Piantor Vial layout
-;; Layer triggers: n=symbols-left, c=symbols-right, n+c=media
+;; Layer triggers: space=symbols, n=media
 
 (defcfg
   process-unmapped-keys yes
@@ -14,6 +14,8 @@
     "beekeeb Piantor Pro Consumer Control"
     "beekeeb Piantor Pro System Control"
     "beekeeb Piantor Pro"
+    "ZMK Project Toucan Keyboard"
+    "ZMK Project Toucan Mouse"
   )
 )
 
@@ -30,15 +32,12 @@
   lctl lmet lalt           spc            ralt rmet cmp  rctl
 )
 
-;; Chord: n+c together activates media layer
-(defchordsv2
-  (n c) (layer-while-held media) 50 first-release ()
-)
-
 (defalias
-  ;; Layer switches
-  n_sym (tap-hold-release 200 200 n (layer-while-held symbols-left))
-  c_sym (tap-hold-release 200 200 c (layer-while-held symbols-right))
+  ;; Space: tap for space, hold for symbols layer
+  spc_sym (tap-hold-release 200 200 spc (layer-while-held symbols))
+
+  ;; Media layer on n
+  n_med (tap-hold-release 200 200 n (layer-while-held media))
 
   ;; Caps lock as escape when tapped, control when held
   esc_ctl (tap-hold-press 200 200 esc lctl)
@@ -52,33 +51,23 @@
   grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
   tab  q    w    e    r    t    y    u    i    o    p    home ]    \
   @esc_ctl a    s    d    f    g    h    j    k    l    slck pause ret
-  lsft z    x    @c_sym v    b    @n_sym m    ,    .    /    @rsft_colon
-  lctl lalt lmet           spc            ralt rmet cmp  rctl
+  lsft z    x    c    v    b    @n_med m    ,    .    /    @rsft_colon
+  lctl lalt lmet           @spc_sym       ralt rmet cmp  rctl
 )
 
-;; Symbols LEFT (hold n) - left hand symbols from Piantor
-;; ` ! @ ( ) ; on qwert, Alt # [ { } ] on asdfg, ^ < > % on xcvb
-(deflayer symbols-left
+;; Symbols layer (hold space) - unified from Piantor Vial
+;; Left: ` ! @ ( ) ; on qwert, # [ { } ] on asdfg, ^ < > % on xcvb
+;; Right: : ' " * bksp on yuiop, arrows on hjkl, + = * | on m,./
+(deflayer symbols
   _    _    _    _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _    _    _    _    _
-  grv  S-1  S-2  S-9  S-0  ;    _    _    _    _    _    _    _    _
-  lalt S-3  [    S-[  S-]  ]    _    _    _    _    _    _    _
-  _    _    S-6  S-,  S-.  S-5  _    _    _    _    _    _
+  grv  S-1  S-2  S-9  S-0  ;    S-;  '    S-'  C-6  S-8  bspc _    _
+  lalt S-3  [    S-[  S-]  ]    left down up   rght _    _    _
+  _    _    S-6  S-,  S-.  S-5  _    S-=  =    S-8  S-\  _
   _    _    _              _              _    _    _    _
 )
 
-;; Symbols RIGHT (hold c) - right hand symbols from Piantor
-;; : ' " C-6 * bksp on yuiop[, arrows on hjkl, - + = * | on m,./
-(deflayer symbols-right
-  _    _    _    _    _    _    _    _    _    _    _    _    _
-  _    _    _    _    _    _    _    _    _    _    _    _    _    _
-  _    _    _    _    _    _    S-;  '    S-'  C-6  S-8  bspc _    _
-  _    _    _    _    _    _    left down up   rght _    _    _
-  _    _    _    _    _    _    _    S-=  =    S-8  S-\  _
-  _    _    _              _              _    _    _    _
-)
-
-;; Media layer (chord n+c)
+;; Media layer (hold n)
 ;; q/w=screen brightness, a/s=volume, k/l=keyboard brightness
 (deflayer media
   _    _    _    _    _    _    _    _    _    _    _    _    _

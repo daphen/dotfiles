@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(pacman -Q:*)",
-      "Bash(systemctl:*)"
+      "Bash(systemctl:*)",
+      "Bash(journalctl:*)",
+      "Bash(pacman -Qi:*)"
     ],
     "deny": [],
     "ask": []
@@ -14,8 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /home/daphen/.claude/hooks/ai-tracker.js",
-            "suppressOutput": true
+            "command": "node /home/daphen/.claude/hooks/ai-tracker.js"
           }
         ]
       }

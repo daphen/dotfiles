@@ -1,22 +1,12 @@
 {
   "layer": "top",
   "position": "top",
-  "height": 56,
-  "spacing": 0,
+  "height": 40,
+  "spacing": 8,
 
-  "modules-left": ["custom/corner-left", "clock#date", "custom/weather"],
+  "modules-left": ["clock#date", "custom/weather"],
   "modules-center": ["custom/niri-minimap"],
-  "modules-right": ["network", "pulseaudio", "battery", "clock", "custom/corner-right"],
-
-  "custom/corner-left": {
-    "format": " ",
-    "tooltip": false
-  },
-
-  "custom/corner-right": {
-    "format": " ",
-    "tooltip": false
-  },
+  "modules-right": ["network", "pulseaudio", "battery", "clock"],
 
   "clock#date": {
     "format": "󰃭 {:%a %b %d}",

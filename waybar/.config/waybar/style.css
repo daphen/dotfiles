@@ -7,58 +7,44 @@
 }
 
 window#waybar {
-  background: #181818;
-}
-
-/* Corner modules - positioned at bottom edges with SVG backgrounds */
-#custom-corner-left,
-#custom-corner-right {
-  color: transparent;
-  min-width: 16px;
-  min-height: 16px;
-  padding: 0;
-  margin: 0;
-  margin-top: 40px;
-  background-color: transparent;
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-#custom-corner-left {
-  background-image: url("/home/daphen/.config/waybar/assets/corner-left.svg");
-}
-
-#custom-corner-right {
-  background-image: url("/home/daphen/.config/waybar/assets/corner-right.svg");
-}
-
-/* Module containers */
-.modules-left,
-.modules-center,
-.modules-right {
   background: transparent;
-  margin: 0;
-  padding: 0 8px;
 }
 
-/* Individual module styling */
+/* Left side modules */
+.modules-left {
+  background: alpha(#1b1b1b, 0.85);
+  border-radius: 8px;
+  margin: 8px 16px 0px 16px;
+  padding: 0px 8px;
+}
+
 #clock.date,
-#custom-weather {
+.modules-left #custom-weather {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: #EDEDED;
+  color: #ededed;
+  border-radius: 0;
 }
 
-#custom-weather {
-  color: #8A9AA6;
+.modules-left #custom-weather {
+  color: #8a9aa6;
+}
+
+/* Center module */
+.modules-center {
+  background: alpha(#1b1b1b, 0.85);
+  border-radius: 8px;
+  margin: 8px 16px 0px;
+  padding: 0px 8px;
 }
 
 #custom-niri-minimap {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: #EDEDED;
+  color: #ededed;
+  border-radius: 0;
   font-size: 16px;
 }
 
@@ -67,7 +53,8 @@ window#waybar {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: #5865F2;
+  color: #5865f2;
+  border-radius: 0;
   font-size: 16px;
 }
 
@@ -78,6 +65,14 @@ window#waybar {
   min-width: 0;
 }
 
+/* Right side container - all items grouped */
+.modules-right {
+  background: alpha(#1b1b1b, 0.85);
+  border-radius: 8px;
+  margin: 8px 16px 0px 16px;
+  padding: 0px 8px;
+}
+
 #clock,
 #battery,
 #network,
@@ -85,7 +80,8 @@ window#waybar {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: #EDEDED;
+  color: #ededed;
+  border-radius: 0;
 }
 
 #battery.warning {
@@ -93,39 +89,39 @@ window#waybar {
 }
 
 #battery.critical {
-  color: #FF7B72;
+  color: #ff7b72;
 }
 
 #battery.charging {
-  color: #97B5A6;
+  color: #97b5a6;
 }
 
 #clock {
-  color: #CCD5E4;
+  color: #ccd5e4;
 }
 
 #network {
-  color: #97B5A6;
+  color: #97b5a6;
 }
 
 #network.disconnected {
-  color: #FF7B72;
+  color: #ff7b72;
 }
 
 #pulseaudio {
-  color: #CCD5E4;
+  color: #ccd5e4;
 }
 
 #pulseaudio.muted {
-  color: #8A9AA6;
+  color: #8a9aa6;
 }
 
 tooltip {
-  background: alpha(#1B1B1B, 0.95);
-  border: 1px solid alpha(#8A9AA6, 0.2);
+  background: alpha(#1b1b1b, 0.95);
+  border: 1px solid alpha(#8a9aa6, 0.2);
   border-radius: 8px;
 }
 
 tooltip label {
-  color: #EDEDED;
+  color: #ededed;
 }

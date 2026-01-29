@@ -94,3 +94,5 @@ if status is-interactive; and test -n "$SHOW_FASTFETCH"
     sleep 0.1; fastfetch
 end
 
+alias drag='dragon-drop -x -T -i -s 48'
+set -gx GTK_THEME Adwaita:dark

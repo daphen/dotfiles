@@ -1,4 +1,4 @@
-function restart_kanata --description "Restart Kanata (excludes Piantor via device exclusion)"
+function kanata_restart --description "Restart Kanata (excludes Piantor via device exclusion)"
     set -l kanata_dir "$HOME/.config/kanata"
 
     # Use the restart script

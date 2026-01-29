@@ -32,7 +32,7 @@ return {
 				html = { "prettier" },
 				less = { "prettier" },
 				scss = { "prettier" },
-				markdown = { "mdformat" },
+				markdown = { "prettier" },
 				json = { "prettier" },
 				yaml = { "prettier" },
 				svg = { "prettier" },

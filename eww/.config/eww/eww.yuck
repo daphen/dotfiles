@@ -325,7 +325,7 @@
 
 (defpoll weather :interval "1800s"
   :initial "..."
-  "curl -s 'wttr.in/Stockholm?format=%t' 2>/dev/null || echo 'N/A'")
+  "~/.config/eww/scripts/weather.sh")
 
 ; Per-monitor window minimaps
 (defpoll window-minimap-0 :interval "500ms"

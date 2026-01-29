@@ -9,7 +9,7 @@ focused_workspace=$(echo "$focused" | grep "Workspace ID:" | awk '{print $3}')
 focused_column=$(echo "$focused" | grep "Scrolling position:" | sed 's/.*column \([0-9]*\).*/\1/')
 
 if [ -z "$focused_workspace" ] || [ -z "$focused_column" ]; then
-    echo '{"text": "●", "tooltip": "No active window"}'
+    echo '{"text": "◆", "tooltip": "No active window"}'
     exit 0
 fi
 
@@ -29,7 +29,7 @@ done <<< "$windows"
 
 # If only one column, show single indicator
 if [ ${#columns[@]} -le 1 ]; then
-    echo '{"text": "●", "tooltip": "Single column"}'
+    echo '{"text": "◆", "tooltip": "Single column"}'
     exit 0
 fi
 
@@ -39,9 +39,9 @@ sorted_cols=($(for col in "${!columns[@]}"; do echo "$col"; done | sort -n))
 
 for col in "${sorted_cols[@]}"; do
     if [ "$col" -eq "$focused_column" ]; then
-        minimap="${minimap}● "
+        minimap="${minimap}◆"
     else
-        minimap="${minimap}○ "
+        minimap="${minimap}◇"
     fi
 done
 

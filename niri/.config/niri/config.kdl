@@ -80,7 +80,7 @@ input {
 output "eDP-1" {
     mode "2880x1800@120.000"
     scale 1.5
-    position x=2560 y=0
+    position x=3440 y=0
 }
 
 // Office monitor (Dell U2515H) - positioned to the LEFT of laptop
@@ -94,22 +94,22 @@ output "Dell Inc. DELL U2515H 9X2VY5840MWL" {
 }
 
 // External monitor (Technical Concepts 27R83U) - HOME MONITOR - positioned on the RIGHT
-// TODO: Replace "DP-1" with the full monitor name from `niri msg outputs` when at home
-// Example: output "Technical Concepts 27R83U ABC123" { ... }
-// This avoids conflicts with other monitors that connect as DP-1/DP-2
+// Using full monitor name to avoid conflicts with other monitors that connect as DP-1/DP-2
 // Laptop is 2880x1800 @ scale 1.5 = 1920x1200 logical pixels wide
 // So external monitor starts at x=1920
-output "DP-1" {
+output "Technical Concepts Ltd 27R83U X2414000823" {
     mode "3840x2160@144.000"
     scale 1.5
     position x=1920 y=0
     focus-at-startup
 }
 
-output "DP-2" {
-    mode "3840x2160@144.000"
-    scale 1.5
-    position x=1920 y=0
+// Samsung S34C65xV ultrawide - positioned to the LEFT of laptop
+// At scale 1.0: logical width = 3440, laptop starts at x=3440
+output "Samsung Electric Company S34C65xV HNTY700216" {
+    mode "3440x1440@59.973"
+    scale 1.0
+    position x=0 y=0
     focus-at-startup
 }
 
@@ -118,7 +118,10 @@ output "DP-2" {
 // https://yalter.github.io/niri/Configuration:-Layout
 layout {
     // Set gaps around windows in logical pixels.
-    gaps 18
+    gaps 16
+
+    // Transparent background so the static wallpaper shows through
+    background-color "transparent"
 
     // When to center a column when changing focus, options are:
     // - "never", default behavior, focusing an off-screen column will keep at the left
@@ -261,10 +264,10 @@ layout {
     // Top and bottom struts will simply add outer gaps in addition to the area occupied by
     // layer-shell panels and regular gaps.
     struts {
-        left 16
-        right 8
-        top -2
-        bottom 8
+        left 0
+        right 0
+        top 0
+        bottom 0
     }
 }
 
@@ -273,8 +276,8 @@ layout {
 // which may be more convenient to use.
 // See the binds section below for more spawn examples.
 
-// This line starts eww bar
-spawn-at-startup "~/.config/eww/start-eww.sh"
+// This line starts waybar
+spawn-at-startup "waybar"
 
 // Auto-restore wallpaper on startup with waypaper
 spawn-at-startup "waypaper" "--restore"
@@ -361,6 +364,13 @@ window-rule {
 layer-rule {
     match namespace="^gtk-layer-shell$"
     geometry-corner-radius 0
+}
+
+// Make wallpaper static (doesn't scroll with workspaces)
+// Places swaybg in the backdrop layer so it stays fixed
+layer-rule {
+    match namespace="^wallpaper$"
+    place-within-backdrop true
 }
 
 // Work around WezTerm's initial configure bug
@@ -522,6 +532,9 @@ binds {
     Super+Ctrl+V { spawn "kitty" "--class" "clipse" "-o" "initial_window_width=800" "-o" "initial_window_height=600" "clipse"; }  // Open clipboard history (clipse in floating terminal)
     Super+Ctrl+J { spawn "rofimoji" "--action" "copy" "type" "--selector" "rofi"; }  // Open emoji picker (copy + auto-type)
     Super+Ctrl+B { spawn "rofi-bluetooth"; }  // Open bluetooth menu
+
+    // Dismiss all notifications
+    Super+Escape { spawn "makoctl" "dismiss" "--all"; }
 }
 
 // Clipboard management with clipse

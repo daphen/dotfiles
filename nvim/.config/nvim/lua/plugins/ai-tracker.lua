@@ -34,19 +34,9 @@ return {
 			desc = "AI Changes (all lines)",
 		},
 		{
-			"<C-g>f",
-			function() require("ai-tracker").show_file() end,
-			desc = "AI Changes (current file)",
-		},
-		{
 			"<C-g>p",
 			function() require("ai-tracker").show_grouped() end,
 			desc = "AI Changes (grouped by prompt)",
-		},
-		{
-			"<C-g>s",
-			function() require("ai-tracker").show_sessions() end,
-			desc = "AI Changes (by session)",
 		},
 		{
 			"<C-g>P",

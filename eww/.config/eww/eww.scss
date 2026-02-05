@@ -49,16 +49,10 @@ $accent-blue: #CCD5E4;
 }
 
 // Module containers
-.modules-left {
-  padding: 0 8px 0 16px; // left padding matches left frame width
-}
-
-.modules-center {
-  padding: 0 8px;
-}
-
+.modules-left,
+.modules-center,
 .modules-right {
-  padding: 0 10px 0 8px; // right padding matches right frame width
+  padding: 0 8px;
 }
 
 // Individual widgets
@@ -109,7 +103,7 @@ $accent-blue: #CCD5E4;
 }
 
 .network {
-  color: $accent-cyan;
+  color: $accent-green;
 
   &.disconnected {
     color: $accent-red;
@@ -117,10 +111,10 @@ $accent-blue: #CCD5E4;
 }
 
 .volume {
-  color: $accent-cyan;
+  color: $accent-blue;
 
   &.muted {
-    color: $fg-muted;
+    color: $accent-cyan;
   }
 }
 
@@ -128,10 +122,6 @@ $accent-blue: #CCD5E4;
   color: $fg-muted;
 
   &.charging {
-    color: $accent-green;
-  }
-
-  &.full {
     color: $accent-green;
   }
 
@@ -150,7 +140,7 @@ $accent-blue: #CCD5E4;
 }
 
 .clock {
-  color: $accent-cyan;
+  color: $accent-blue;
 }
 
 // Frame

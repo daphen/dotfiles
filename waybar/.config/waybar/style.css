@@ -12,9 +12,9 @@ window#waybar {
 
 /* Left side modules */
 .modules-left {
-  background: alpha(#1b1b1b, 0.85);
+  background: alpha(#1B1B1B, 0.85);
   border-radius: 8px;
-  margin: 8px 16px 0px 16px;
+  margin: 4px 8px 4px 20px;
   padding: 0px 8px;
 }
 
@@ -23,19 +23,19 @@ window#waybar {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: #ededed;
+  color: #EDEDED;
   border-radius: 0;
 }
 
 .modules-left #custom-weather {
-  color: #8a9aa6;
+  color: #8A9AA6;
 }
 
 /* Center module */
 .modules-center {
-  background: alpha(#1b1b1b, 0.85);
+  background: alpha(#1B1B1B, 0.85);
   border-radius: 8px;
-  margin: 8px 16px 0px;
+  margin: 4px 8px;
   padding: 0px 8px;
 }
 
@@ -43,7 +43,7 @@ window#waybar {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: #ededed;
+  color: #EDEDED;
   border-radius: 0;
   font-size: 16px;
 }
@@ -53,7 +53,7 @@ window#waybar {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: #5865f2;
+  color: #5865F2;
   border-radius: 0;
   font-size: 16px;
 }
@@ -67,9 +67,9 @@ window#waybar {
 
 /* Right side container - all items grouped */
 .modules-right {
-  background: alpha(#1b1b1b, 0.85);
+  background: alpha(#1B1B1B, 0.85);
   border-radius: 8px;
-  margin: 8px 16px 0px 16px;
+  margin: 4px 20px 4px 8px;
   padding: 0px 8px;
 }
 
@@ -80,7 +80,7 @@ window#waybar {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: #ededed;
+  color: #EDEDED;
   border-radius: 0;
 }
 
@@ -89,39 +89,39 @@ window#waybar {
 }
 
 #battery.critical {
-  color: #ff7b72;
+  color: #FF7B72;
 }
 
 #battery.charging {
-  color: #97b5a6;
+  color: #97B5A6;
 }
 
 #clock {
-  color: #ccd5e4;
+  color: #CCD5E4;
 }
 
 #network {
-  color: #97b5a6;
+  color: #97B5A6;
 }
 
 #network.disconnected {
-  color: #ff7b72;
+  color: #FF7B72;
 }
 
 #pulseaudio {
-  color: #ccd5e4;
+  color: #CCD5E4;
 }
 
 #pulseaudio.muted {
-  color: #8a9aa6;
+  color: #8A9AA6;
 }
 
 tooltip {
-  background: alpha(#1b1b1b, 0.95);
-  border: 1px solid alpha(#8a9aa6, 0.2);
+  background: alpha(#1B1B1B, 0.95);
+  border: 1px solid alpha(#8A9AA6, 0.2);
   border-radius: 8px;
 }
 
 tooltip label {
-  color: #ededed;
+  color: #EDEDED;
 }

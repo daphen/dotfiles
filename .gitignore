@@ -1,6 +1,8 @@
 # Fish shell
 fish/.config/fish/fish_variables
+fish/.config/fish/fish_variables*
 fish/.config/fish/fish_history
+fish/.config/fish/secrets.fish
 
 # Themes
 themes/.config/themes/generated/

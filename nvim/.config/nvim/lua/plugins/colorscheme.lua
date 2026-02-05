@@ -60,6 +60,15 @@ return {
 					vim.api.nvim_set_hl(0, "NormalFloat", { fg = normal_float.fg, bg = "none" })
 					vim.api.nvim_set_hl(0, "StatusLine", { fg = status_line.fg, bg = "none" })
 					vim.api.nvim_set_hl(0, "StatusLineNC", { fg = status_line_nc.fg, bg = "none" })
+
+					-- Neo-tree transparent backgrounds
+					vim.api.nvim_set_hl(0, "NeoTreeNormal", { bg = "none" })
+					vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { bg = "none" })
+					vim.api.nvim_set_hl(0, "NeoTreeEndOfBuffer", { bg = "none" })
+
+					-- Float/border transparent backgrounds
+					vim.api.nvim_set_hl(0, "FloatBorder", { bg = "none" })
+					vim.api.nvim_set_hl(0, "WinSeparator", { bg = "none" })
 				end,
 			})
 		end,

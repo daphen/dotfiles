@@ -86,7 +86,7 @@ end
 
 
 nvm use system >/dev/null 2>&1
-abbr -a oc opencode
+# oc function defined in ~/.config/fish/functions/oc.fish (uses Max subscription)
 
 # Show system info with fastfetch only when SHOW_FASTFETCH env var is set
 # This is triggered by Super+Shift+D in niri (spawns kitty with --env SHOW_FASTFETCH=1)

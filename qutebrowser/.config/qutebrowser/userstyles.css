@@ -1,0 +1,53 @@
+/* qutebrowser internal pages theme */
+/* Only applies to qute:// pages */
+
+:root {
+    color-scheme: dark;
+}
+
+body {
+    background-color: #181818 !important;
+    color: #EDEDED !important;
+}
+
+h1, h2, h3, h4 {
+    color: #EDEDED !important;
+}
+
+a {
+    color: #CCD5E4 !important;
+}
+
+a:hover {
+    color: #8A9AA6 !important;
+}
+
+a:visited {
+    color: #8A92A7 !important;
+}
+
+td, th {
+    border-color: #292826 !important;
+}
+
+th {
+    background-color: #1B1B1B !important;
+    color: #C3C8C6 !important;
+}
+
+tr:nth-child(odd) {
+    background-color: #181818 !important;
+}
+
+tr:nth-child(even) {
+    background-color: #1B1B1B !important;
+}
+
+pre, code {
+    background-color: #1B1B1B !important;
+    color: #EDEDED !important;
+}
+
+hr {
+    border-color: #292826 !important;
+}

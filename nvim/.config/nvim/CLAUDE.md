@@ -32,9 +32,8 @@ All plugins use **lazy.nvim** with event-based loading for performance. Key load
 - **Special configurations**: TypeScript filtering, Tailwind CSS support
 
 ### AI Integration
-- **Avante.nvim**: Claude Sonnet 4 integration with temperature 0, 32k max tokens
-- **Supermaven**: AI-powered completion
-- **Claude Code**: Official CLI integration via `claudecode.nvim`
+- **99**: ThePrimeagen's AI agent plugin for inline code editing (via opencode)
+- **AI Tracker**: Custom local plugin for tracking AI-made file changes
 
 ### File Management
 - **Neo-tree**: Primary file explorer (Leader+e)
@@ -58,12 +57,14 @@ All plugins use **lazy.nvim** with event-based loading for performance. Key load
 - `<leader>/` - Fuzzy search in current buffer
 - `<leader>e` - Toggle Neo-tree
 - `<leader>E` - Toggle Mini.files
-- `<C-g><C-g>` - Copy entire file to clipboard
+- `<C-g><C-g>` - AI Tracker: Show changes by file
 
 ### AI & Code Actions
-- `<leader>aa` - Avante ask
-- `<leader>ar` - Avante refresh
-- `<leader>ae` - Avante edit
+- `<C-g>f` - 99: Fill in function
+- `<C-g>v` - 99: Visual selection action
+- `<C-g>s` - 99: Stop all requests
+- `<C-g><C-g>` - AI Tracker: Show changes by file
+- `<C-g>j/k` - AI Tracker: Next/prev change
 - FastAction integration for quick code actions
 
 ### Development Tools

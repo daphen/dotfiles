@@ -1,0 +1,30 @@
+#!/bin/bash
+# Force kill the currently focused window
+
+# Get the focused window info
+focused_window=$(niri msg -j windows | jq -r '.[] | select(.is_focused == true)')
+
+if [ -z "$focused_window" ]; then
+    notify-send "Force Kill" "No focused window found"
+    exit 1
+fi
+
+# Extract PID
+pid=$(echo "$focused_window" | jq -r '.pid')
+
+if [ -z "$pid" ] || [ "$pid" = "null" ]; then
+    notify-send "Force Kill" "Could not get PID of focused window"
+    exit 1
+fi
+
+# Get app name for notification
+app_id=$(echo "$focused_window" | jq -r '.app_id // .title')
+
+# Kill the process
+kill -9 "$pid"
+
+if [ $? -eq 0 ]; then
+    notify-send "Force Kill" "Killed: $app_id (PID: $pid)"
+else
+    notify-send "Force Kill" "Failed to kill PID: $pid"
+fi

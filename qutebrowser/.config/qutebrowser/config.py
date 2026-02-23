@@ -17,7 +17,7 @@ c.tabs.indicator.padding = {'top': 4, 'bottom': 4, 'left': 2, 'right': 6}
 
 # Tell sites we prefer dark mode (let them handle it natively)
 c.colors.webpage.darkmode.enabled = False
-c.colors.webpage.preferred_color_scheme = 'dark'
+c.colors.webpage.preferred_color_scheme = 'auto'
 
 # Ctrl+j/k to navigate completion lists
 config.bind('<Ctrl-j>', 'completion-item-focus next', mode='command')
@@ -43,11 +43,19 @@ config.bind('<Ctrl-b>', 'spawn --userscript sync-quickmarks')
 config.bind('<Ctrl-h>', 'tab-prev')
 config.bind('<Ctrl-l>', 'tab-next')
 
+# Move tabs left/right with Ctrl+Shift+h/l
+config.bind('<Ctrl-Shift-h>', 'tab-move -')
+config.bind('<Ctrl-Shift-l>', 'tab-move +')
+
+# Break out tab to new window / join tab to another window
+config.bind('<Ctrl-Shift-k>', 'tab-give')
+config.bind('<Ctrl-Shift-j>', 'tab-give 0')
+
 # Restore tabs from last session on startup
 c.auto_save.session = True
 
 # Uncap frame rate (workaround for QTBUG-76006 - WebEngine assumes 60Hz)
-c.qt.args = ['disable-frame-rate-limit']
+# c.qt.args = ['disable-frame-rate-limit']
 
 # Smooth scrolling for keyboard navigation
 c.scrolling.smooth = True
@@ -56,4 +64,16 @@ c.scrolling.smooth = True
 config.bind('<Ctrl-d>', 'cmd-repeat 20 scroll down')
 config.bind('<Ctrl-u>', 'cmd-repeat 20 scroll up')
 
+# Native Wayland rendering to fix pixelated/blurry text with fractional scaling.
+# Without this, qutebrowser runs via XWayland which upscales the surface causing
+# pixelation on 1.5x scaled displays. This forces Qt and the Chromium engine to
+# use the native Wayland backend and handle HiDPI scaling correctly.
+c.qt.environ = {
+    'QT_QPA_PLATFORM': 'wayland',
+    'QT_QPA_PLATFORMTHEME': 'gnome',  # Help Qt detect GNOME dark mode preference
+}
+
 # Your custom settings below:
+
+# Prevent videos from auto-playing in background tabs
+c.content.autoplay = False

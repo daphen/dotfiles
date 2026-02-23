@@ -6,7 +6,7 @@ xkb_keymap {
     xkb_symbols {
         include "pc+us+inet(evdev)"
         key <RALT> { [ Alt_R, Meta_R ] };
-        replace key <HOME> {
+        key <HENK> {
             [ aring, Aring ]
         };
 

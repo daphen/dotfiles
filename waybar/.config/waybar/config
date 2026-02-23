@@ -4,7 +4,7 @@
   "height": 40,
   "spacing": 8,
 
-  "modules-left": ["clock#date", "custom/weather"],
+  "modules-left": ["clock#date", "custom/weather", "cpu"],
   "modules-center": ["custom/niri-minimap"],
   "modules-right": ["network", "pulseaudio", "battery", "clock"],
 
@@ -58,6 +58,12 @@
     "on-click": "networkmanager_dmenu"
   },
 
+  "cpu": {
+    "interval": 2,
+    "format": "󰻠 {usage}%",
+    "tooltip": true
+  },
+
   "pulseaudio": {
     "format": "{icon} {volume}%",
     "format-bluetooth": "󰂯 {volume}%",
@@ -83,5 +89,5 @@
     "interval": 1,
     "format": "{}",
     "tooltip": true
-  },
+  }
 }

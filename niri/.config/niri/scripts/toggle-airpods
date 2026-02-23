@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+# AirPods MAC address
+AIRPODS_MAC="20:F4:D4:22:2D:3A"
+
+# Check if AirPods are connected
+if bluetoothctl info "$AIRPODS_MAC" | grep -q "Connected: yes"; then
+    # Disconnect
+    bluetoothctl disconnect "$AIRPODS_MAC"
+    notify-send "Bluetooth" "Disconnected AirPods Pro #3" -t 2000
+else
+    # Connect
+    bluetoothctl connect "$AIRPODS_MAC"
+    notify-send "Bluetooth" "Connecting AirPods Pro #3..." -t 2000
+fi

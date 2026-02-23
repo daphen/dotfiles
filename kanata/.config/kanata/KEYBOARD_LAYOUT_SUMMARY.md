@@ -9,7 +9,7 @@ This is a two-layer system to add Swedish characters (åäö) to an ANSI keyboar
 Kanata intercepts physical keypresses and remaps them to different keycodes BEFORE they reach the system.
 
 **Swedish character mappings:**
-- Physical `[` key → sends `home` keycode
+- Physical `[` key → sends `henk` keycode
 - Physical `;` key → sends `slck` (Scroll Lock) keycode
 - Physical `'` key → sends `pause` keycode
 
@@ -19,7 +19,7 @@ These keycodes are chosen because they're rarely used and don't conflict with ty
 XKB receives the keycodes from Kanata and maps them to actual characters.
 
 **Character mappings:**
-- `home` keycode → å (lowercase) / Å (with Shift)
+- `henk` keycode → å (lowercase) / Å (with Shift)
 - `slck` keycode → ö (lowercase) / Ö (with Shift)
 - `pause` keycode → ä (lowercase) / Ä (with Shift)
 
@@ -80,7 +80,7 @@ Some applications (especially Electron apps) intercept certain keycodes for spec
 - Page Down → Used for scrolling
 - F11 → Fullscreen toggle
 
-This is why we use Home, Scroll Lock, and Pause - they're rarely intercepted by modern applications.
+This is why we use Henk, Scroll Lock, and Pause - they're rarely intercepted by modern applications.
 
 ### To verify mappings
 ```bash
@@ -93,7 +93,7 @@ This is why we use Home, Scroll Lock, and Pause - they're rarely intercepted by 
 ## Testing Status
 
 ### Current Mapping (CONFIRMED WORKING - Nov 4, 2025)
-- **å (Physical `[`)** → `home` keycode → ✅ Working in all apps
+- **å (Physical `[`)** → `henk` keycode → ✅ Working in all apps
 - **ö (Physical `;`)** → `slck` keycode → ✅ Working in all apps
 - **ä (Physical `'`)** → `pause` keycode → ✅ Working in all apps
 
@@ -108,7 +108,7 @@ This is why we use Home, Scroll Lock, and Pause - they're rarely intercepted by 
 | `f12` | ä | ❌ Not tested | Would trigger dev tools in browsers |
 | `ins` | ö | ❌ Failed | Capital Ö doesn't work in Slack (paste operation conflict) |
 | `pgdn` | ä | ❌ Failed | Doesn't work in Discord (scroll conflict) |
-| `home` | å | ✅ Works | Currently in use |
+| `henk` | å | ✅ Works | Currently in use |
 | `slck` | ö | ✅ Works | Currently in use |
 | `pause` | ä | ✅ Works | Currently in use - confirmed working |
 
@@ -137,7 +137,7 @@ spawn-at-startup "bash" "-c" "/home/daphen/.config/kanata/start-kanata.sh"
 
 ### Piantor Pro Configuration
 For the Piantor Pro keyboard, map these keycodes in your QMK/ZMK firmware:
-- `KC_HOME` → for å/Å
+- `KC_HENK` → for å/Å
 - `KC_SLCK` → for ö/Ö
 - `KC_PAUSE` → for ä/Ä
 
@@ -147,4 +147,4 @@ The Piantor is excluded from Kanata processing and handles Swedish characters th
 - Original setup used F10/F11/F12, but F11 triggered fullscreen toggle when typing ö
 - Tried Insert for ö, but capital Ö didn't work in Slack (paste conflict)
 - Tried PageDown for ä, but didn't work in Discord (scroll conflict)
-- **Final solution: Home/ScrollLock/Pause** - ✅ Confirmed working in all applications (Nov 4, 2025)
+- **Final solution: Henk/ScrollLock/Pause** - ✅ Confirmed working in all applications (Nov 4, 2025)

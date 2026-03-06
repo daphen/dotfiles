@@ -1,0 +1,5 @@
+<svg width="28" height="22" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bottom-left corner: fills left 16px and bottom 10px, with concave curve (14px radius) in top-right -->
+  <path d="M 28,12 A 14,14 0 0 1 16,0 L 0,0 L 0,22 L 28,22 Z" fill="{{background.primary}}"/>
+  <path d="M 28,12 A 14,14 0 0 1 16,0" fill="none" stroke="{{background.overlay}}" stroke-width="1"/>
+</svg>

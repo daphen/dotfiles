@@ -1,0 +1,58 @@
+# Kitty color theme
+# Generated from centralized theme system
+
+# Basic colors
+foreground {{foreground.primary}}
+background {{background.primary}}
+selection_foreground {{foreground.primary}}
+selection_background {{background.selection}}
+
+# Cursor
+cursor {{semantic.cursor}}
+cursor_text_color {{background.primary}}
+
+# URL underline color
+url_color {{accent.blue}}
+
+# Terminal colors
+# Black
+color0 {{terminal.black}}
+color8 {{terminal.bright_black}}
+
+# Red
+color1 {{terminal.red}}
+color9 {{terminal.bright_red}}
+
+# Green
+color2 {{terminal.green}}
+color10 {{terminal.bright_green}}
+
+# Yellow
+color3 {{terminal.yellow}}
+color11 {{terminal.bright_yellow}}
+
+# Blue
+color4 {{terminal.blue}}
+color12 {{terminal.bright_blue}}
+
+# Magenta
+color5 {{terminal.magenta}}
+color13 {{terminal.bright_magenta}}
+
+# Cyan
+color6 {{terminal.cyan}}
+color14 {{terminal.bright_cyan}}
+
+# White
+color7 {{terminal.white}}
+color15 {{terminal.bright_white}}
+
+# Tab bar colors
+active_tab_foreground {{foreground.primary}}
+active_tab_background {{background.secondary}}
+inactive_tab_foreground {{foreground.muted}}
+inactive_tab_background {{background.primary}}
+
+# Window border colors
+active_border_color {{accent.orange}}
+inactive_border_color {{foreground.muted}}

@@ -12,6 +12,8 @@ tmux/.config/tmux/plugins/
 themes/.config/themes/generated/
 themes/.config/themes/*.log
 themes/.config/themes/.current-theme
+themes/.config/themes/theme-viewer/
+themes/.config/themes/node_modules/
 
 # Temporary files
 *.swp

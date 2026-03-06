@@ -3,6 +3,10 @@ fish/.config/fish/fish_variables
 fish/.config/fish/fish_variables*
 fish/.config/fish/fish_history
 fish/.config/fish/secrets.fish
+fish/.config/fish/conf.d/fish_debug.log
+
+# Tmux plugins (managed by TPM)
+tmux/.config/tmux/plugins/
 
 # Themes
 themes/.config/themes/generated/

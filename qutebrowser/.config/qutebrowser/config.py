@@ -53,8 +53,20 @@ config.bind('<Ctrl-Shift-j>', 'tab-give 0')
 # Restore tabs from last session on startup
 c.auto_save.session = True
 
-# Uncap frame rate (workaround for QTBUG-76006 - WebEngine assumes 60Hz)
-# c.qt.args = ['disable-frame-rate-limit']
+# Uncap frame rate on AC power (workaround for QTBUG-76006 - WebEngine assumes 60Hz)
+import subprocess
+def _on_ac_power():
+    try:
+        result = subprocess.run(
+            ['cat', '/sys/class/power_supply/AC0/online'],
+            capture_output=True, text=True, timeout=1
+        )
+        return result.stdout.strip() == '1'
+    except Exception:
+        return True
+
+if _on_ac_power():
+    c.qt.args = ['disable-frame-rate-limit']
 
 # Smooth scrolling for keyboard navigation
 c.scrolling.smooth = True

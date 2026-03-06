@@ -1,0 +1,19 @@
+[init]
+	defaultBranch = main
+[fetch]
+	prune = true
+
+[user]
+	name = David Karlsson
+	email = davidkarlssson@gmail.com
+
+[includeIf "gitdir:~/personal/"]
+	path = ~/.config/git/personal
+
+[includeIf "gitdir:~/work/"]
+	path = ~/.config/git/work
+
+[includeIf "gitdir:~/dotfiles/"]
+	path = ~/.config/git/personal
+[core]
+	excludesfile = /home/daphen/.gitignore_global

@@ -6,7 +6,5 @@
 
 config_version: 2
 settings:
-  content.javascript.clipboard:
-    https://app.improvmx.com: access-paste
-  content.register_protocol_handler:
-    https://mail.google.com?extsrc=mailto&url=%25s: true
+  content.notifications.enabled:
+    https://www.facebook.com: true

@@ -94,5 +94,17 @@ if status is-interactive; and test -n "$SHOW_FASTFETCH"
     sleep 0.1; fastfetch
 end
 
+# OpenCode cleanup aliases (workaround for memory leak issue #13230)
+alias oc-orphans='oc-cleanup'
+alias oc-kill='oc-cleanup kill'
+alias oc-watch='oc-cleanup watch'
+alias oc-guard='oc-cleanup guard'
+alias lsp-watch='lsp-guard'
+alias lsp-kill='lsp-guard kill'
+
 alias drag='dragon-drop -x -T -i -s 48'
 set -gx GTK_THEME Adwaita:dark
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/home/daphen/google-cloud-sdk/path.fish.inc' ]; . '/home/daphen/google-cloud-sdk/path.fish.inc'; end
+fish_add_path ~/google-cloud-sdk/bin

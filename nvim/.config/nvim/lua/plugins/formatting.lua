@@ -12,6 +12,13 @@ return {
 			-- Fallback to package.json for simple projects
 			return utils.find_root_with_markers(path, { "package.json" })
 		end
+
+		-- Check if we're in the Lovable project
+		local function is_lovable_project(path)
+			local root = utils.find_root_with_markers(path, { ".treefmt.toml", ".oxfmtrc.json" })
+			return root ~= nil
+		end
+
 		local prettier_configs = {
 			".prettierrc",
 			".prettierrc.json",
@@ -22,30 +29,64 @@ return {
 
 		conform.setup({
 			formatters_by_ft = {
-				javascript = { "prettier" },
-				typescript = { "prettier" },
-				javascriptreact = { "prettier" },
-				typescriptreact = { "prettier" },
+				-- Use lovable_format for these filetypes if in Lovable project, otherwise prettier
+				javascript = { "lovable_format", "prettier" },
+				typescript = { "lovable_format", "prettier" },
+				javascriptreact = { "lovable_format", "prettier" },
+				typescriptreact = { "lovable_format", "prettier" },
+				css = { "lovable_format", "prettier" },
+				html = { "lovable_format", "prettier" },
+				less = { "lovable_format", "prettier" },
+				scss = { "lovable_format", "prettier" },
+				markdown = { "lovable_format", "prettier" },
+				json = { "lovable_format", "prettier" },
+				yaml = { "lovable_format", "prettier" },
+				-- Prettier-only for these
 				svelte = { "prettier" },
 				vue = { "prettier" },
-				css = { "prettier" },
-				html = { "prettier" },
-				less = { "prettier" },
-				scss = { "prettier" },
-				markdown = { "prettier" },
-				json = { "prettier" },
-				yaml = { "prettier" },
 				svg = { "prettier" },
+				-- Other formatters
 				lua = { "stylua" },
 				python = { "black" },
 			},
 			formatters = {
+				-- Lovable project formatter (uses treefmt + oxfmt)
+				lovable_format = {
+					condition = function()
+						local current_path = utils.current_path()
+						return is_lovable_project(current_path)
+					end,
+					command = function()
+						local current_path = utils.current_path()
+						local root = utils.find_root_with_markers(current_path, { ".treefmt.toml" })
+						if root then
+							local sep = package.config:sub(1, 1)
+							local format_bin = root .. sep .. "bin" .. sep .. "format"
+							if vim.fn.executable(format_bin) == 1 then
+								return format_bin
+							end
+						end
+						return "format" -- Fallback to PATH
+					end,
+					args = { "$FILENAME" },
+					stdin = false,
+					cwd = function()
+						local current_path = utils.current_path()
+						return utils.find_root_with_markers(current_path, { ".treefmt.toml" }) or vim.fn.getcwd()
+					end,
+				},
 				black = {
 					cwd = require("conform.util").root_file({ "pyproject.toml" }),
 				},
 				prettier = {
 					condition = function()
 						local current_path = utils.current_path()
+						
+						-- Don't use prettier in Lovable project (lovable_format handles it)
+						if is_lovable_project(current_path) then
+							return false
+						end
+						
 						local root_path = find_project_root(current_path)
 
 						-- Check global prettier first

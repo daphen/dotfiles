@@ -453,7 +453,10 @@ binds {
     Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack '/usr/bin/slack --disable-gpu-compositing --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime --enable-features=WebRTCPipeWireCapturer --enable-features=WaylandWindowDecorations --disable-features=WaylandFractionalScaleV1'"; }
     Super+a { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'title:spotify_player' 'kitty --class spotify_player /usr/bin/spotify_player'"; }
     Super+t { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'Microsoft Teams' 'teams-for-linux --enable-features=WebRTCPipeWireCapturer --ozone-platform=wayland'"; }
-    Super+q { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec org.qutebrowser.qutebrowser qutebrowser"; }
+    Super+q { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec qutebrowser-personal 'qutebrowser --desktop-file-name qutebrowser-personal'"; }
+    Super+Shift+q { spawn "qutebrowser" "--desktop-file-name" "qutebrowser-personal"; }
+    Super+w { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec qutebrowser-work 'qutebrowser --basedir /home/daphen/.config/qutebrowser-work --config-py /home/daphen/.config/qutebrowser/config.py --desktop-file-name qutebrowser-work'"; }
+    Super+Shift+w { spawn-sh "qutebrowser --basedir /home/daphen/.config/qutebrowser-work --config-py /home/daphen/.config/qutebrowser/config.py --desktop-file-name qutebrowser-work"; }
 
     // Notes - tiled window like spotify/claude
     Super+n { spawn "/home/daphen/.config/niri/scripts/spawn-notes"; }
@@ -518,8 +521,8 @@ binds {
     // Toggle overview mode with Super+Tab
     Super+Tab { toggle-overview; }
 
-    // Close focused window with Super+Shift+w
-    Super+Shift+w { close-window; }
+    // Close focused window with Super+Ctrl+w
+    Super+Ctrl+w { close-window; }
 
     // Screenshot keybinds
     Print { screenshot; }                    // Interactive screenshot UI (select area)

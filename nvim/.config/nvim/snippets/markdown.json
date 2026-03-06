@@ -1,0 +1,75 @@
+{
+  "Checklist Item Unchecked": {
+    "prefix": "check",
+    "body": ["- [ ] ${1:item}"],
+    "description": "Unchecked checklist item"
+  },
+  "Checklist Item Checked": {
+    "prefix": "checkx",
+    "body": ["- [x] ${1:item}"],
+    "description": "Checked checklist item"
+  },
+  "Checklist Multiple": {
+    "prefix": "checklist",
+    "body": [
+      "- [ ] ${1:First item}",
+      "- [ ] ${2:Second item}",
+      "- [ ] ${3:Third item}"
+    ],
+    "description": "Multiple checklist items"
+  },
+  "Heading 1": {
+    "prefix": "h1",
+    "body": ["# ${1:Heading}"],
+    "description": "Heading level 1"
+  },
+  "Heading 2": {
+    "prefix": "h2",
+    "body": ["## ${1:Heading}"],
+    "description": "Heading level 2"
+  },
+  "Heading 3": {
+    "prefix": "h3",
+    "body": ["### ${1:Heading}"],
+    "description": "Heading level 3"
+  },
+  "Code Block": {
+    "prefix": "code",
+    "body": ["```${1:language}", "${2:code}", "```"],
+    "description": "Fenced code block"
+  },
+  "Link": {
+    "prefix": "link",
+    "body": ["[${1:text}](${2:url})"],
+    "description": "Markdown link"
+  },
+  "Bold": {
+    "prefix": "bold",
+    "body": ["**${1:text}**"],
+    "description": "Bold text"
+  },
+  "Italic": {
+    "prefix": "italic",
+    "body": ["*${1:text}*"],
+    "description": "Italic text"
+  },
+  "Unordered List": {
+    "prefix": "ul",
+    "body": ["- ${1:item}"],
+    "description": "Unordered list item"
+  },
+  "Ordered List": {
+    "prefix": "ol",
+    "body": ["1. ${1:item}"],
+    "description": "Ordered list item"
+  },
+  "Table": {
+    "prefix": "table",
+    "body": [
+      "| ${1:Header 1} | ${2:Header 2} | ${3:Header 3} |",
+      "| ----------- | ----------- | ----------- |",
+      "| ${4:Cell 1} | ${5:Cell 2} | ${6:Cell 3} |"
+    ],
+    "description": "Markdown table"
+  }
+}

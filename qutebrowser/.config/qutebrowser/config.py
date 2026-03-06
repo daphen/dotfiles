@@ -17,7 +17,6 @@ c.tabs.indicator.padding = {'top': 4, 'bottom': 4, 'left': 2, 'right': 6}
 
 # Tell sites we prefer dark mode (let them handle it natively)
 c.colors.webpage.darkmode.enabled = False
-c.colors.webpage.preferred_color_scheme = 'auto'
 
 # Ctrl+j/k to navigate completion lists
 config.bind('<Ctrl-j>', 'completion-item-focus next', mode='command')
@@ -64,6 +63,21 @@ c.scrolling.smooth = True
 config.bind('<Ctrl-d>', 'cmd-repeat 20 scroll down')
 config.bind('<Ctrl-u>', 'cmd-repeat 20 scroll up')
 
+# Open devtools in a separate window
+config.bind('<Ctrl-Shift-i>', 'devtools window')
+
+# Quick tab switching with number keys
+config.bind('1', 'tab-focus 1')
+config.bind('2', 'tab-focus 2')
+config.bind('3', 'tab-focus 3')
+config.bind('4', 'tab-focus 4')
+config.bind('5', 'tab-focus 5')
+config.bind('6', 'tab-focus 6')
+config.bind('7', 'tab-focus 7')
+config.bind('8', 'tab-focus 8')
+config.bind('9', 'tab-focus 9')
+config.bind('0', 'tab-focus -1')  # Jump to last tab
+
 # Native Wayland rendering to fix pixelated/blurry text with fractional scaling.
 # Without this, qutebrowser runs via XWayland which upscales the surface causing
 # pixelation on 1.5x scaled displays. This forces Qt and the Chromium engine to
@@ -77,3 +91,9 @@ c.qt.environ = {
 
 # Prevent videos from auto-playing in background tabs
 c.content.autoplay = False
+
+# Always allow Gmail to handle mailto links (prevents repeated prompts)
+config.set('content.register_protocol_handler', True, '*://mail.google.com/*')
+
+# Always allow Google Calendar to handle webcal links
+config.set('content.register_protocol_handler', True, '*://calendar.google.com/*')

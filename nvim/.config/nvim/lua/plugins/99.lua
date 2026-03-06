@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-global
 return {
     "ThePrimeagen/99",
     config = function()

@@ -1,0 +1,12 @@
+[Unit]
+Description=OpenCode orphan process guard
+After=default.target
+
+[Service]
+ExecStart=%h/.local/bin/oc-cleanup guard 1024 60
+Restart=on-failure
+RestartSec=10
+Environment=TERM=dumb
+
+[Install]
+WantedBy=default.target

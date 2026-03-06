@@ -33,7 +33,7 @@ return {
 					"ts_ls",
 					"eslint",
 					"html",
-					"cssls",
+					-- "cssls",  -- Disabled: Tailwind v4 uses unknown at-rules
 					"tailwindcss",
 					"lua_ls",
 					"emmet_ls",
@@ -41,7 +41,7 @@ return {
 					"graphql",
 					"pylsp",
 				},
-				automatic_installation = true,
+				automatic_installation = false,  -- Disabled to prevent cssls auto-install
 				handlers = {
 					-- Default handler for servers without custom config
 					function(server_name)
@@ -61,20 +61,42 @@ return {
 							capabilities = capabilities,
 							handlers = {
 								["textDocument/publishDiagnostics"] = function(_, result, ctx, config)
-									-- Process diagnostics
-									for _, diagnostic in ipairs(result.diagnostics) do
-										-- Filter ESLint diagnostics from ts_ls to prevent duplicates
-										if diagnostic.source == "eslint" then
-											diagnostic = nil
-										-- Ensure TypeScript warnings show as warnings, not hints
-										elseif diagnostic.code == 6133 then
-											-- "declared but never read" should be a warning
-											diagnostic.severity = vim.lsp.protocol.DiagnosticSeverity.Warning
+									-- DEBUG: Log all diagnostics to understand the format
+									if result.diagnostics then
+										for i, diagnostic in ipairs(result.diagnostics) do
+											local msg_preview = diagnostic.message and diagnostic.message:sub(1, 60) or "no message"
+											if msg_preview:match("serializable") or msg_preview:match("onSendChatMessage") then
+												print(string.format("DIAG[%d]: code=%s (type=%s), source=%s, msg=%s", 
+													i, 
+													vim.inspect(diagnostic.code), 
+													type(diagnostic.code),
+													diagnostic.source or "nil",
+													msg_preview))
+											end
 										end
+										
+										-- Filter diagnostics
+										result.diagnostics = vim.tbl_filter(function(diagnostic)
+											local code = diagnostic.code
+											
+											-- Convert string codes to numbers if needed
+											if type(code) == "string" then
+												code = tonumber(code)
+											end
+											
+											-- Filter ESLint diagnostics from ts_ls to prevent duplicates
+											if diagnostic.source == "eslint" then
+												return false
+											end
+											
+											-- Filter all Next.js-specific warnings (71XXX codes) during TanStack Start migration
+											if type(code) == "number" and code >= 71000 and code < 72000 then
+												return false
+											end
+											
+											return true
+										end, result.diagnostics)
 									end
-
-									-- Filter out nil diagnostics
-									result.diagnostics = vim.tbl_filter(function(d) return d ~= nil end, result.diagnostics)
 
 									vim.lsp.handlers["textDocument/publishDiagnostics"](_, result, ctx, config)
 								end,
@@ -96,14 +118,23 @@ return {
 							},
 						})
 					end,
-					["cssls"] = function()
-						lspconfig.cssls.setup({
-							capabilities = capabilities,
-							settings = {
-								css = { lint = { unknownAtRules = "ignore" } },
-							},
-						})
-					end,
+				-- cssls disabled - Tailwind v4 uses unknown at-rules that cause warnings
+				-- ["cssls"] = function()
+				-- 	lspconfig.cssls.setup({
+				-- 		capabilities = capabilities,
+				-- 		settings = {
+				-- 			css = {
+				-- 				validate = false,
+				-- 			},
+				-- 			scss = {
+				-- 				validate = false,
+				-- 			},
+				-- 			less = {
+				-- 				validate = false,
+				-- 			},
+				-- 		},
+				-- 	})
+				-- end,
 					["tailwindcss"] = function()
 						lspconfig.tailwindcss.setup({
 							capabilities = capabilities,
@@ -164,6 +195,53 @@ return {
 			{ "antosha417/nvim-lsp-file-operations", config = true },
 		},
 		config = function()
+			-- Configure LSP floating window borders globally
+			local border = "rounded"
+			
+			-- Override the default open_floating_preview function to always use borders
+			local orig_util_open_floating_preview = vim.lsp.util.open_floating_preview
+			function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
+				opts = opts or {}
+				opts.border = opts.border or border
+				return orig_util_open_floating_preview(contents, syntax, opts, ...)
+			end
+			
+			-- Also set handlers explicitly
+			vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, {
+				border = border,
+			})
+			vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, {
+				border = border,
+			})
+			
+			-- Filter out CSS unknownAtRules and Next.js diagnostics globally
+			local orig_handler = vim.lsp.handlers["textDocument/publishDiagnostics"]
+			vim.lsp.handlers["textDocument/publishDiagnostics"] = function(err, result, ctx, config)
+				if result and result.diagnostics then
+					result.diagnostics = vim.tbl_filter(function(d)
+						local code = d.code
+						
+						-- Convert string codes to numbers if needed
+						if type(code) == "string" then
+							code = tonumber(code)
+						end
+						
+						-- Filter out Tailwind CSS at-rules warnings
+						if d.code == "unknownAtRules" and d.source == "css" then
+							return false
+						end
+						
+						-- Filter all Next.js-specific warnings (71XXX codes) during TanStack Start migration
+						if type(code) == "number" and code >= 71000 and code < 72000 then
+							return false
+						end
+						
+						return true
+					end, result.diagnostics)
+				end
+				orig_handler(err, result, ctx, config)
+			end
+
 			-- Configure diagnostics globally
 			vim.diagnostic.config({
 				virtual_text = {

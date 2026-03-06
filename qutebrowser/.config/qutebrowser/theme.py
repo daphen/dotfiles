@@ -99,5 +99,3 @@ c.colors.tabs.selected.odd.fg = '#EDEDED'
 c.colors.tabs.selected.odd.bg = '#292826'
 c.colors.tabs.selected.even.fg = '#EDEDED'
 c.colors.tabs.selected.even.bg = '#292826'
-
-c.colors.webpage.bg = '#181818'

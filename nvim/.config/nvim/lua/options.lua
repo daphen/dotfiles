@@ -31,11 +31,11 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	desc = "Highlight when yanking and sync to primary selection",
 	group = vim.api.nvim_create_augroup("kickstart-highlight-yank", { clear = true }),
 	callback = function()
-		vim.highlight.on_yank()
+		vim.highlight.on_yank({ timeout = 150 })
 		-- Also copy to primary selection for middle-click paste
 		if vim.v.event.operator == "y" then
 			local content = vim.fn.getreg('"')
-			vim.fn.system("wl-copy --primary", content)
+			vim.fn.jobstart({ "wl-copy", "--primary", content }, { detach = true })
 		end
 	end,
 })

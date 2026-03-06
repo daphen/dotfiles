@@ -13,21 +13,12 @@ return {
 
 		require("noice").setup({
 			presets = {
-				lsp_doc_border = true,
 				command_palette = true,
 				long_message_to_split = true,
 			},
-			views = {
-				hover = {
-					border = {
-						style = "rounded",
-					},
-				},
-			},
 			lsp = {
-				override = {
-					["vim.lsp.buf.code_action"] = true,
-				},
+				-- Disable all LSP overrides to use native Neovim borders
+				override = {},
 			},
 			routes = {
 				{

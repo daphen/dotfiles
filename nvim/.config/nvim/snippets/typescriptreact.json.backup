@@ -1,0 +1,362 @@
+{
+  "useState Hook": {
+    "prefix": "us",
+    "body": ["const [${1:state}, set${1/(.*)/\\u$1/}] = useState$2(${3:''});"],
+    "description": "useState hook"
+  },
+  "useState with Array": {
+    "prefix": "usa",
+    "body": [
+      "const [${1:items}, set${1/(.*)/\\u$1/}] = useState<${2:string}[]>([]);"
+    ],
+    "description": "useState with typed array"
+  },
+  "useEffect Hook": {
+    "prefix": "ue",
+    "body": [
+      "useEffect(() => {",
+      "  ${1:// effect code}",
+      "  ",
+      "  return () => {",
+      "    ${2:// cleanup}",
+      "  };",
+      "}, [${3:}]);"
+    ],
+    "description": "useEffect with cleanup"
+  },
+  "useEffect Simple": {
+    "prefix": "ues",
+    "body": ["useEffect(() => {", "  ${1:// effect code}", "}, [${2:}]);"],
+    "description": "useEffect without cleanup"
+  },
+  "useLayoutEffect": {
+    "prefix": "ule",
+    "body": [
+      "useLayoutEffect(() => {",
+      "  ${1:// DOM mutation/measurement}",
+      "}, [${2:}]);"
+    ],
+    "description": "useLayoutEffect (runs before paint - for DOM mutations)"
+  },
+  "useRef Hook": {
+    "prefix": "ur",
+    "body": ["const ${1:ref} = useRef<HTML${2:Div}Element>(null);"],
+    "description": "useRef hook"
+  },
+  "Form with Action (React 19)": {
+    "prefix": "formaction",
+    "body": [
+      "const handle${1:Submit} = (formData: FormData) => {",
+      "  const ${2:value} = formData.get('${3:name}') as string;",
+      "  ${4:// form logic}",
+      "};",
+      "",
+      "<form action={handle${1:Submit}}>",
+      "  <input name=\"${3:name}\" placeholder=\"${5:}\" />",
+      "  <button type=\"submit\">${6:Submit}</button>",
+      "</form>"
+    ],
+    "description": "React 19 form with action prop and FormData (uncontrolled)"
+  },
+  "Form with FormData (React 19)": {
+    "prefix": "formdata",
+    "body": [
+      "const handle${1:Submit} = (formData: FormData) => {",
+      "  const ${2:value} = formData.get('${3:name}');",
+      "  ${4:// use value}",
+      "};",
+      "",
+      "<form action={handle${1:Submit}}>",
+      "  <input name=\"${3:name}\" />",
+      "  <button type=\"submit\">${5:Submit}</button>",
+      "</form>"
+    ],
+    "description": "React 19 form with FormData"
+  },
+  "useActionState Hook (React 19)": {
+    "prefix": "uac",
+    "body": [
+      "const [state, ${1:action}, isPending] = useActionState(",
+      "  async (prevState, formData: FormData) => {",
+      "    const ${2:value} = formData.get('${3:fieldName}') as string;",
+      "    ",
+      "    ${4:// Process and return new state}",
+      "    return ${5:prevState};",
+      "  },",
+      "  ${6:{\\}}",
+      ");"
+    ],
+    "description": "useActionState hook with form data extraction"
+  },
+  "useActionState with Types (React 19)": {
+    "prefix": "uacf",
+    "body": [
+      "type ${1:State} = {",
+      "  ${2:data}: ${3:string}[];",
+      "};",
+      "",
+      "const [state, ${4:action}, isPending] = useActionState(",
+      "  async (prevState: ${1:State}, formData: FormData): Promise<${1:State}> => {",
+      "    const ${5:value} = formData.get('${6:fieldName}') as string;",
+      "    ",
+      "    ${7:// Process and return new state}",
+      "    return prevState;",
+      "  },",
+      "  { ${2:data}: [] }",
+      ");"
+    ],
+    "description": "useActionState with TypeScript types"
+  },
+  "useOptimistic Hook (React 19)": {
+    "prefix": "uop",
+    "body": [
+      "const [${1:optimistic}${2:State}, ${3:add}${2}/(.)(.*)/${1:/upcase}$2/}}] = useOptimistic(",
+      "  ${2:state},",
+      "  (currentState, ${4:optimisticValue}) => {",
+      "    return [...currentState, ${4:optimisticValue}];",
+      "  }",
+      ");"
+    ],
+    "description": "useOptimistic for optimistic updates (React 19)"
+  },
+  "use Hook (React 19)": {
+    "prefix": "useH",
+    "body": ["const ${1:data} = use(${2:promise});"],
+    "description": "use() hook for reading promises (React 19)"
+  },
+  "Add to Array": {
+    "prefix": "addarr",
+    "body": [
+      "set${1}/(.)(.*)/${1:/upcase}$2/}}(prev => [...prev, ${2:newItem}]);"
+    ],
+    "description": "Add item to state array with updater function"
+  },
+  "Add to Array (Direct)": {
+    "prefix": "addarrd",
+    "body": ["set${1}/(.)(.*)/${1:/upcase}$2/}}([...${1:items}, ${2:newItem}]);"],
+    "description": "Add item to state array (direct - use cautiously)"
+  },
+  "Map Array": {
+    "prefix": "map",
+    "body": [
+      "{${1:items}.map((${2:item}) => (",
+      "  <${3:div} key={${2:item}.id}>",
+      "    {${2:item}${4:.name}}",
+      "  </${3:div}>",
+      "))}"
+    ],
+    "description": "Map array to JSX with proper key"
+  },
+  "Map Array with Index": {
+    "prefix": "mapi",
+    "body": [
+      "{${1:items}.map((${2:item}, ${3:index}) => (",
+      "  <${4:div} key={${3:index}}>",
+      "    {${2:item}}",
+      "  </${4:div}>",
+      "))}"
+    ],
+    "description": "Map array to JSX with index key"
+  },
+  "onChange Handler": {
+    "prefix": "onch",
+    "body": [
+      "onChange={(e) => set${1}/(.)(.*)/${1:/upcase}$2/}}(e.target.value)}"
+    ],
+    "description": "onChange handler for input"
+  },
+  "onClick Handler": {
+    "prefix": "oncl",
+    "body": ["onClick={() => ${1:handleClick}()}"],
+    "description": "onClick handler"
+  },
+  "Controlled Input": {
+    "prefix": "input",
+    "body": [
+      "<input",
+      "  type=\"${1:text}\"",
+      "  name=\"${2:name}\"",
+      "  value={${3:value}}",
+      "  onChange={(e) => set${3}/(.)(.*)/${1:/upcase}$2/}}(e.target.value)}",
+      "  placeholder=\"${4:}\"",
+      "/>"
+    ],
+    "description": "Controlled input with name attribute"
+  },
+  "Ref Div": {
+    "prefix": "refdiv",
+    "body": ["<div ref={${1:ref}}>${2:}</div>"],
+    "description": "Div with ref (React 19 - no forwardRef needed)"
+  },
+  "Functional Component": {
+    "prefix": "fc",
+    "body": [
+      "export default function ${1:Component}() {",
+      "  return (",
+      "    <div>",
+      "      ${2:}",
+      "    </div>",
+      "  );",
+      "}"
+    ],
+    "description": "Functional component"
+  },
+  "Functional Component with Props": {
+    "prefix": "fcp",
+    "body": [
+      "type ${1:Component}Props = {",
+      "  ${2:children: React.ReactNode;}",
+      "};",
+      "",
+      "export default function ${1:Component}({ ${3:children} }: ${1:Component}Props) {",
+      "  return (",
+      "    <div>",
+      "      {${3:children}}",
+      "    </div>",
+      "  );",
+      "}"
+    ],
+    "description": "Functional component with typed props"
+  },
+  "Client Component": {
+    "prefix": "client",
+    "body": ["'use client';", "", "${1:}"],
+    "description": "Client component directive (React 19)"
+  },
+  "React Component File": {
+    "prefix": "rfc",
+    "body": [
+      "'use client';",
+      "",
+      "import { useState } from 'react';",
+      "",
+      "export default function ${1:Component}() {",
+      "  ${2:}",
+      "  ",
+      "  return (",
+      "    <div>",
+      "      ${3:}",
+      "    </div>",
+      "  );",
+      "}"
+    ],
+    "description": "Full React component file with 'use client'"
+  },
+  "React Component File with Hooks": {
+    "prefix": "rfch",
+    "body": [
+      "'use client';",
+      "",
+      "import { useState, useLayoutEffect, useRef } from 'react';",
+      "",
+      "export default function ${1:Component}() {",
+      "  const [${2:state}, set${2}/(.)(.*)/${1:/upcase}$2/}}] = useState(${3:''});",
+      "  ",
+      "  ${4:}",
+      "  ",
+      "  return (",
+      "    <div>",
+      "      ${5:}",
+      "    </div>",
+      "  );",
+      "}"
+    ],
+    "description": "Full React component file with common hooks"
+  },
+  "Next.js Page Component": {
+    "prefix": "npage",
+    "body": [
+      "'use client';",
+      "",
+      "import Link from 'next/link';",
+      "",
+      "export default function ${1:Page}() {",
+      "  return (",
+      "    <div className=\"min-h-screen p-8\">",
+      "      <Link href=\"/\" className=\"mb-4 inline-block text-orange hover:underline\">",
+      "        ← Back",
+      "      </Link>",
+      "      ",
+      "      <h1 className=\"mb-4 text-2xl\">${2:Title}</h1>",
+      "      ",
+      "      ${3:}",
+      "    </div>",
+      "  );",
+      "}"
+    ],
+    "description": "Next.js page component with navigation"
+  },
+
+  "Conditional Rendering": {
+    "prefix": "cond",
+    "body": ["{${1:condition} && <${2:div}>${3:}</${2:div}>}"],
+    "description": "Conditional rendering with &&"
+  },
+  "Ternary Rendering": {
+    "prefix": "tern",
+    "body": [
+      "{${1:condition} ? <${2:div}>${3:true}</${2:div}> : <${4:div}>${5:false}</${4:div}>}"
+    ],
+    "description": "Ternary conditional rendering"
+  },
+  "className with Conditional": {
+    "prefix": "cn",
+    "body": [
+      "className={`${1:base-class} \\${${2:condition} ? '${3:active}' : '${4:inactive}'}`}"
+    ],
+    "description": "className with conditional logic"
+  },
+  "Event Handler Function": {
+    "prefix": "handler",
+    "body": [
+      "const handle${1:Click} = () => {",
+      "  ${2:// handler logic}",
+      "};"
+    ],
+    "description": "Event handler function"
+  },
+  "Async Event Handler": {
+    "prefix": "async",
+    "body": [
+      "const handle${1:Submit} = async () => {",
+      "  try {",
+      "    ${2:// async logic}",
+      "  } catch (error) {",
+      "    console.error(error);",
+      "  }",
+      "};"
+    ],
+    "description": "Async event handler with error handling"
+  },
+  "Async Form Handler (React 19)": {
+    "prefix": "asyncform",
+    "body": [
+      "const formRef = useRef<HTMLFormElement>(null);",
+      "const [isLoading, setIsLoading] = useState(false);",
+      "",
+      "const handle${1:Submit} = async (formData: FormData) => {",
+      "  const ${2:value} = formData.get('${3:name}') as string;",
+      "  if (!${2:value}?.trim()) return;",
+      "  ",
+      "  setIsLoading(true);",
+      "  ",
+      "  try {",
+      "    ${4:// async operation}",
+      "    formRef.current?.reset();",
+      "  } catch (error) {",
+      "    console.error(error);",
+      "  } finally {",
+      "    setIsLoading(false);",
+      "  }",
+      "};",
+      "",
+      "<form ref={formRef} action={handle${1:Submit}}>",
+      "  <input name=\"${3:name}\" disabled={isLoading} />",
+      "  <button type=\"submit\" disabled={isLoading}>",
+      "    {isLoading ? 'Loading...' : '${5:Submit}'}",
+      "  </button>",
+      "</form>"
+    ],
+    "description": "Async form handler with loading state and form reset"
+  }
+}

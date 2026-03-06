@@ -1,0 +1,12 @@
+[Unit]
+Description=LSP process memory guard - kills runaway tsserver/LSP processes
+After=default.target
+
+[Service]
+ExecStart=%h/.local/bin/lsp-guard guard 2048 120
+Restart=on-failure
+RestartSec=10
+Environment=TERM=dumb
+
+[Install]
+WantedBy=default.target

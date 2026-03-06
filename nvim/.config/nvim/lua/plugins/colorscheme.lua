@@ -50,25 +50,32 @@ return {
 			vim.api.nvim_create_autocmd("ColorScheme", {
 				pattern = "custom-theme-*",
 				callback = function()
-					-- Transparent backgrounds (preserve fg colors)
-					local normal = vim.api.nvim_get_hl(0, { name = "Normal" })
-					local normal_float = vim.api.nvim_get_hl(0, { name = "NormalFloat" })
-					local status_line = vim.api.nvim_get_hl(0, { name = "StatusLine" })
-					local status_line_nc = vim.api.nvim_get_hl(0, { name = "StatusLineNC" })
+				-- Transparent backgrounds (preserve fg colors)
+				local normal = vim.api.nvim_get_hl(0, { name = "Normal" })
+				local normal_float = vim.api.nvim_get_hl(0, { name = "NormalFloat" })
+				local status_line = vim.api.nvim_get_hl(0, { name = "StatusLine" })
+				local status_line_nc = vim.api.nvim_get_hl(0, { name = "StatusLineNC" })
+				local float_border = vim.api.nvim_get_hl(0, { name = "FloatBorder" })
+				local win_separator = vim.api.nvim_get_hl(0, { name = "WinSeparator" })
 
-					vim.api.nvim_set_hl(0, "Normal", { fg = normal.fg, bg = "none" })
-					vim.api.nvim_set_hl(0, "NormalFloat", { fg = normal_float.fg, bg = "none" })
-					vim.api.nvim_set_hl(0, "StatusLine", { fg = status_line.fg, bg = "none" })
-					vim.api.nvim_set_hl(0, "StatusLineNC", { fg = status_line_nc.fg, bg = "none" })
+				vim.api.nvim_set_hl(0, "Normal", { fg = normal.fg, bg = "none" })
+				vim.api.nvim_set_hl(0, "NormalFloat", { fg = normal_float.fg, bg = "none" })
+				vim.api.nvim_set_hl(0, "StatusLine", { fg = status_line.fg, bg = "none" })
+				vim.api.nvim_set_hl(0, "StatusLineNC", { fg = status_line_nc.fg, bg = "none" })
 
-					-- Neo-tree transparent backgrounds
-					vim.api.nvim_set_hl(0, "NeoTreeNormal", { bg = "none" })
-					vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { bg = "none" })
-					vim.api.nvim_set_hl(0, "NeoTreeEndOfBuffer", { bg = "none" })
+				-- Neo-tree transparent backgrounds
+				vim.api.nvim_set_hl(0, "NeoTreeNormal", { bg = "none" })
+				vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { bg = "none" })
+				vim.api.nvim_set_hl(0, "NeoTreeEndOfBuffer", { bg = "none" })
 
-					-- Float/border transparent backgrounds
-					vim.api.nvim_set_hl(0, "FloatBorder", { bg = "none" })
-					vim.api.nvim_set_hl(0, "WinSeparator", { bg = "none" })
+				-- Float/border transparent backgrounds (PRESERVE fg colors!)
+				vim.api.nvim_set_hl(0, "FloatBorder", { fg = float_border.fg, bg = "none" })
+				vim.api.nvim_set_hl(0, "WinSeparator", { fg = win_separator.fg, bg = "none" })
+				
+				-- Noice-specific borders (link to FloatBorder to inherit colors)
+				vim.api.nvim_set_hl(0, "NoiceCmdlinePopupBorder", { link = "FloatBorder" })
+				vim.api.nvim_set_hl(0, "NoiceConfirmBorder", { link = "FloatBorder" })
+				vim.api.nvim_set_hl(0, "NoicePopupmenuBorder", { link = "FloatBorder" })
 				end,
 			})
 		end,

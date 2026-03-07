@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Spawn a new terminal with zoxide interactive directory picker
 
 # Spawn kitty with an interactive zoxide picker

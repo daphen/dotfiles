@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test script for Claude Code AI Tracker Hook
 
 echo "Testing Claude Code AI Tracker Hook..."

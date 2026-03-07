@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Screenshot selection to clipboard with timestamp
 
 # Create temporary directory for screenshots

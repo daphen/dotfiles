@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Start Kanata with the configuration
 # Runs in background with sudo (requires sudoers configuration)

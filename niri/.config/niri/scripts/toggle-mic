@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Toggle microphone mute and sync the keyboard LED
 
 # Toggle mute via wpctl

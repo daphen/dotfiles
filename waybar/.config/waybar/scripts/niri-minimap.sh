@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Get focused window and all windows info
 focused=$(niri msg focused-window 2>/dev/null)

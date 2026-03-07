@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Theme Manager - Centralized theme management for dotfiles
 # https://github.com/daphen/theme-generator

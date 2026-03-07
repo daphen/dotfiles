@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Get list of audio output devices (sinks)
 sinks=$(pactl list sinks short | awk '{print $2}')

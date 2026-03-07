@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Hook to handle image pasting from Wayland clipboard for Claude Code
 # This script extracts images from wl-clipboard and saves them to a temp file
 # that Claude Code can then read and encode properly

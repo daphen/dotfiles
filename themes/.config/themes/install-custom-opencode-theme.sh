@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Install custom OpenCode theme with solid colors (no Rose Pine references)
 

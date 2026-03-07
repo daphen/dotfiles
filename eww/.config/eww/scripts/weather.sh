@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Async weather fetcher with caching
 CACHE_FILE="/tmp/eww-weather-cache"
 

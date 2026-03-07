@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Spawn a new terminal at the same directory as the focused window and run yazi
 
 # Debug log file

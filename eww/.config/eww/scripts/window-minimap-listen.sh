@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 get_minimap() {
     focused=$(niri msg focused-window 2>/dev/null)

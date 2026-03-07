@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Force kill the currently focused window
 
 # Get the focused window info

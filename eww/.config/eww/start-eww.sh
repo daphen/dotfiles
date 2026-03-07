@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Kill any existing eww daemon instances
 pkill -9 -x eww 2>/dev/null
 rm -f /run/user/$(id -u)/eww-server_* 2>/dev/null

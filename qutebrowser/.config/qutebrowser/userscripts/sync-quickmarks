@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Sync links from synced app to qutebrowser bookmarks (additive only)
 
 # Load database URL from synced .env

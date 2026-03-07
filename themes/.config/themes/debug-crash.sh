@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Debug script to capture information before/during/after theme switch crashes
 DEBUG_DIR="$HOME/.config/themes/debug-$(date +%Y%m%d_%H%M%S)"

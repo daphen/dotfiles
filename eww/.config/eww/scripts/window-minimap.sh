@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Get target output from argument (e.g., "DP-1", "eDP-1", or "external" for auto-detect)
 target_output="${1:-}"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Jump to a window if it exists, otherwise launch the app
 # Jumps to most recently active window, then cycles through others
 # Usage: niri-jump-or-exec <app-id-or-title-pattern> <command>

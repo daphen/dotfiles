@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Live Test for AI Tracker Hook
 # This simulates what Claude Code does when you make changes
 

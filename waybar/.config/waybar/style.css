@@ -12,7 +12,7 @@ window#waybar {
 
 /* Left side modules */
 .modules-left {
-  background: alpha(#F9F2DF, 0.85);
+  background: alpha(#1B1B1B, 0.85);
   border-radius: 8px;
   margin: 4px 8px 4px 20px;
   padding: 0px 8px;
@@ -23,17 +23,17 @@ window#waybar {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: #2D4A3D;
+  color: #EDEDED;
   border-radius: 0;
 }
 
 .modules-left #custom-weather {
-  color: #4A7C59;
+  color: #8A9AA6;
 }
 
 /* Center module */
 .modules-center {
-  background: alpha(#F9F2DF, 0.85);
+  background: alpha(#1B1B1B, 0.85);
   border-radius: 8px;
   margin: 4px 8px;
   padding: 0px 8px;
@@ -43,7 +43,7 @@ window#waybar {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: #2D4A3D;
+  color: #EDEDED;
   border-radius: 0;
   font-size: 16px;
 }
@@ -67,7 +67,7 @@ window#waybar {
 
 /* Right side container - all items grouped */
 .modules-right {
-  background: alpha(#F9F2DF, 0.85);
+  background: alpha(#1B1B1B, 0.85);
   border-radius: 8px;
   margin: 4px 20px 4px 8px;
   padding: 0px 8px;
@@ -80,48 +80,48 @@ window#waybar {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: #2D4A3D;
+  color: #EDEDED;
   border-radius: 0;
 }
 
 #battery.warning {
-  color: #69756C;
+  color: #ff8a31;
 }
 
 #battery.critical {
-  color: #ED333B;
+  color: #FF7B72;
 }
 
 #battery.charging {
-  color: #5E7270;
+  color: #97B5A6;
 }
 
 #clock {
-  color: #286983;
+  color: #CCD5E4;
 }
 
 #network {
-  color: #5E7270;
+  color: #97B5A6;
 }
 
 #network.disconnected {
-  color: #ED333B;
+  color: #FF7B72;
 }
 
 #pulseaudio {
-  color: #286983;
+  color: #CCD5E4;
 }
 
 #pulseaudio.muted {
-  color: #4A7C59;
+  color: #8A9AA6;
 }
 
 tooltip {
-  background: alpha(#F9F2DF, 0.95);
-  border: 1px solid alpha(#4A7C59, 0.2);
+  background: alpha(#1B1B1B, 0.95);
+  border: 1px solid alpha(#8A9AA6, 0.2);
   border-radius: 8px;
 }
 
 tooltip label {
-  color: #2D4A3D;
+  color: #EDEDED;
 }

@@ -234,7 +234,7 @@ apply_tool_theme() {
         "opencode")
             if [[ -d "$HOME/.config/opencode" ]] || command -v opencode &> /dev/null; then
                 mkdir -p "$HOME/.config/opencode"
-                cp "$generated_file" "$HOME/.config/opencode/theme.json"
+                cp -f "$generated_file" "$HOME/.config/opencode/theme.json" 2>/dev/null || true
                 log_success "Applied opencode theme"
             fi
             ;;

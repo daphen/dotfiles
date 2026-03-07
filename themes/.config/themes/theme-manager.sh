@@ -3,7 +3,7 @@
 # Theme Manager - Centralized theme management for dotfiles
 # https://github.com/daphen/theme-generator
 
-set -e
+# Don't use set -e: individual tool apply failures shouldn't abort the whole script
 
 # Determine the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

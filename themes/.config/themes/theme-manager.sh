@@ -93,7 +93,7 @@ generate_tool_theme() {
     # Create output directory and generate theme
     mkdir -p "$output_dir"
     local output_file="$output_dir/${theme_mode}.theme"
-    python3 "$THEMES_DIR/theme-processor.py" "$template_file" "$COLORS_FILE" "$theme_mode" "$output_file"
+    python3 "$THEMES_DIR/theme-processor.py" "$template_file" "$COLORS_FILE" "$theme_mode" "$output_file" "$tool"
     
     log_success "Generated $tool theme: $output_file"
 }

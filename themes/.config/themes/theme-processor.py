@@ -43,8 +43,11 @@ def get_nested_color(colors, path, max_depth=5, theme_context=None):
     
     return value
 
-def process_template(template_file, colors_file, theme_mode, output_file):
+def process_template(template_file, colors_file, theme_mode, output_file, tool_name=None):
     """Process template file and replace color variables."""
+    
+    # Fish expects bare hex colors without '#' prefix (it treats '#' as a comment)
+    strip_hash = tool_name in ('fish', 'tide')
     
     # Check if this is the nvim template which needs both themes
     is_nvim_template = 'nvim' in os.path.basename(template_file)
@@ -73,6 +76,8 @@ def process_template(template_file, colors_file, theme_mode, output_file):
         
         color_value = get_nested_color(colors, var, 5, theme_context)
         if color_value:
+            if strip_hash and isinstance(color_value, str) and color_value.startswith('#'):
+                color_value = color_value[1:]
             content = content.replace(f'{{{{{var}}}}}', color_value)
         else:
             print(f"Warning: Color not found for path '{var}'", file=sys.stderr)
@@ -85,14 +90,15 @@ def process_template(template_file, colors_file, theme_mode, output_file):
     print(f"Generated: {output_file}")
 
 def main():
-    if len(sys.argv) != 5:
-        print("Usage: theme-processor.py <template_file> <colors_file> <theme_mode> <output_file>")
+    if len(sys.argv) < 5:
+        print("Usage: theme-processor.py <template_file> <colors_file> <theme_mode> <output_file> [tool_name]")
         sys.exit(1)
     
     template_file, colors_file, theme_mode, output_file = sys.argv[1:5]
+    tool_name = sys.argv[5] if len(sys.argv) > 5 else None
     
     try:
-        process_template(template_file, colors_file, theme_mode, output_file)
+        process_template(template_file, colors_file, theme_mode, output_file, tool_name)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

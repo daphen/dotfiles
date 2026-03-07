@@ -1,5 +1,5 @@
 <svg width="28" height="22" xmlns="http://www.w3.org/2000/svg">
   <!-- Bottom-left corner: fills left 16px and bottom 10px, with concave curve (14px radius) in top-right -->
-  <path d="M 28,12 A 14,14 0 0 1 16,0 L 0,0 L 0,22 L 28,22 Z" fill="#181818"/>
-  <path d="M 28,12 A 14,14 0 0 1 16,0" fill="none" stroke="#292826" stroke-width="1"/>
+  <path d="M 28,12 A 14,14 0 0 1 16,0 L 0,0 L 0,22 L 28,22 Z" fill="#FDF6E3"/>
+  <path d="M 28,12 A 14,14 0 0 1 16,0" fill="none" stroke="#EBE4D6" stroke-width="1"/>
 </svg>

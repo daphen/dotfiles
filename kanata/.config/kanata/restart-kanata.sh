@@ -7,7 +7,7 @@ echo "🔄 Restarting Kanata..."
 
 # Kill any existing Kanata instances
 echo "🛑 Stopping existing Kanata processes..."
-sudo /usr/bin/pkill kanata 2>/dev/null || true
+sudo pkill kanata 2>/dev/null || true
 
 # Wait a moment for processes to fully stop
 sleep 1

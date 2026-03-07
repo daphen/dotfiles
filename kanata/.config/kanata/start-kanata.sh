@@ -11,7 +11,7 @@ echo "📝 Config: $CONFIG_FILE"
 echo "📋 Logs: $LOG_FILE"
 
 # Run Kanata in background with sudo (use full paths for sudoers compatibility)
-sudo /usr/bin/nohup /usr/bin/kanata --cfg "$CONFIG_FILE" > "$LOG_FILE" 2>&1 &
+sudo nohup kanata --cfg "$CONFIG_FILE" > "$LOG_FILE" 2>&1 &
 KANATA_PID=$!
 
 # Wait a moment and check if it started

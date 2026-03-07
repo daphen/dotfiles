@@ -450,8 +450,8 @@ binds {
     Super+Shift+f { spawn "zen-browser"; }
     Super+d { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec kitty kitty"; }
     Super+Shift+d { spawn-sh "SHOW_FASTFETCH=1 kitty"; }
-    Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack '/usr/bin/slack --disable-gpu-compositing --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime --enable-features=WebRTCPipeWireCapturer --enable-features=WaylandWindowDecorations --disable-features=WaylandFractionalScaleV1'"; }
-    Super+a { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'title:spotify_player' 'kitty --class spotify_player /usr/bin/spotify_player'"; }
+    Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack 'slack --disable-gpu-compositing --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime --enable-features=WebRTCPipeWireCapturer --enable-features=WaylandWindowDecorations --disable-features=WaylandFractionalScaleV1'"; }
+    Super+a { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'title:spotify_player' 'kitty --class spotify_player spotify_player'"; }
     Super+t { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'Microsoft Teams' 'teams-for-linux --enable-features=WebRTCPipeWireCapturer --ozone-platform=wayland'"; }
     Super+q { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec qutebrowser-personal 'qutebrowser --desktop-file-name qutebrowser-personal'"; }
     Super+Shift+q { spawn "qutebrowser" "--desktop-file-name" "qutebrowser-personal"; }

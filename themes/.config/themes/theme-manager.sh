@@ -130,17 +130,7 @@ apply_tool_theme() {
     local theme_mode=$2
     local generated_file="$GENERATED_DIR/${tool}/${theme_mode}.theme"
 
-    # Some tools don't need a generated file (they update config directly)
-    local no_generated_file_needed=("rofi")
-    local needs_file=true
-    for skip_tool in "${no_generated_file_needed[@]}"; do
-        if [[ "$tool" == "$skip_tool" ]]; then
-            needs_file=false
-            break
-        fi
-    done
-
-    if [[ "$needs_file" == true && ! -f "$generated_file" ]]; then
+    if [[ ! -f "$generated_file" ]]; then
         log_error "Generated theme file not found: $generated_file"
         return 1
     fi
@@ -225,9 +215,9 @@ apply_tool_theme() {
             fi
             ;;
         "rofi")
-            local rofi_config="$HOME/.config/rofi/config.rasi"
-            if [[ -f "$rofi_config" ]]; then
-                sed -i "s/@import \".*\.rasi\"/@import \"${theme_mode}.rasi\"/" "$rofi_config"
+            if [[ -d "$HOME/.config/rofi" ]] || command -v rofi &> /dev/null; then
+                mkdir -p "$HOME/.config/rofi"
+                cp "$generated_file" "$HOME/.config/rofi/theme.rasi"
                 log_success "Applied Rofi ${theme_mode} theme"
             fi
             ;;
@@ -322,9 +312,6 @@ apply_all() {
             apply_tool_theme "$tool" "$theme_mode"
         fi
     done
-
-    # Apply tools that don't need generated files (config modification only)
-    apply_tool_theme "rofi" "$theme_mode"
 
     log_success "All themes applied for $theme_mode mode"
 }

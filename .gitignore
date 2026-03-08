@@ -8,12 +8,22 @@ fish/.config/fish/conf.d/fish_debug.log
 # Tmux plugins (managed by TPM)
 tmux/.config/tmux/plugins/
 
-# Themes
+# Themes - generated output directory
 themes/.config/themes/generated/
 themes/.config/themes/*.log
 themes/.config/themes/.current-theme
 themes/.config/themes/theme-viewer/
 themes/.config/themes/node_modules/
+
+# Theme-manager generated output files (recreated by: theme-manager.sh switch dark)
+kitty/.config/kitty/theme.conf
+waybar/.config/waybar/style.css
+mako/.config/mako/config
+qutebrowser/.config/qutebrowser/theme.py
+qutebrowser/.config/qutebrowser/userstyles.css
+wezterm/.config/wezterm/colors/
+eww/.config/eww/eww.scss
+eww/.config/eww/assets/
 
 # Temporary files
 *.swp

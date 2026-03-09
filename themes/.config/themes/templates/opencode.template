@@ -1,226 +1,205 @@
 {
   "$schema": "https://opencode.ai/theme.json",
-  "defs": {
-    "base": "{{background.primary}}",
-    "surface": "{{background.secondary}}",
-    "overlay": "{{background.overlay}}",
-    "muted": "{{foreground.muted}}",
-    "subtle": "{{foreground.subtle}}",
-    "text": "{{foreground.primary}}",
-    "red": "{{accent.red}}",
-    "orange": "{{accent.orange}}",
-    "pink": "{{accent.pink}}",
-    "green": "{{accent.green}}",
-    "cyan": "{{accent.cyan}}",
-    "purple": "{{accent.purple}}",
-    "highlightLow": "{{background.secondary}}",
-    "highlightMed": "{{background.selection}}",
-    "highlightHigh": "{{background.overlay}}",
-    "diffAddedBg": "{{background.surface}}",
-    "diffRemovedBg": "{{background.surface}}",
-    "diffAddedLineNumberBg": "{{background.surface}}",
-    "diffRemovedLineNumberBg": "{{background.surface}}"
-  },
   "theme": {
     "primary": {
-      "dark": "cyan",
-      "light": "green"
+      "dark": "{{accent.orange}}",
+      "light": "{{accent.green}}"
     },
     "secondary": {
-      "dark": "purple",
-      "light": "purple"
+      "dark": "{{accent.purple}}",
+      "light": "{{accent.purple}}"
     },
     "accent": {
-      "dark": "pink",
-      "light": "cyan"
+      "dark": "{{accent.orange}}",
+      "light": "{{accent.cyan}}"
     },
     "error": {
-      "dark": "red",
-      "light": "red"
+      "dark": "{{accent.red}}",
+      "light": "{{accent.red}}"
     },
     "warning": {
-      "dark": "orange",
-      "light": "orange"
+      "dark": "{{accent.orange}}",
+      "light": "{{accent.orange}}"
     },
     "success": {
-      "dark": "cyan",
-      "light": "cyan"
+      "dark": "{{accent.cyan}}",
+      "light": "{{accent.cyan}}"
     },
     "info": {
-      "dark": "green",
-      "light": "green"
+      "dark": "{{accent.green}}",
+      "light": "{{accent.green}}"
     },
     "text": {
-      "dark": "text",
-      "light": "text"
+      "dark": "{{foreground.primary}}",
+      "light": "{{foreground.primary}}"
     },
     "textMuted": {
-      "dark": "muted",
-      "light": "muted"
+      "dark": "{{foreground.muted}}",
+      "light": "{{foreground.muted}}"
     },
     "background": {
-      "dark": "base",
-      "light": "base"
+      "dark": "{{background.primary}}",
+      "light": "{{background.primary}}"
     },
     "backgroundPanel": {
-      "dark": "surface",
-      "light": "surface"
+      "dark": "{{background.secondary}}",
+      "light": "{{background.secondary}}"
     },
     "backgroundElement": {
-      "dark": "overlay",
-      "light": "overlay"
+      "dark": "{{background.secondary}}",
+      "light": "{{background.secondary}}"
     },
     "border": {
-      "dark": "highlightMed",
-      "light": "highlightMed"
+      "dark": "{{accent.orange}}",
+      "light": "{{accent.orange}}"
     },
     "borderActive": {
-      "dark": "highlightHigh",
-      "light": "highlightHigh"
+      "dark": "{{accent.orange}}",
+      "light": "{{accent.orange}}"
     },
     "borderSubtle": {
-      "dark": "highlightLow",
-      "light": "highlightLow"
+      "dark": "{{accent.orange}}",
+      "light": "{{accent.orange}}"
     },
     "diffAdded": {
-      "dark": "cyan",
-      "light": "cyan"
+      "dark": "{{accent.cyan}}",
+      "light": "{{accent.cyan}}"
     },
     "diffRemoved": {
-      "dark": "red",
-      "light": "red"
+      "dark": "{{accent.red}}",
+      "light": "{{accent.red}}"
     },
     "diffContext": {
-      "dark": "muted",
-      "light": "muted"
+      "dark": "{{foreground.muted}}",
+      "light": "{{foreground.muted}}"
     },
     "diffHunkHeader": {
-      "dark": "subtle",
-      "light": "subtle"
+      "dark": "{{foreground.subtle}}",
+      "light": "{{foreground.subtle}}"
     },
     "diffHighlightAdded": {
-      "dark": "cyan",
-      "light": "cyan"
+      "dark": "{{accent.cyan}}",
+      "light": "{{accent.cyan}}"
     },
     "diffHighlightRemoved": {
-      "dark": "red",
-      "light": "red"
+      "dark": "{{accent.red}}",
+      "light": "{{accent.red}}"
     },
     "diffAddedBg": {
-      "dark": "diffAddedBg",
-      "light": "diffAddedBg"
+      "dark": "#2A3C29",
+      "light": "#E8F5E8"
     },
     "diffRemovedBg": {
-      "dark": "diffRemovedBg",
-      "light": "diffRemovedBg"
+      "dark": "#3D2326",
+      "light": "#FDEDEF"
     },
     "diffContextBg": {
-      "dark": "surface",
-      "light": "surface"
+      "dark": "{{background.secondary}}",
+      "light": "{{background.secondary}}"
     },
     "diffLineNumber": {
-      "dark": "muted",
-      "light": "muted"
+      "dark": "{{foreground.muted}}",
+      "light": "{{foreground.muted}}"
     },
     "diffAddedLineNumberBg": {
-      "dark": "diffAddedLineNumberBg",
-      "light": "diffAddedLineNumberBg"
+      "dark": "#2A3C29",
+      "light": "#E8F5E8"
     },
     "diffRemovedLineNumberBg": {
-      "dark": "diffRemovedLineNumberBg",
-      "light": "diffRemovedLineNumberBg"
+      "dark": "#3D2326",
+      "light": "#FDEDEF"
     },
     "markdownText": {
-      "dark": "text",
-      "light": "text"
+      "dark": "{{foreground.primary}}",
+      "light": "{{foreground.primary}}"
     },
     "markdownHeading": {
-      "dark": "purple",
-      "light": "purple"
+      "dark": "{{accent.purple}}",
+      "light": "{{accent.purple}}"
     },
     "markdownLink": {
-      "dark": "cyan",
-      "light": "cyan"
+      "dark": "{{accent.cyan}}",
+      "light": "{{accent.cyan}}"
     },
     "markdownLinkText": {
-      "dark": "green",
-      "light": "green"
+      "dark": "{{accent.green}}",
+      "light": "{{accent.green}}"
     },
     "markdownCode": {
-      "dark": "pink",
-      "light": "pink"
+      "dark": "{{accent.pink}}",
+      "light": "{{accent.pink}}"
     },
     "markdownBlockQuote": {
-      "dark": "muted",
-      "light": "muted"
+      "dark": "{{foreground.muted}}",
+      "light": "{{foreground.muted}}"
     },
     "markdownEmph": {
-      "dark": "orange",
-      "light": "orange"
+      "dark": "{{accent.orange}}",
+      "light": "{{accent.orange}}"
     },
     "markdownStrong": {
-      "dark": "red",
-      "light": "red"
+      "dark": "{{accent.red}}",
+      "light": "{{accent.red}}"
     },
     "markdownHorizontalRule": {
-      "dark": "highlightMed",
-      "light": "highlightMed"
+      "dark": "#3a3a3a",
+      "light": "#D8D1C3"
     },
     "markdownListItem": {
-      "dark": "green",
-      "light": "green"
+      "dark": "{{accent.green}}",
+      "light": "{{accent.green}}"
     },
     "markdownListEnumeration": {
-      "dark": "cyan",
-      "light": "cyan"
+      "dark": "{{accent.cyan}}",
+      "light": "{{accent.cyan}}"
     },
     "markdownImage": {
-      "dark": "purple",
-      "light": "purple"
+      "dark": "{{accent.purple}}",
+      "light": "{{accent.purple}}"
     },
     "markdownImageText": {
-      "dark": "cyan",
-      "light": "cyan"
+      "dark": "{{accent.cyan}}",
+      "light": "{{accent.cyan}}"
     },
     "markdownCodeBlock": {
-      "dark": "text",
-      "light": "text"
+      "dark": "{{foreground.primary}}",
+      "light": "{{foreground.primary}}"
     },
     "syntaxComment": {
-      "dark": "muted",
-      "light": "muted"
+      "dark": "{{foreground.muted}}",
+      "light": "{{foreground.muted}}"
     },
     "syntaxKeyword": {
-      "dark": "green",
-      "light": "green"
+      "dark": "{{accent.green}}",
+      "light": "{{accent.green}}"
     },
     "syntaxFunction": {
-      "dark": "cyan",
-      "light": "cyan"
+      "dark": "{{accent.cyan}}",
+      "light": "{{accent.cyan}}"
     },
     "syntaxVariable": {
-      "dark": "text",
-      "light": "text"
+      "dark": "{{foreground.primary}}",
+      "light": "{{foreground.primary}}"
     },
     "syntaxString": {
-      "dark": "orange",
-      "light": "orange"
+      "dark": "{{accent.orange}}",
+      "light": "{{accent.orange}}"
     },
     "syntaxNumber": {
-      "dark": "purple",
-      "light": "purple"
+      "dark": "{{accent.purple}}",
+      "light": "{{accent.purple}}"
     },
     "syntaxType": {
-      "dark": "pink",
-      "light": "pink"
+      "dark": "{{accent.pink}}",
+      "light": "{{accent.pink}}"
     },
     "syntaxOperator": {
-      "dark": "subtle",
-      "light": "subtle"
+      "dark": "{{foreground.subtle}}",
+      "light": "{{foreground.subtle}}"
     },
     "syntaxPunctuation": {
-      "dark": "subtle",
-      "light": "subtle"
+      "dark": "{{foreground.subtle}}",
+      "light": "{{foreground.subtle}}"
     }
   }
 }

@@ -133,6 +133,30 @@ generate_all() {
     log_success "All themes generated for $theme_mode mode"
 }
 
+# Helper: Determine target location for a tool
+# Returns 0 and sets $target_dir and $is_managed if found, 1 otherwise
+get_tool_target() {
+    local tool=$1
+    local dotfiles_path="$DOTFILES_DIR/${tool}/.config/${tool}"
+    local local_path="$HOME/.config/${tool}"
+    
+    # Check if ~/.config/${tool} is a symlink (managed by home-manager/stow)
+    # If so, write to dotfiles source. Otherwise write to ~/.config directly.
+    if [[ -L "$local_path" ]] && [[ -d "$dotfiles_path" ]]; then
+        # App is managed: ~/.config is symlinked and dotfiles exists
+        target_dir="$dotfiles_path"
+        is_managed=true
+        return 0
+    elif [[ -d "$local_path" ]]; then
+        # App exists locally but not managed
+        target_dir="$local_path"
+        is_managed=false
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Apply theme for a specific tool
 apply_tool_theme() {
     local tool=$1
@@ -146,37 +170,39 @@ apply_tool_theme() {
 
     case "$tool" in
         "nvim")
-            if [[ -d "$HOME/.config/nvim" ]]; then
-                mkdir -p "$HOME/.config/nvim/colors"
-                cp "$generated_file" "$HOME/.config/nvim/colors/custom-theme-${theme_mode}.lua"
-                log_success "Applied Neovim ${theme_mode} theme"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir/colors"
+                cp "$generated_file" "$target_dir/colors/custom-theme-${theme_mode}.lua"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                log_success "Applied Neovim ${theme_mode} theme ($label)"
             fi
             ;;
         "mako")
-            if command -v mako &> /dev/null || [[ -d "$HOME/.config/mako" ]]; then
-                # Write to dotfiles source so the home-manager symlink picks it up
-                local dotfiles_mako="$DOTFILES_DIR/mako/.config/mako"
-                mkdir -p "$dotfiles_mako"
-                cp "$generated_file" "$dotfiles_mako/config"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir"
+                cp "$generated_file" "$target_dir/config"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
                 if pgrep -x mako > /dev/null; then
                     makoctl reload
-                    log_success "Applied and reloaded Mako theme"
+                    log_success "Applied and reloaded Mako theme ($label)"
                 else
-                    log_success "Applied Mako theme (not running)"
+                    log_success "Applied Mako theme ($label, not running)"
                 fi
             fi
             ;;
         "waybar")
-            if command -v waybar &> /dev/null || [[ -d "$HOME/.config/waybar" ]]; then
-                # Write to dotfiles source so the symlink picks it up
-                local dotfiles_waybar="$DOTFILES_DIR/waybar/.config/waybar"
-                mkdir -p "$dotfiles_waybar"
-                cp "$generated_file" "$dotfiles_waybar/style.css"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir"
+                cp "$generated_file" "$target_dir/style.css"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
                 if pgrep -x waybar > /dev/null; then
                     killall -SIGUSR2 waybar
-                    log_success "Applied and reloaded Waybar theme"
+                    log_success "Applied and reloaded Waybar theme ($label)"
                 else
-                    log_success "Applied Waybar theme (not running)"
+                    log_success "Applied Waybar theme ($label, not running)"
                 fi
             fi
             ;;
@@ -186,10 +212,12 @@ apply_tool_theme() {
             fi
             ;;
         "ghostty")
-            if [[ -d "$HOME/.config/ghostty" ]] || command -v ghostty &> /dev/null; then
-                mkdir -p "$HOME/.config/ghostty/themes"
-                cp "$generated_file" "$HOME/.config/ghostty/themes/$theme_mode"
-                log_success "Generated and copied Ghostty theme"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir/themes"
+                cp "$generated_file" "$target_dir/themes/$theme_mode"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                log_success "Applied Ghostty theme ($label)"
             fi
             ;;
         "tmux")
@@ -214,62 +242,71 @@ apply_tool_theme() {
             fi
             ;;
         "wezterm")
-            if [[ -d "$HOME/.config/wezterm" ]] || command -v wezterm &> /dev/null; then
-                mkdir -p "$HOME/.config/wezterm/colors"
-                cp "$generated_file" "$HOME/.config/wezterm/colors/${theme_mode}.lua"
-                log_success "Applied Wezterm ${theme_mode} theme"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir/colors"
+                cp "$generated_file" "$target_dir/colors/${theme_mode}.lua"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                log_success "Applied Wezterm ${theme_mode} theme ($label)"
             fi
             ;;
         "spotify-player")
-            if [[ -d "$HOME/.config/spotify-player" ]] || command -v spotify_player &> /dev/null; then
-                mkdir -p "$HOME/.config/spotify-player"
-                cp "$generated_file" "$HOME/.config/spotify-player/theme.toml"
-                log_success "Applied spotify-player theme (restart app to apply)"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir"
+                cp "$generated_file" "$target_dir/theme.toml"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                log_success "Applied spotify-player theme ($label, restart required)"
             fi
             ;;
         "rofi")
-            if [[ -d "$HOME/.config/rofi" ]] || command -v rofi &> /dev/null; then
-                mkdir -p "$HOME/.config/rofi"
-                cp "$generated_file" "$HOME/.config/rofi/theme.rasi"
-                log_success "Applied Rofi ${theme_mode} theme"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir"
+                cp "$generated_file" "$target_dir/theme.rasi"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                log_success "Applied Rofi ${theme_mode} theme ($label)"
             fi
             ;;
         "opencode")
-            if [[ -d "$HOME/.config/opencode" ]] || command -v opencode &> /dev/null; then
-                mkdir -p "$HOME/.config/opencode"
-                cp -f "$generated_file" "$HOME/.config/opencode/theme.json" 2>/dev/null || true
-                log_success "Applied opencode theme"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir/themes"
+                cp -f "$generated_file" "$target_dir/themes/customtheme.json" 2>/dev/null || true
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                log_success "Applied opencode theme ($label)"
             fi
             ;;
         "clipse")
-            if [[ -d "$HOME/.config/clipse" ]] || command -v clipse &> /dev/null; then
-                mkdir -p "$HOME/.config/clipse"
-                cp "$generated_file" "$HOME/.config/clipse/custom_theme.json"
-                log_success "Applied clipse theme"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir"
+                cp "$generated_file" "$target_dir/custom_theme.json"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                log_success "Applied clipse theme ($label)"
             fi
             ;;
         "kitty")
-            if command -v kitty &> /dev/null || [[ -d "$HOME/.config/kitty" ]]; then
-                # Write to dotfiles source so the symlink picks it up
-                local dotfiles_kitty="$DOTFILES_DIR/kitty/.config/kitty"
-                mkdir -p "$dotfiles_kitty"
-                cp "$generated_file" "$dotfiles_kitty/theme.conf"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir"
+                cp "$generated_file" "$target_dir/theme.conf"
                 # Reload all kitty instances
                 if pgrep -x kitty > /dev/null; then
                     for socket in /tmp/kitty-*; do
                         kitty @ --to "unix:$socket" set-colors -a -c "$generated_file" 2>/dev/null || true
                     done
                 fi
-                log_success "Applied kitty theme"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                log_success "Applied kitty theme ($label)"
             fi
             ;;
         "eww")
-            if command -v eww &> /dev/null || [[ -d "$HOME/.config/eww" ]]; then
-                # Write to dotfiles source so the symlink picks it up
-                local dotfiles_eww="$DOTFILES_DIR/eww/.config/eww"
-                mkdir -p "$dotfiles_eww"
-                mkdir -p "$dotfiles_eww/assets"
-                cp "$generated_file" "$dotfiles_eww/eww.scss"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir"
+                mkdir -p "$target_dir/assets"
+                cp "$generated_file" "$target_dir/eww.scss"
                 # Generate SVG corners from templates
                 local bg_color=$(jq -r ".themes.${theme_mode}.background.primary" "$COLORS_FILE")
                 local border_color=$(jq -r ".themes.${theme_mode}.background.overlay" "$COLORS_FILE")
@@ -278,7 +315,7 @@ apply_tool_theme() {
                     for svg_template in "$svg_templates_dir"/*.svg.template; do
                         if [[ -f "$svg_template" ]]; then
                             local svg_name=$(basename "$svg_template" .template)
-                            local output_svg="$dotfiles_eww/assets/$svg_name"
+                            local output_svg="$target_dir/assets/$svg_name"
                             sed -e "s|{{background.primary}}|${bg_color}|g" \
                                 -e "s|{{background.overlay}}|${border_color}|g" \
                                 "$svg_template" > "$output_svg"
@@ -286,31 +323,42 @@ apply_tool_theme() {
                     done
                     log_info "Generated eww SVG assets"
                 fi
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
                 # Reload eww if running
                 if pgrep -x eww > /dev/null; then
                     eww reload
-                    log_success "Applied and reloaded eww theme"
+                    log_success "Applied and reloaded eww theme ($label)"
                 else
-                    log_success "Applied eww theme (not running)"
+                    log_success "Applied eww theme ($label, not running)"
                 fi
             fi
             ;;
         "qutebrowser")
-            if command -v qutebrowser &> /dev/null || [[ -d "$HOME/.config/qutebrowser" ]]; then
-                # Write to dotfiles source so the symlink picks it up
-                local dotfiles_qutebrowser="$DOTFILES_DIR/qutebrowser/.config/qutebrowser"
-                mkdir -p "$dotfiles_qutebrowser"
-                cp "$generated_file" "$dotfiles_qutebrowser/theme.py"
-                log_success "Applied qutebrowser theme (add 'config.source(\"theme.py\")' to config.py)"
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir"
+                cp "$generated_file" "$target_dir/theme.py"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                log_success "Applied qutebrowser theme ($label)"
             fi
             ;;
         "qutebrowser-userstyles")
-            if command -v qutebrowser &> /dev/null || [[ -d "$HOME/.config/qutebrowser" ]]; then
-                # Write to dotfiles source so the symlink picks it up
-                local dotfiles_qutebrowser="$DOTFILES_DIR/qutebrowser/.config/qutebrowser"
-                mkdir -p "$dotfiles_qutebrowser"
-                cp "$generated_file" "$dotfiles_qutebrowser/userstyles.css"
-                log_success "Applied qutebrowser userstyles"
+            # Special case: uses qutebrowser's directory
+            local target_dir is_managed
+            if get_tool_target "qutebrowser"; then
+                mkdir -p "$target_dir"
+                cp "$generated_file" "$target_dir/userstyles.css"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                log_success "Applied qutebrowser userstyles ($label)"
+            fi
+            ;;
+        "swaylock")
+            local target_dir is_managed
+            if get_tool_target "$tool"; then
+                mkdir -p "$target_dir"
+                cp "$generated_file" "$target_dir/config"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                log_success "Applied swaylock theme ($label)"
             fi
             ;;
         *)

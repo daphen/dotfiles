@@ -230,6 +230,96 @@ When you press `Super+Ctrl+T` (or your configured keybind), here's what happens:
 | `~/.config/nvim/lua/plugins/colorscheme.lua` | Neovim file watcher |
 | `~/.config/fish/conf.d/theme_watcher.fish` | Fish prompt theme checker (optional) |
 
+## File Placement Reference
+
+This section documents exactly where generated theme files are placed for each tool. Understanding this is critical for debugging theme issues.
+
+### File Flow: Generated → Applied
+
+Each tool follows this pattern:
+1. **Generated**: `generated/{tool}/{mode}.theme` - Created by theme-processor.py
+2. **Applied**: Tool-specific location - Copied by theme-manager.sh
+
+| Tool | Generated File | Applied Location | Status | Notes |
+|------|----------------|------------------|--------|-------|
+| **Kitty** | `generated/kitty/{mode}.theme` | `~/dotfiles/kitty/.config/kitty/theme.conf` | Managed | Symlinked by home-manager. Live reload. |
+| **Neovim** | `generated/nvim/{mode}.theme` | `~/dotfiles/nvim/.config/nvim/colors/custom-theme-{mode}.lua` | Managed | Symlinked. Both modes exist. |
+| **Waybar** | `generated/waybar/{mode}.theme` | `~/dotfiles/waybar/.config/waybar/style.css` | Managed | Symlinked. Auto-reloads via SIGUSR2. |
+| **Rofi** | `generated/rofi/{mode}.theme` | `~/dotfiles/rofi/.config/rofi/theme.rasi` | Managed | Symlinked. Single file per mode. |
+| **Wezterm** | `generated/wezterm/{mode}.theme` | `~/dotfiles/wezterm/.config/wezterm/colors/{mode}.lua` | Managed | Symlinked. Both modes exist. |
+| **Eww** | `generated/eww/{mode}.theme` | `~/dotfiles/eww/.config/eww/eww.scss` | Managed | Symlinked. Generates SVG assets. |
+| **Qutebrowser** | `generated/qutebrowser/{mode}.theme` | `~/dotfiles/qutebrowser/.config/qutebrowser/theme.py` | Managed | Symlinked. Main theme file. |
+| **Qutebrowser (userstyles)** | `generated/qutebrowser-userstyles/{mode}.theme` | `~/dotfiles/qutebrowser/.config/qutebrowser/userstyles.css` | Managed | Symlinked. Custom CSS. |
+| **Mako** | `generated/mako/{mode}.theme` | `~/.config/mako/config` | Local | Not symlinked. Auto-reloads via `makoctl`. |
+| **opencode** | `generated/opencode/{mode}.theme` | `~/.config/opencode/themes/customtheme.json` | Local | Not symlinked. Single theme file. |
+| **Ghostty** | `generated/ghostty/{mode}.theme` | `~/.config/ghostty/themes/{mode}` | Local | Not in dotfiles. |
+| **Clipse** | `generated/clipse/{mode}.theme` | `~/.config/clipse/custom_theme.json` | Local | Not in dotfiles. |
+| **spotify-player** | `generated/spotify-player/{mode}.theme` | `~/.config/spotify-player/theme.toml` | Local | Not in dotfiles. |
+| **Fish** | `generated/fish/{mode}.theme` | Generated only | N/A | Sourced by shell. |
+| **FZF** | `generated/fzf/{mode}.theme` | Generated only | N/A | Sourced by shell. |
+| **Tide** | `generated/tide/{mode}.theme` | Applied via `fish -c source` | N/A | Prompt colors. |
+
+### Important Notes
+
+#### File Placement Strategy
+
+The theme-manager uses **smart detection** to determine where to write theme files:
+
+**Decision Logic:**
+1. **If app exists in `~/dotfiles/${app}/.config/${app}/`** → Write to dotfiles (labeled "managed")
+2. **Else if app exists in `~/.config/${app}/`** → Write to local config (labeled "local")
+3. **Else** → Skip (app not installed)
+
+**Managed Apps** (symlinked by home-manager):
+- eww, kitty, nvim, qutebrowser, rofi, waybar, wezterm
+- **Detection**: `~/.config/${app}` is a symlink → theme-manager writes to `~/dotfiles/${app}/.config/${app}/`
+- **Flow**: Write to dotfiles → visible instantly in `~/.config/` via symlink
+- **Workflow**: Edit in `~/.config/`, changes go to `~/dotfiles/`, commit & push from `~/dotfiles/`
+
+**Local Apps** (real directories, not symlinked):
+- clipse, ghostty, mako, opencode, spotify-player
+- **Detection**: `~/.config/${app}` is a real directory → theme-manager writes directly to `~/.config/${app}/`
+- **Result**: Files exist only on this machine, not version controlled
+- **Note**: mako and opencode exist in `~/dotfiles/` but aren't deployed by home-manager
+
+**How to Promote Local → Managed:**
+```bash
+# Create dotfiles directory structure
+mkdir -p ~/dotfiles/ghostty/.config/ghostty
+# Add to home-manager configuration
+# Theme-manager will automatically detect and use dotfiles location
+```
+
+#### Other Notes
+
+- **Single vs Dual Files**: Some tools maintain both dark and light theme files (Neovim, Wezterm, Ghostty) while others use a single file that gets overwritten on mode switch (opencode, Rofi, Clipse).
+- **Live Reload**: Tools marked with live reload will automatically pick up changes when their config is updated.
+
+### Debugging Theme Issues
+
+If theme changes aren't applying:
+
+1. **Check generation**: Verify `generated/{tool}/{mode}.theme` exists and has your changes
+   ```bash
+   cat generated/{tool}/dark.theme | grep "your-color-property"
+   ```
+
+2. **Check application**: Verify the applied file location has matching content
+   ```bash
+   # For opencode
+   diff generated/opencode/dark.theme ~/.config/opencode/themes/customtheme.json
+   ```
+
+3. **Check timestamps**: Ensure applied file is newer than or same time as generated
+   ```bash
+   stat -c '%y %n' generated/{tool}/dark.theme ~/.config/{tool}/...
+   ```
+
+4. **Manual apply**: If timestamps don't match, manually copy and test
+   ```bash
+   cp -f generated/{tool}/dark.theme ~/.config/{tool}/...
+   ```
+
 ## Tool-Specific Integration
 
 ### Neovim
@@ -361,6 +451,31 @@ Requires existing `dark.rasi` and `light.rasi` theme files in `~/.config/rofi/`.
 **Applied to**: `~/.config/clipse/custom_theme.json`
 
 Clipse clipboard manager theme is applied automatically. Restart clipse to see changes.
+
+### opencode
+
+**Generated file**: `generated/opencode/{dark,light}.theme`
+
+**Applied to**: `~/.config/opencode/themes/customtheme.json` (single location)
+
+**Configuration**: Set `"theme": "customtheme"` in `~/.config/opencode/opencode.json`
+
+**Important**: 
+- opencode looks for themes in `~/.config/opencode/themes/{theme-name}.json`
+- The theme name in the config must match the filename (without `.json` extension)
+- Only one location is correct - do not place theme files in the root config directory
+- Restart opencode or reload config to see theme changes
+
+**Theme properties**:
+- `primary`, `accent` - Main UI accent colors (used for highlights, active elements)
+- `border`, `borderActive`, `borderSubtle` - Border colors for UI elements
+- `background*` - Various background levels
+- `text`, `textMuted` - Text colors
+- `markdown*` - Markdown rendering colors
+- `syntax*` - Code syntax highlighting
+- `diff*` - Git diff colors
+
+**Note**: Some UI elements may use hardcoded colors or terminal theme colors that don't respond to the opencode theme configuration.
 
 ## Theme Editor Webapp
 

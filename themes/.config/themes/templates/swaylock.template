@@ -1,0 +1,73 @@
+# Swaylock Configuration
+# Generated from centralized theme system
+
+# Use screenshots with blur effect (nice and secure)
+screenshots
+effect-blur=7x5
+effect-vignette=0.5:0.5
+
+# Show clock and date
+clock
+timestr=%H:%M
+datestr=%A, %B %d
+
+# Indicator styling (the circle that appears when typing)
+indicator
+indicator-radius=120
+indicator-thickness=10
+
+# Color scheme - Background overlay (with alpha for transparency)
+color={{background.primary}}dd
+
+# Ring colors (the circle around the indicator)
+ring-color={{accent.cyan}}
+ring-clear-color={{accent.blue}}
+ring-caps-lock-color={{accent.yellow}}
+ring-ver-color={{accent.green}}
+ring-wrong-color={{accent.red}}
+
+# Inside colors (the center of the indicator - with alpha)
+inside-color={{background.secondary}}dd
+inside-clear-color={{background.secondary}}dd
+inside-caps-lock-color={{background.secondary}}dd
+inside-ver-color={{background.secondary}}dd
+inside-wrong-color={{background.secondary}}dd
+
+# Line colors (between ring and inside - transparent)
+line-color=00000000
+line-clear-color=00000000
+line-caps-lock-color=00000000
+line-ver-color=00000000
+line-wrong-color=00000000
+
+# Text colors
+text-color={{foreground.primary}}
+text-clear-color={{foreground.primary}}
+text-caps-lock-color={{accent.yellow}}
+text-ver-color={{accent.green}}
+text-wrong-color={{accent.red}}
+
+# Key highlight colors
+key-hl-color={{accent.green}}
+bs-hl-color={{accent.red}}
+
+# Layout text colors (if showing keyboard layout - with alpha)
+layout-text-color={{foreground.primary}}
+layout-bg-color={{background.overlay}}80
+layout-border-color={{accent.cyan}}80
+
+# Show failed attempts
+show-failed-attempts
+
+# Show keyboard layout
+show-keyboard-layout
+
+# Font
+font=sans-serif
+font-size=24
+
+# Fade in effect (smooth)
+fade-in=0.2
+
+# Disable caps lock text (we show it on the indicator instead)
+indicator-caps-lock

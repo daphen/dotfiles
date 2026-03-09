@@ -30,8 +30,11 @@ sudo pacman -S git stow
 # Clone the repository
 git clone https://github.com/YOUR_USERNAME/dotfiles.git ~/dotfiles
 
-# Deploy all configurations
+# Generate theme files (required for first-time setup)
 cd ~/dotfiles
+./themes/.config/themes/generate-themes.sh
+
+# Deploy all configurations
 stow niri waybar mako fish nvim wezterm yazi kanata themes systemd claude
 
 # Or deploy individual packages
@@ -94,6 +97,7 @@ stow niri  # Just the niri window manager config
 - Centralized theme manager for all tools
 - Dark/light mode switching
 - Theme generation scripts
+- **Important**: After cloning, run `cd ~/dotfiles && ./themes/.config/themes/generate-themes.sh` to generate initial theme files
 
 ### claude
 - Custom hooks for enhanced functionality

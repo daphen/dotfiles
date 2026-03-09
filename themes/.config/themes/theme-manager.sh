@@ -13,6 +13,15 @@ COLORS_FILE="$THEMES_DIR/colors.json"
 TEMPLATES_DIR="$THEMES_DIR/templates"
 GENERATED_DIR="$THEMES_DIR/generated"
 
+# Detect dotfiles directory (for stow-managed configs)
+# Assumes dotfiles is in ~/dotfiles or find it from the themes directory
+if [[ -d "$HOME/dotfiles" ]]; then
+    DOTFILES_DIR="$HOME/dotfiles"
+else
+    # Fallback: derive from SCRIPT_DIR (themes/.config/themes -> dotfiles root)
+    DOTFILES_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -144,9 +153,11 @@ apply_tool_theme() {
             fi
             ;;
         "mako")
-            if [[ -d "$HOME/.config/mako" ]] || command -v mako &> /dev/null; then
-                mkdir -p "$HOME/.config/mako"
-                cp "$generated_file" "$HOME/.config/mako/config"
+            if command -v mako &> /dev/null || [[ -d "$HOME/.config/mako" ]]; then
+                # Write to dotfiles source so the home-manager symlink picks it up
+                local dotfiles_mako="$DOTFILES_DIR/mako/.config/mako"
+                mkdir -p "$dotfiles_mako"
+                cp "$generated_file" "$dotfiles_mako/config"
                 if pgrep -x mako > /dev/null; then
                     makoctl reload
                     log_success "Applied and reloaded Mako theme"
@@ -156,9 +167,11 @@ apply_tool_theme() {
             fi
             ;;
         "waybar")
-            if [[ -d "$HOME/.config/waybar" ]] || command -v waybar &> /dev/null; then
-                mkdir -p "$HOME/.config/waybar"
-                cp "$generated_file" "$HOME/.config/waybar/style.css"
+            if command -v waybar &> /dev/null || [[ -d "$HOME/.config/waybar" ]]; then
+                # Write to dotfiles source so the symlink picks it up
+                local dotfiles_waybar="$DOTFILES_DIR/waybar/.config/waybar"
+                mkdir -p "$dotfiles_waybar"
+                cp "$generated_file" "$dotfiles_waybar/style.css"
                 if pgrep -x waybar > /dev/null; then
                     killall -SIGUSR2 waybar
                     log_success "Applied and reloaded Waybar theme"
@@ -236,9 +249,11 @@ apply_tool_theme() {
             fi
             ;;
         "kitty")
-            if [[ -d "$HOME/.config/kitty" ]] || command -v kitty &> /dev/null; then
-                mkdir -p "$HOME/.config/kitty"
-                cp "$generated_file" "$HOME/.config/kitty/theme.conf"
+            if command -v kitty &> /dev/null || [[ -d "$HOME/.config/kitty" ]]; then
+                # Write to dotfiles source so the symlink picks it up
+                local dotfiles_kitty="$DOTFILES_DIR/kitty/.config/kitty"
+                mkdir -p "$dotfiles_kitty"
+                cp "$generated_file" "$dotfiles_kitty/theme.conf"
                 # Reload all kitty instances
                 if pgrep -x kitty > /dev/null; then
                     for socket in /tmp/kitty-*; do
@@ -249,10 +264,12 @@ apply_tool_theme() {
             fi
             ;;
         "eww")
-            if [[ -d "$HOME/.config/eww" ]] || command -v eww &> /dev/null; then
-                mkdir -p "$HOME/.config/eww"
-                mkdir -p "$HOME/.config/eww/assets"
-                cp "$generated_file" "$HOME/.config/eww/eww.scss"
+            if command -v eww &> /dev/null || [[ -d "$HOME/.config/eww" ]]; then
+                # Write to dotfiles source so the symlink picks it up
+                local dotfiles_eww="$DOTFILES_DIR/eww/.config/eww"
+                mkdir -p "$dotfiles_eww"
+                mkdir -p "$dotfiles_eww/assets"
+                cp "$generated_file" "$dotfiles_eww/eww.scss"
                 # Generate SVG corners from templates
                 local bg_color=$(jq -r ".themes.${theme_mode}.background.primary" "$COLORS_FILE")
                 local border_color=$(jq -r ".themes.${theme_mode}.background.overlay" "$COLORS_FILE")
@@ -261,7 +278,7 @@ apply_tool_theme() {
                     for svg_template in "$svg_templates_dir"/*.svg.template; do
                         if [[ -f "$svg_template" ]]; then
                             local svg_name=$(basename "$svg_template" .template)
-                            local output_svg="$HOME/.config/eww/assets/$svg_name"
+                            local output_svg="$dotfiles_eww/assets/$svg_name"
                             sed -e "s|{{background.primary}}|${bg_color}|g" \
                                 -e "s|{{background.overlay}}|${border_color}|g" \
                                 "$svg_template" > "$output_svg"
@@ -279,16 +296,20 @@ apply_tool_theme() {
             fi
             ;;
         "qutebrowser")
-            if [[ -d "$HOME/.config/qutebrowser" ]] || command -v qutebrowser &> /dev/null; then
-                mkdir -p "$HOME/.config/qutebrowser"
-                cp "$generated_file" "$HOME/.config/qutebrowser/theme.py"
+            if command -v qutebrowser &> /dev/null || [[ -d "$HOME/.config/qutebrowser" ]]; then
+                # Write to dotfiles source so the symlink picks it up
+                local dotfiles_qutebrowser="$DOTFILES_DIR/qutebrowser/.config/qutebrowser"
+                mkdir -p "$dotfiles_qutebrowser"
+                cp "$generated_file" "$dotfiles_qutebrowser/theme.py"
                 log_success "Applied qutebrowser theme (add 'config.source(\"theme.py\")' to config.py)"
             fi
             ;;
         "qutebrowser-userstyles")
-            if [[ -d "$HOME/.config/qutebrowser" ]] || command -v qutebrowser &> /dev/null; then
-                mkdir -p "$HOME/.config/qutebrowser"
-                cp "$generated_file" "$HOME/.config/qutebrowser/userstyles.css"
+            if command -v qutebrowser &> /dev/null || [[ -d "$HOME/.config/qutebrowser" ]]; then
+                # Write to dotfiles source so the symlink picks it up
+                local dotfiles_qutebrowser="$DOTFILES_DIR/qutebrowser/.config/qutebrowser"
+                mkdir -p "$dotfiles_qutebrowser"
+                cp "$generated_file" "$dotfiles_qutebrowser/userstyles.css"
                 log_success "Applied qutebrowser userstyles"
             fi
             ;;

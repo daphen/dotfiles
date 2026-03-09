@@ -9,7 +9,7 @@ return {
 		config = function()
 			-- First set up the basic TreeSitter configuration without the keymaps
 			require("nvim-treesitter.configs").setup({
-				ensure_installed = { "javascript", "typescript", "lua" },
+				ensure_installed = { "javascript", "typescript", "lua", "markdown", "markdown_inline" },
 				incremental_selection = {
 					enable = true,
 					keymaps = {

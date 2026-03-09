@@ -144,8 +144,12 @@ function notes --description "Notes sync and management"
         case edit e
             set -l filename $argv[2]
             if test -z "$filename"
-                set -l selected (find $__notes_storage_dir -name "*.md" -type f 2>/dev/null | sed "s|$__notes_storage_dir/||" | fzf --preview "cat $__notes_storage_dir/{}")
-                if test -n "$selected"
+                # Use fzf with Ctrl-D to delete
+                while true
+                    set -l selected (find $__notes_storage_dir -name "*.md" -type f 2>/dev/null | sed "s|$__notes_storage_dir/||" | fzf --preview "cat $__notes_storage_dir/{}" --bind "ctrl-d:execute(rm $__notes_storage_dir/{} && echo 'Deleted {}')+reload(find $__notes_storage_dir -name '*.md' -type f 2>/dev/null | sed 's|$__notes_storage_dir/||')" --header "Enter: edit | Ctrl-D: delete")
+                    if test -z "$selected"
+                        break
+                    end
                     nvim $__notes_storage_dir/$selected
                     # Auto-sync after editing
                     notes push
@@ -162,6 +166,29 @@ function notes --description "Notes sync and management"
         case ls list
             find $__notes_storage_dir -name "*.md" -type f 2>/dev/null | sed "s|$__notes_storage_dir/||" | sort
 
+        case delete rm
+            set -l filename $argv[2]
+            if test -z "$filename"
+                set -l selected (find $__notes_storage_dir -name "*.md" -type f 2>/dev/null | sed "s|$__notes_storage_dir/||" | fzf --preview "cat $__notes_storage_dir/{}" --header "Select note to delete")
+                if test -n "$selected"
+                    rm $__notes_storage_dir/$selected
+                    echo "✗ Deleted $selected"
+                    notes push
+                end
+            else
+                if not string match -q "*.md" $filename
+                    set filename "$filename.md"
+                end
+                if test -f $__notes_storage_dir/$filename
+                    rm $__notes_storage_dir/$filename
+                    echo "✗ Deleted $filename"
+                    notes push
+                else
+                    echo "Note not found: $filename"
+                    return 1
+                end
+            end
+
         case open
             xdg-open $__notes_api_url
 
@@ -169,13 +196,14 @@ function notes --description "Notes sync and management"
             echo "Usage: notes <command>"
             echo ""
             echo "Commands:"
-            echo "  sync        - Pull then push (full sync)"
-            echo "  push        - Push local notes to server"
-            echo "  pull        - Pull notes from server"
-            echo "  new <name>  - Create new note, open in nvim"
-            echo "  edit [name] - Edit note (fzf if no name)"
-            echo "  ls          - List local notes"
-            echo "  open        - Open web app"
+            echo "  sync          - Pull then push (full sync)"
+            echo "  push          - Push local notes to server"
+            echo "  pull          - Pull notes from server"
+            echo "  new <name>    - Create new note, open in nvim"
+            echo "  edit [name]   - Edit note (fzf if no name, Ctrl-D to delete)"
+            echo "  delete [name] - Delete note (fzf if no name)"
+            echo "  ls            - List local notes"
+            echo "  open          - Open web app"
 
         case '*'
             echo "Unknown command: $argv[1]"

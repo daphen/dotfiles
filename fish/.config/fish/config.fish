@@ -64,6 +64,11 @@ abbr -a lsa ls -la
 abbr -a prd pnpm run dev
 abbr -a nrd npm run dev
 
+# NixOS rebuild aliases (ALWAYS use flake!)
+abbr -a rebuild 'sudo nixos-rebuild switch --flake /home/daphen/nixos#nixos'
+abbr -a nixos-rebuild-test 'sudo nixos-rebuild test --flake /home/daphen/nixos#nixos'
+abbr -a nixos-rebuild-boot 'sudo nixos-rebuild boot --flake /home/daphen/nixos#nixos'
+
 set -g fish_clipboard_copy_cmd wl-copy
 set -g fish_clipboard_paste_cmd wl-paste
 

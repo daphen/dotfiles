@@ -1,6 +1,6 @@
 return {
 	"mfussenegger/nvim-lint",
-	event = { "BufReadPre", "BufNewFile" },
+	event = "VeryLazy",  -- Defer loading to avoid startup lag
 	config = function()
 		local lint = require("lint")
 

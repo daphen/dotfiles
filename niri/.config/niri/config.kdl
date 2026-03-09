@@ -3,6 +3,11 @@
 // Check the wiki for a full description of the configuration:
 // https://yalter.github.io/niri/Configuration:-Introduction
 
+cursor {
+    xcursor-theme "Adwaita"
+    xcursor-size 24
+}
+
 // Input device configuration.
 // Find the full list of options on the wiki:
 // https://yalter.github.io/niri/Configuration:-Input
@@ -76,11 +81,21 @@ input {
 // https://yalter.github.io/niri/Configuration:-Outputs
 // Remember to uncomment the node by removing "/-"!
 
-// Built-in laptop display - positioned on the RIGHT (external monitor is on the left)
+// Built-in laptop display - centered below the Dell P3425WE
+// Dell P3425WE logical width = 3440, laptop logical width = 1920x1200 (2880/1.5)
+// x = (3440 - 1920) / 2 = 760 to center; y = 1440 (Dell's logical height)
 output "eDP-1" {
     mode "2880x1800@120.000"
     scale 1.5
-    position x=3440 y=0
+    position x=760 y=1440
+}
+
+// Dell P3425WE ultrawide - positioned above the laptop
+output "Dell Inc. DELL P3425WE 8Y8PY54" {
+    mode "3440x1440@59.973"
+    scale 1.0
+    position x=0 y=0
+    focus-at-startup
 }
 
 // Office monitor (Dell U2515H) - positioned to the LEFT of laptop
@@ -434,7 +449,7 @@ binds {
     // Suggested binds for running programs: app launcher, screen locker.
     Super+Space hotkey-overlay-title="Run an Application" { spawn "rofi" "-show" "drun"; }
     Super+Ctrl+q hotkey-overlay-title="Force Kill Focused Window" { spawn "/home/daphen/.config/niri/scripts/force-kill-focused"; }
-    Super+Shift+Ctrl+q hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+    Super+Shift+Ctrl+q hotkey-overlay-title="Lock the Screen: swaylock" { spawn "/home/daphen/lock-with-kanata-pause.sh"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.

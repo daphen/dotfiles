@@ -1,22 +1,38 @@
 return {
 	"stevearc/conform.nvim",
-	event = { "BufReadPre", "BufNewFile" },
+	event = "VeryLazy",  -- Defer loading to avoid startup lag in large projects
 	config = function()
 		local conform = require("conform")
 		local utils = require("utils")
 
+		-- Cache expensive lookups to avoid repeated filesystem checks
+		local project_cache = {}
+		
 		local function find_project_root(path)
+			if project_cache[path] then
+				return project_cache[path]
+			end
 			-- Try monorepo/project root markers first
 			local root = utils.find_root_with_markers(path, { ".prettierrc", ".prettierrc.json", "pnpm-workspace.yaml", ".git" })
-			if root then return root end
+			if root then 
+				project_cache[path] = root
+				return root 
+			end
 			-- Fallback to package.json for simple projects
-			return utils.find_root_with_markers(path, { "package.json" })
+			local fallback = utils.find_root_with_markers(path, { "package.json" })
+			project_cache[path] = fallback
+			return fallback
 		end
 
 		-- Check if we're in the Lovable project
+		local lovable_cache = {}
 		local function is_lovable_project(path)
+			if lovable_cache[path] ~= nil then
+				return lovable_cache[path]
+			end
 			local root = utils.find_root_with_markers(path, { ".treefmt.toml", ".oxfmtrc.json" })
-			return root ~= nil
+			lovable_cache[path] = root ~= nil
+			return lovable_cache[path]
 		end
 
 		local prettier_configs = {
@@ -38,7 +54,7 @@ return {
 				html = { "lovable_format", "prettier" },
 				less = { "lovable_format", "prettier" },
 				scss = { "lovable_format", "prettier" },
-				markdown = { "lovable_format", "prettier" },
+				markdown = { "mdformat" },
 				json = { "lovable_format", "prettier" },
 				yaml = { "lovable_format", "prettier" },
 				-- Prettier-only for these
@@ -75,15 +91,26 @@ return {
 						return utils.find_root_with_markers(current_path, { ".treefmt.toml" }) or vim.fn.getcwd()
 					end,
 				},
+				mdformat = {
+					prepend_args = { "--wrap", "80" },
+				},
 				black = {
 					cwd = require("conform.util").root_file({ "pyproject.toml" }),
 				},
 				prettier = {
-					condition = function()
+					-- Cache prettier availability per project to avoid repeated checks
+					_cache = {},
+					condition = function(self)
 						local current_path = utils.current_path()
+						
+						-- Check cache first
+						if self._cache[current_path] ~= nil then
+							return self._cache[current_path]
+						end
 						
 						-- Don't use prettier in Lovable project (lovable_format handles it)
 						if is_lovable_project(current_path) then
+							self._cache[current_path] = false
 							return false
 						end
 						
@@ -91,10 +118,12 @@ return {
 
 						-- Check global prettier first
 						if vim.fn.executable("prettier") == 1 then
+							self._cache[current_path] = true
 							return true
 						end
 
 						if not root_path then
+							self._cache[current_path] = false
 							return false
 						end
 
@@ -125,10 +154,12 @@ return {
 
 						for _, path in ipairs(paths) do
 							if path ~= "" and vim.fn.executable(path) == 1 then
+								self._cache[current_path] = true
 								return true
 							end
 						end
 
+						self._cache[current_path] = false
 						return false
 					end,
 					command = function()

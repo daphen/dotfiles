@@ -3,7 +3,7 @@ return {
 		"williamboman/mason.nvim",
 		build = ":MasonUpdate",
 		cmd = { "Mason", "MasonUpdate", "MasonInstall", "MasonUninstall" },
-		event = "VeryLazy", -- Load after startup to avoid session restoration conflicts
+		lazy = true,  -- Only load on command to avoid startup overhead
 		opts = {
 			ui = {
 				icons = {
@@ -22,7 +22,7 @@ return {
 	{
 		"williamboman/mason-lspconfig.nvim",
 		dependencies = { "williamboman/mason.nvim" },
-		event = "VeryLazy",
+		lazy = true,  -- LSP config will trigger loading when needed
 		config = function()
 			local lspconfig = require("lspconfig")
 			local cmp_nvim_lsp = require("cmp_nvim_lsp")
@@ -61,21 +61,8 @@ return {
 							capabilities = capabilities,
 							handlers = {
 								["textDocument/publishDiagnostics"] = function(_, result, ctx, config)
-									-- DEBUG: Log all diagnostics to understand the format
+									-- Filter diagnostics
 									if result.diagnostics then
-										for i, diagnostic in ipairs(result.diagnostics) do
-											local msg_preview = diagnostic.message and diagnostic.message:sub(1, 60) or "no message"
-											if msg_preview:match("serializable") or msg_preview:match("onSendChatMessage") then
-												print(string.format("DIAG[%d]: code=%s (type=%s), source=%s, msg=%s", 
-													i, 
-													vim.inspect(diagnostic.code), 
-													type(diagnostic.code),
-													diagnostic.source or "nil",
-													msg_preview))
-											end
-										end
-										
-										-- Filter diagnostics
 										result.diagnostics = vim.tbl_filter(function(diagnostic)
 											local code = diagnostic.code
 											
@@ -189,7 +176,7 @@ return {
 	},
 	{
 		"neovim/nvim-lspconfig",
-		event = { "BufReadPre", "BufNewFile" },
+		event = "VeryLazy",  -- Load after session restoration to avoid LSP flood
 		dependencies = {
 			"hrsh7th/cmp-nvim-lsp",
 			{ "antosha417/nvim-lsp-file-operations", config = true },
@@ -272,9 +259,16 @@ return {
 				end
 			end, {})
 
-			-- Disable concealing which can cause URL highlighting issues
-			vim.opt.conceallevel = 0
-			vim.opt.concealcursor = ""
+			-- Disable concealing which can cause URL highlighting issues (except for markdown)
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = "*",
+				callback = function()
+					if vim.bo.filetype ~= "markdown" then
+						vim.opt_local.conceallevel = 0
+						vim.opt_local.concealcursor = ""
+					end
+				end,
+			})
 
 			-- KEYMAPS
 			vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Show description" })

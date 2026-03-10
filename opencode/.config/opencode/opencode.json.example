@@ -11,6 +11,10 @@
       "type": "remote",
       "url": "https://mcp.linear.app/mcp"
     },
+    "posthog": {
+      "type": "remote",
+      "url": "https://mcp.posthog.com/mcp"
+    },
     "motion": {
       "type": "local",
       "command": [

@@ -36,6 +36,7 @@ eww/.config/eww/assets/
 *.key
 *.pem
 secrets/
+opencode/.config/opencode/opencode.json
 
 # Claude Code runtime files
 claude/.claude/.credentials.json
@@ -47,4 +48,3 @@ claude/.claude/shell-snapshots/
 claude/.claude/statsig/
 claude/.claude/todos/
 claude/.claude/projects/
-claude/.claude/plans/

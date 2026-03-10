@@ -1,0 +1,26 @@
+{
+  "theme": "customtheme",
+  "$schema": "https://opencode.ai/config.json",
+  "keybinds": {
+    "messages_half_page_up": "ctrl+u",
+    "messages_half_page_down": "ctrl+d",
+    "input_clear": "ctrl+l"
+  },
+  "mcp": {
+    "linear": {
+      "type": "remote",
+      "url": "https://mcp.linear.app/mcp"
+    },
+    "motion": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "https://api.motion.dev/registry.tgz?package=motion-studio-mcp&version=latest"
+      ],
+      "environment": {
+        "TOKEN": "YOUR_MOTION_TOKEN_HERE"
+      }
+    }
+  }
+}

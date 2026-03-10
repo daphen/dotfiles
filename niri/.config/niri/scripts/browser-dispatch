@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Routes URLs to the last-focused qutebrowser profile (personal or work).
+# Uses niri-focus-tracker state to determine which instance was most recently active.
+# Falls back to personal if neither has been focused or no instances are running.
+
+URL="$1"
+TRACKER_DIR="/tmp/niri-focus-tracker"
+
+PERSONAL_STATE="$TRACKER_DIR/app-qutebrowser-personal"
+WORK_STATE="$TRACKER_DIR/app-qutebrowser-work"
+
+WORK_BASEDIR="$HOME/.config/qutebrowser-work"
+WORK_CONFIG="$HOME/.config/qutebrowser/config.py"
+
+# Determine which profile was last focused by comparing file modification times
+pick_profile() {
+    local personal_exists=false
+    local work_exists=false
+
+    [[ -f "$PERSONAL_STATE" ]] && personal_exists=true
+    [[ -f "$WORK_STATE" ]] && work_exists=true
+
+    if $personal_exists && $work_exists; then
+        # Both exist — compare modification times (focus tracker updates mtime on focus)
+        if [[ "$PERSONAL_STATE" -nt "$WORK_STATE" ]]; then
+            echo "personal"
+        else
+            echo "work"
+        fi
+    elif $work_exists; then
+        echo "work"
+    else
+        # Default to personal (also covers case where neither exists)
+        echo "personal"
+    fi
+}
+
+PROFILE=$(pick_profile)
+
+if [[ "$PROFILE" == "work" ]]; then
+    # Open in work profile — use --target tab to reuse existing window
+    exec qutebrowser --target tab \
+        --basedir "$WORK_BASEDIR" \
+        --config-py "$WORK_CONFIG" \
+        --desktop-file-name qutebrowser-work \
+        "$URL"
+else
+    # Open in personal profile
+    exec qutebrowser --target tab \
+        --desktop-file-name qutebrowser-personal \
+        "$URL"
+fi

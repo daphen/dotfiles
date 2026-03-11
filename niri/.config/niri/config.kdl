@@ -45,6 +45,7 @@ input {
         // accel-profile "flat"
         // scroll-method "two-finger"
         // disabled-on-external-mouse
+        // click-method "clickfinger"
     }
 
     mouse {
@@ -417,6 +418,13 @@ window-rule {
     open-floating true
 }
 
+// Lovable devenv terminal - same sizing as kitty, excluded from Super+d
+window-rule {
+    match app-id="lovable_devenv"
+    default-column-width { proportion 0.5; }
+    default-window-height { proportion 1.0; }
+}
+
 // Notes window - tiled like other apps
 window-rule {
     match app-id="notes-scratchpad"
@@ -427,8 +435,8 @@ window-rule {
 window-rule {
     match app-id="clipse"
     open-floating true
-    default-column-width { fixed 800; }
-    default-window-height { fixed 600; }
+    default-column-width { fixed 1000; }
+    default-window-height { fixed 750; }
 }
 
 binds {
@@ -449,7 +457,7 @@ binds {
     // Suggested binds for running programs: app launcher, screen locker.
     Super+Space hotkey-overlay-title="Run an Application" { spawn "rofi" "-show" "drun"; }
     Super+Ctrl+q hotkey-overlay-title="Force Kill Focused Window" { spawn "/home/daphen/.config/niri/scripts/force-kill-focused"; }
-    Super+Shift+Ctrl+q hotkey-overlay-title="Lock the Screen: swaylock" { spawn "/home/daphen/lock-with-kanata-pause.sh"; }
+    Super+Shift+Ctrl+q hotkey-overlay-title="Lock the Screen" { spawn "swaylock"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
@@ -472,6 +480,7 @@ binds {
     Super+Shift+q { spawn "qutebrowser" "--desktop-file-name" "qutebrowser-personal"; }
     Super+w { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec qutebrowser-work 'qutebrowser --basedir /home/daphen/.config/qutebrowser-work --config-py /home/daphen/.config/qutebrowser/config.py --desktop-file-name qutebrowser-work'"; }
     Super+Shift+w { spawn-sh "qutebrowser --basedir /home/daphen/.config/qutebrowser-work --config-py /home/daphen/.config/qutebrowser/config.py --desktop-file-name qutebrowser-work"; }
+    Super+m { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec lovable_devenv $HOME/.config/niri/scripts/spawn-lovable-devenv"; }
 
     // Notes - tiled window like spotify/claude
     Super+n { spawn "/home/daphen/.config/niri/scripts/spawn-notes"; }
@@ -508,23 +517,40 @@ binds {
     Super+h { focus-column-or-monitor-left; }
     Super+l { focus-column-or-monitor-right; }
 
-    // Move windows with Super+Shift+hl (removed j/k since not stacking windows)
+    // Move windows with Super+Shift+hl
     Super+Shift+h { move-column-left; }
     Super+Shift+l { move-column-right; }
+
+    // Move windows to workspace up/down with Super+Shift+jk
+    Super+Shift+j { move-window-to-workspace-down; }
+    Super+Shift+k { move-window-to-workspace-up; }
 
     // Switch workspaces with Super+jk
     // These scripts will focus adjacent monitor if at edge workspace
     Super+j { spawn "/home/daphen/.config/niri/scripts/focus-workspace-down-or-monitor"; }
     Super+k { spawn "/home/daphen/.config/niri/scripts/focus-workspace-up-or-monitor"; }
 
-    // Move windows to different monitors with Super+Ctrl+Shift+hl
+    // Move windows to different monitors with Super+Ctrl+Shift+hjkl
     Super+Ctrl+Shift+h { move-window-to-monitor-left; }
+    Super+Ctrl+Shift+j { move-window-to-monitor-down; }
+    Super+Ctrl+Shift+k { move-window-to-monitor-up; }
     Super+Ctrl+Shift+l { move-window-to-monitor-right; }
 
-    // Move windows to different workspaces with Super+Ctrl+Shift+jk
-    // These scripts will move to adjacent monitor if at edge workspace
-    Super+Ctrl+Shift+j { spawn "/home/daphen/.config/niri/scripts/move-window-down-or-monitor"; }
-    Super+Ctrl+Shift+k { spawn "/home/daphen/.config/niri/scripts/move-window-up-or-monitor"; }
+    // Move entire workspace up/down with Alt+Shift+jk
+    Alt+Shift+j { move-workspace-down; }
+    Alt+Shift+k { move-workspace-up; }
+
+    // Move entire workspace to another monitor with Alt+Shift+Ctrl+hjkl
+    Alt+Shift+Ctrl+h { move-workspace-to-monitor-left; }
+    Alt+Shift+Ctrl+j { move-workspace-to-monitor-down; }
+    Alt+Shift+Ctrl+k { move-workspace-to-monitor-up; }
+    Alt+Shift+Ctrl+l { move-workspace-to-monitor-right; }
+
+    // Focus monitor directly with Alt+hjkl
+    Alt+h { focus-monitor-left; }
+    Alt+j { focus-monitor-down; }
+    Alt+k { focus-monitor-up; }
+    Alt+l { focus-monitor-right; }
 
     // Resize windows with Super+Ctrl+hjkl
     Super+Ctrl+h { set-column-width "-5%"; }
@@ -549,7 +575,7 @@ binds {
     Super+Ctrl+c { spawn "niri" "msg" "pick-color"; }  // Pick color from screen
 
     // Rofi keybinds
-    Super+Ctrl+V { spawn "kitty" "--class" "clipse" "-o" "initial_window_width=800" "-o" "initial_window_height=600" "clipse"; }  // Open clipboard history (clipse in floating terminal)
+    Super+Ctrl+V { spawn "kitty" "--class" "clipse" "-o" "initial_window_width=1000" "-o" "initial_window_height=750" "clipse"; }  // Open clipboard history (clipse in floating terminal)
     Super+Ctrl+J { spawn "rofimoji" "--action" "copy" "type" "--selector" "rofi"; }  // Open emoji picker (copy + auto-type)
     Super+Ctrl+B { spawn "rofi-bluetooth"; }  // Open bluetooth menu
     Super+Ctrl+A { spawn "/home/daphen/.config/niri/scripts/toggle-airpods"; }  // Toggle AirPods connection

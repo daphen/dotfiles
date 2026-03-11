@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Spawn a kitty terminal in the lovable folder, wait for direnv, then run devenv up
+
+kitty --class lovable_devenv --directory /home/daphen/work/lovable fish -c "direnv exec . devenv up"

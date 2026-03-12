@@ -54,7 +54,10 @@
         "cursor": "#FF570D",
         "highlight_low": "#2F2E3E",
         "highlight_medium": "#545168",
-        "highlight_high": "#6F6C85"
+        "highlight_high": "#6F6C85",
+        "highlight_succ": "#2B2F2D",
+        "highlight_warn": "#3A291B",
+        "highlight_err": "#3A2625"
       },
       "terminal": {
         "black": "background.tertiary",
@@ -123,7 +126,10 @@
         "cursor": "#FF570D",
         "highlight_low": "#E8EAED",
         "highlight_medium": "#D5D8DD",
-        "highlight_high": "#C2C6CC"
+        "highlight_high": "#C2C6CC",
+        "highlight_succ": "#D5D5C6",
+        "highlight_warn": "#D8D5C5",
+        "highlight_err": "#F9C5B9"
       },
       "terminal": {
         "black": "foreground.primary",

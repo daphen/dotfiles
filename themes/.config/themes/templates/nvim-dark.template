@@ -59,6 +59,9 @@ local c = {
   highlight_low = "{{dark.semantic.highlight_low}}",
   highlight_med = "{{dark.semantic.highlight_medium}}",
   highlight_high = "{{dark.semantic.highlight_high}}",
+  highlight_succ = "{{dark.semantic.highlight_succ}}",
+  highlight_warn = "{{dark.semantic.highlight_warn}}",
+  highlight_err = "{{dark.semantic.highlight_err}}",
 
   -- Special
   cursor = "{{dark.semantic.cursor}}",
@@ -79,9 +82,9 @@ hl("FloatTitle", { fg = c.blue, bg = c.bg_surface })
 hl("WinSeparator", { fg = c.bg_secondary })
 
 -- Diff
-hl("Added", { fg = c.green, bg = c.highlight_low })
-hl("Changed", { fg = c.yellow, bg = c.highlight_low })
-hl("Removed", { fg = c.red, bg = c.highlight_low })
+hl("Added", { fg = c.green, bg = c.highlight_succ })
+hl("Changed", { fg = c.yellow, bg = c.highlight_warn })
+hl("Removed", { fg = c.red, bg = c.highlight_err })
 
 -- Elements
 hl("ColorColumn", {})
@@ -168,7 +171,7 @@ hl("Typedef", { link = "Type" })
 hl("DiffAdd", { link = "Added" })
 hl("DiffChange", { link = "Changed" })
 hl("DiffDelete", { link = "Removed" })
-hl("DiffText", { bg = c.blue })
+hl("DiffText", { fg = c.yellow, bg = c.highlight_warn, bold = true })
 
 -- Gitcommit diffs
 hl("diffAdded", { link = "Added" })

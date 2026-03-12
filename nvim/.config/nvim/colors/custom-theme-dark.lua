@@ -59,6 +59,9 @@ local c = {
   highlight_low = "#2F2E3E",
   highlight_med = "#545168",
   highlight_high = "#6F6C85",
+  highlight_succ = "#2B2F2D",
+  highlight_warn = "#3A291B",
+  highlight_err = "#3A2625",
 
   -- Special
   cursor = "#FF570D",
@@ -79,9 +82,9 @@ hl("FloatTitle", { fg = c.blue, bg = c.bg_surface })
 hl("WinSeparator", { fg = c.bg_secondary })
 
 -- Diff
-hl("Added", { fg = c.green, bg = c.highlight_low })
-hl("Changed", { fg = c.yellow, bg = c.highlight_low })
-hl("Removed", { fg = c.red, bg = c.highlight_low })
+hl("Added", { fg = c.green, bg = c.highlight_succ })
+hl("Changed", { fg = c.yellow, bg = c.highlight_warn })
+hl("Removed", { fg = c.red, bg = c.highlight_err })
 
 -- Elements
 hl("ColorColumn", {})
@@ -168,7 +171,7 @@ hl("Typedef", { link = "Type" })
 hl("DiffAdd", { link = "Added" })
 hl("DiffChange", { link = "Changed" })
 hl("DiffDelete", { link = "Removed" })
-hl("DiffText", { bg = c.blue })
+hl("DiffText", { fg = c.yellow, bg = c.highlight_warn, bold = true })
 
 -- Gitcommit diffs
 hl("diffAdded", { link = "Added" })

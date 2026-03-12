@@ -100,4 +100,3 @@ c.colors.tabs.selected.odd.bg = '{{background.overlay}}'
 c.colors.tabs.selected.even.fg = '{{foreground.primary}}'
 c.colors.tabs.selected.even.bg = '{{background.overlay}}'
 
-c.colors.webpage.bg = '{{background.primary}}'

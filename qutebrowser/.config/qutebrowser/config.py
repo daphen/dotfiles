@@ -53,6 +53,10 @@ config.bind('<Ctrl-Shift-j>', 'tab-give 0')
 # Restore tabs from last session on startup
 c.auto_save.session = True
 
+# Related tabs (links) open next to current, new tabs open at the end
+c.tabs.new_position.related = 'next'
+c.tabs.new_position.unrelated = 'last'
+
 # Uncap frame rate on AC power (workaround for QTBUG-76006 - WebEngine assumes 60Hz)
 import subprocess
 def _on_ac_power():

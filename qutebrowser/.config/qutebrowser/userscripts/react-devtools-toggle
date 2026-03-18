@@ -1,0 +1,13 @@
+#!/bin/bash
+if pgrep -f "react-devtools" > /dev/null; then
+    pkill -f "react-devtools"
+    echo "message-info 'React DevTools stopped'" >> "$QUTE_FIFO"
+else
+    ELECTRON=$(which electron 2>/dev/null || echo "")
+    if [ -z "$ELECTRON" ]; then
+        echo "message-error 'React DevTools: electron not found'" >> "$QUTE_FIFO"
+        exit 1
+    fi
+    WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}" "$ELECTRON" ~/.local/lib/node_modules/react-devtools/app &>/dev/null &
+    echo "message-info 'React DevTools started'" >> "$QUTE_FIFO"
+fi

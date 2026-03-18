@@ -82,6 +82,9 @@ config.bind('<Ctrl-u>', 'cmd-repeat 20 scroll up')
 # Open devtools in a separate window
 config.bind('<Ctrl-Shift-i>', 'devtools window')
 
+# Toggle React DevTools standalone (start/stop)
+config.bind('<Ctrl-Shift-r>', 'spawn --userscript react-devtools-toggle')
+
 # Quick tab switching with number keys
 config.bind('1', 'tab-focus 1')
 config.bind('2', 'tab-focus 2')

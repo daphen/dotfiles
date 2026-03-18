@@ -82,30 +82,31 @@ input {
 // https://yalter.github.io/niri/Configuration:-Outputs
 // Remember to uncomment the node by removing "/-"!
 
-// Built-in laptop display - centered below the Dell P3425WE
-// Dell P3425WE logical width = 3440, laptop logical width = 1920x1200 (2880/1.5)
-// x = (3440 - 1920) / 2 = 760 to center; y = 1440 (Dell's logical height)
+// Built-in laptop display - always at origin
+// Logical size: 2880/1.5 x 1800/1.5 = 1920x1200
 output "eDP-1" {
     mode "2880x1800@120.000"
     scale 1.5
-    position x=760 y=1440
+    position x=0 y=0
 }
 
-// Dell P3425WE ultrawide - positioned above the laptop
+// Dell P3425WE ultrawide - positioned above the laptop, centered
+// Laptop logical width = 1920, Dell logical width = 3440
+// x = (1920 - 3440) / 2 = -760 to center above; y = -1440 (above laptop)
 output "Dell Inc. DELL P3425WE 8Y8PY54" {
     mode "3440x1440@59.973"
     scale 1.0
-    position x=0 y=0
+    position x=-760 y=-1440
     focus-at-startup
 }
 
 // Office monitor (Dell U2515H) - positioned to the LEFT of laptop
 // Dell at scale 1.0 is 2560x1440 logical pixels
-// Laptop starts at x=2560
+// x = -2560 to place it left of laptop at origin
 output "Dell Inc. DELL U2515H 9X2VY5840MWL" {
     mode "2560x1440@59.951"
     scale 1.0
-    position x=0 y=0
+    position x=-2560 y=0
     focus-at-startup
 }
 
@@ -121,11 +122,12 @@ output "Technical Concepts Ltd 27R83U X2414000823" {
 }
 
 // Samsung S34C65xV ultrawide - positioned to the LEFT of laptop
-// At scale 1.0: logical width = 3440, laptop starts at x=3440
+// At scale 1.0: logical width = 3440
+// x = -3440 to place it left of laptop at origin
 output "Samsung Electric Company S34C65xV HNTY700216" {
     mode "3440x1440@59.973"
     scale 1.0
-    position x=0 y=0
+    position x=-3440 y=0
     focus-at-startup
 }
 
@@ -145,7 +147,7 @@ layout {
     // - "always", the focused column will always be centered.
     // - "on-overflow", focusing a column will center it if it doesn't fit
     //   together with the previously focused column.
-    center-focused-column "always"
+    center-focused-column "on-overflow"
 
     // You can customize the widths that "switch-preset-column-width" (Mod+R) toggles between.
     preset-column-widths {
@@ -428,7 +430,14 @@ window-rule {
 // Lovable devenv terminal - same sizing as kitty, excluded from Super+d
 window-rule {
     match app-id="lovable_devenv"
-    default-column-width { proportion 0.5; }
+    default-column-width { fixed 1500; }
+    default-window-height { proportion 1.0; }
+}
+
+// Spotify player - same sizing as kitty
+window-rule {
+    match app-id="spotify_player"
+    default-column-width { fixed 1500; }
     default-window-height { proportion 1.0; }
 }
 
@@ -485,8 +494,8 @@ binds {
     Super+t { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'Microsoft Teams' 'teams-for-linux --enable-features=WebRTCPipeWireCapturer --ozone-platform=wayland'"; }
     Super+q { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec qutebrowser-personal 'qutebrowser --desktop-file-name qutebrowser-personal'"; }
     Super+Shift+q { spawn "qutebrowser" "--desktop-file-name" "qutebrowser-personal"; }
-    Super+w { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec qutebrowser-work 'qutebrowser --basedir /home/daphen/.config/qutebrowser-work --config-py /home/daphen/.config/qutebrowser/config.py --desktop-file-name qutebrowser-work'"; }
-    Super+Shift+w { spawn-sh "qutebrowser --basedir /home/daphen/.config/qutebrowser-work --config-py /home/daphen/.config/qutebrowser/config.py --desktop-file-name qutebrowser-work"; }
+   Super+w { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec qutebrowser-work 'qutebrowser --basedir /home/daphen/.config/qutebrowser/work --config-py /home/daphen/.config/qutebrowser/config.py --desktop-file-name qutebrowser-work'"; }
+   Super+Shift+w { spawn-sh "qutebrowser --basedir /home/daphen/.config/qutebrowser/work --config-py /home/daphen/.config/qutebrowser/config.py --desktop-file-name qutebrowser-work"; }
     Super+m { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec lovable_devenv $HOME/.config/niri/scripts/spawn-lovable-devenv"; }
 
     // Notes - tiled window like spotify/claude
@@ -579,7 +588,8 @@ binds {
     Super+Ctrl+Shift+e { spawn "/home/daphen/.config/niri/scripts/screenshot-to-clipboard"; }  // Screenshot selection to clipboard
 
     // Color picker
-    Super+Ctrl+c { spawn "niri" "msg" "pick-color"; }  // Pick color from screen
+    Super+Ctrl+c { spawn "/home/daphen/.config/niri/scripts/pick-color"; }  // Pick color from screen
+    Super+Ctrl+Shift+c { spawn "/home/daphen/.config/niri/scripts/pick-color-format"; }  // Change color picker format
 
     // Rofi keybinds
     Super+Ctrl+V { spawn "kitty" "--class" "clipse" "-o" "initial_window_width=1000" "-o" "initial_window_height=750" "clipse"; }  // Open clipboard history (clipse in floating terminal)

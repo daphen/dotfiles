@@ -1,0 +1,13 @@
+2026/03/18-09:13:44.709 1d2b5c Reusing MANIFEST /home/daphen/.config/qutebrowser/work/data/webengine/IndexedDB/http_localhost_3000.indexeddb.leveldb/MANIFEST-000001
+2026/03/18-09:13:44.709 1d2b5c Recovering log #507
+2026/03/18-09:13:44.709 1d2b5c Reusing old log /home/daphen/.config/qutebrowser/work/data/webengine/IndexedDB/http_localhost_3000.indexeddb.leveldb/000507.log 
+2026/03/18-09:13:44.867 1d2b5c Level-0 table #512: started
+2026/03/18-09:13:44.871 1d2b5c Level-0 table #512: 4072 bytes OK
+2026/03/18-09:13:44.875 1d2b5c Delete type=0 #507
+2026/03/18-09:13:44.877 1d2b5a Manual compaction at level-0 from '\x00\xa1\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\xa2\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/03/18-09:15:00.931 1d2b5c Compacting 1@1 + 1@2 files
+2026/03/18-09:15:00.936 1d2b5c Generated table #513@1: 44 keys, 3639 bytes
+2026/03/18-09:15:00.936 1d2b5c Compacted 1@1 + 1@2 files => 3639 bytes
+2026/03/18-09:15:00.940 1d2b5c compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/03/18-09:15:00.940 1d2b5c Delete type=2 #509
+2026/03/18-09:15:00.940 1d2b5c Delete type=2 #512

@@ -1,0 +1,11 @@
+mail https://mail.google.com/mail/u/0/#inbox
+prod https://lovable.dev/
+calendar https://calendar.google.com/calendar/u/0/r
+linear https://linear.app/lovable/my-issues/assigned
+golinks https://app.golinks.io/
+dev http://localhost:3000/dashboard
+iframe sandbox https://eiza3cdr40-lovable-sandbox-exe.lovable.app/journal/07de35f0-4018-4d6a-97c3-694cd9617526
+review https://github.com/lovablelabs/lovable/pulls?q=is%3Apr+is%3Aopen+user-review-requested%3A%40me
+posthog https://us.posthog.com/project/47074/llm-analytics/dashboard
+PR https://github.com/lovablelabs/lovable/pulls/@me
+DS plan https://docs.google.com/document/d/1DSwV6wsFHHdzHFroMr_7Fvh40bwlac9ZGHOMYtTrzY4/edit?tab=t.0#heading=h.lpeve1bik7q8

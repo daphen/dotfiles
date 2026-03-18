@@ -1,0 +1,12 @@
+2026/03/11-11:36:53.734 111ce Reusing MANIFEST /home/daphen/.config/qutebrowser-work/data/webengine/IndexedDB/https_mail.google.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/11-11:36:53.734 111ce Recovering log #46
+2026/03/11-11:36:53.738 111ce Reusing old log /home/daphen/.config/qutebrowser-work/data/webengine/IndexedDB/https_mail.google.com_0.indexeddb.leveldb/000046.log 
+2026/03/11-11:36:56.713 111b6 Compacting 1@1 + 1@2 files
+2026/03/11-11:36:56.725 111b6 Generated table #49@1: 69 keys, 141515 bytes
+2026/03/11-11:36:56.725 111b6 Compacted 1@1 + 1@2 files => 141515 bytes
+2026/03/11-11:36:56.728 111b6 compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/03/11-11:36:56.728 111b6 Delete type=2 #45
+2026/03/11-11:36:56.729 111b6 Delete type=2 #47
+2026/03/11-11:37:09.516 111ce Level-0 table #51: started
+2026/03/11-11:37:09.550 111ce Level-0 table #51: 3131013 bytes OK
+2026/03/11-11:37:09.555 111ce Delete type=0 #46

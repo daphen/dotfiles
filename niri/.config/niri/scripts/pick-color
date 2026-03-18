@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Pick a color from the screen using hyprpicker
+# Reads the preferred format from ~/.config/hyprpicker/format
+# Default: hex
+
+FORMAT_FILE="$HOME/.config/hyprpicker/format"
+
+if [[ -f "$FORMAT_FILE" ]]; then
+    FORMAT=$(cat "$FORMAT_FILE")
+else
+    FORMAT="hex"
+fi
+
+hyprpicker --autocopy -f "$FORMAT"

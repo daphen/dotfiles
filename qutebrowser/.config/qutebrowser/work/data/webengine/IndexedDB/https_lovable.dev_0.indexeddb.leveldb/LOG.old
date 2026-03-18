@@ -1,0 +1,14 @@
+2026/03/13-18:32:32.004 8ecc Reusing MANIFEST /home/daphen/.config/qutebrowser-work/data/webengine/IndexedDB/https_lovable.dev_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/13-18:32:32.005 8ecc Recovering log #91
+2026/03/13-18:32:32.005 8ecc Reusing old log /home/daphen/.config/qutebrowser-work/data/webengine/IndexedDB/https_lovable.dev_0.indexeddb.leveldb/000091.log 
+2026/03/13-18:32:32.005 8ecc Delete type=2 #90
+2026/03/13-18:32:32.085 8ee5 Level-0 table #96: started
+2026/03/13-18:32:32.088 8ee5 Level-0 table #96: 6921 bytes OK
+2026/03/13-18:32:32.091 8ee5 Delete type=0 #91
+2026/03/13-18:32:32.091 8ecb Manual compaction at level-0 from '\x00\x1f\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00 \x00\x00\x00' @ 0 : 0; will stop at '\x00\x1f\x00\x00\x05' @ 1792 : 1
+2026/03/13-18:32:32.092 8ecb Compacting 1@0 + 1@1 files
+2026/03/13-18:32:32.094 8ecb Generated table #97@0: 91 keys, 4433 bytes
+2026/03/13-18:32:32.094 8ecb Compacted 1@0 + 1@1 files => 4433 bytes
+2026/03/13-18:32:32.097 8ecb compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/03/13-18:32:32.098 8ecb Delete type=2 #96
+2026/03/13-18:32:32.098 8ecb Manual compaction at level-0 from '\x00\x1f\x00\x00\x05' @ 1792 : 1 .. '\x00 \x00\x00\x00' @ 0 : 0; will stop at (end)

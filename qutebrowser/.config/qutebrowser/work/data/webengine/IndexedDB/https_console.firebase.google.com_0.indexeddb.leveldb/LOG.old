@@ -1,0 +1,25 @@
+2026/03/11-17:11:20.147 11d176 Reusing MANIFEST /home/daphen/.config/qutebrowser-work/data/webengine/IndexedDB/https_console.firebase.google.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/11-17:11:20.147 11d176 Recovering log #15
+2026/03/11-17:11:20.147 11d176 Reusing old log /home/daphen/.config/qutebrowser-work/data/webengine/IndexedDB/https_console.firebase.google.com_0.indexeddb.leveldb/000015.log 
+2026/03/11-17:11:20.147 11d176 Delete type=2 #14
+2026/03/11-17:11:20.170 11d15b Level-0 table #20: started
+2026/03/11-17:11:20.174 11d15b Level-0 table #20: 1106 bytes OK
+2026/03/11-17:11:20.178 11d15b Delete type=0 #15
+2026/03/11-17:11:20.179 11d15b Manual compaction at level-0 from '\x00\x07\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x08\x00\x00\x00' @ 0 : 0; will stop at '\x00\x07\x00\x00\x05' @ 381 : 1
+2026/03/11-17:11:20.179 11d15b Compacting 1@0 + 1@1 files
+2026/03/11-17:11:20.181 11d15b Generated table #21@0: 43 keys, 1890 bytes
+2026/03/11-17:11:20.181 11d15b Compacted 1@0 + 1@1 files => 1890 bytes
+2026/03/11-17:11:20.185 11d15b compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/03/11-17:11:20.185 11d15b Delete type=2 #20
+2026/03/11-17:11:20.186 11d15b Manual compaction at level-0 from '\x00\x07\x00\x00\x05' @ 381 : 1 .. '\x00\x08\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/03/11-17:11:22.977 11d177 Level-0 table #23: started
+2026/03/11-17:11:22.980 11d177 Level-0 table #23: 2082 bytes OK
+2026/03/11-17:11:22.983 11d177 Delete type=2 #17
+2026/03/11-17:11:22.984 11d177 Delete type=0 #19
+2026/03/11-17:11:22.984 11d15c Manual compaction at level-0 from '\x00\x08\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x09\x00\x00\x00' @ 0 : 0; will stop at '\x00\x08\x00\x00\x05' @ 424 : 1
+2026/03/11-17:11:22.984 11d15c Compacting 1@0 + 1@1 files
+2026/03/11-17:11:22.987 11d15c Generated table #24@0: 48 keys, 1937 bytes
+2026/03/11-17:11:22.987 11d15c Compacted 1@0 + 1@1 files => 1937 bytes
+2026/03/11-17:11:22.990 11d15c compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/03/11-17:11:22.991 11d15c Delete type=2 #23
+2026/03/11-17:11:22.991 11d15c Manual compaction at level-0 from '\x00\x08\x00\x00\x05' @ 424 : 1 .. '\x00\x09\x00\x00\x00' @ 0 : 0; will stop at (end)

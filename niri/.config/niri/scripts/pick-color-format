@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Rofi menu to change the default hyprpicker color format
+
+FORMAT_FILE="$HOME/.config/hyprpicker/format"
+CURRENT=$(cat "$FORMAT_FILE" 2>/dev/null || echo "hex")
+
+CHOICE=$(printf "hex\nrgb\nhsl\ncmyk" | rofi -dmenu -p "Color format (current: $CURRENT)")
+
+if [[ -n "$CHOICE" ]]; then
+    mkdir -p "$(dirname "$FORMAT_FILE")"
+    echo -n "$CHOICE" > "$FORMAT_FILE"
+    notify-send "Color Picker" "Format set to $CHOICE"
+fi

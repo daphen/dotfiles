@@ -12,6 +12,12 @@ WORK_STATE="$TRACKER_DIR/app-qutebrowser-work"
 WORK_BASEDIR="$HOME/.config/qutebrowser-work"
 WORK_CONFIG="$HOME/.config/qutebrowser/config.py"
 
+# URLs matching these patterns always open in personal profile
+is_personal_url() {
+    [[ "$1" =~ ^https?://(www\.|m\.|music\.)?youtube\.com ]] || \
+    [[ "$1" =~ ^https?://youtu\.be ]]
+}
+
 # Determine which profile was last focused by comparing file modification times
 pick_profile() {
     local personal_exists=false
@@ -36,6 +42,11 @@ pick_profile() {
 }
 
 PROFILE=$(pick_profile)
+
+# Always send YouTube to personal, regardless of last-focused profile
+if is_personal_url "$URL"; then
+    PROFILE="personal"
+fi
 
 if [[ "$PROFILE" == "work" ]]; then
     # Open in work profile — use --target tab to reuse existing window

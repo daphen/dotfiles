@@ -4,7 +4,7 @@
   "height": 40,
   "spacing": 8,
 
-  "modules-left": ["clock#date", "custom/weather", "cpu"],
+  "modules-left": ["clock#date", "custom/weather", "cpu", "memory"],
   "modules-center": ["custom/niri-minimap"],
   "modules-right": ["network", "pulseaudio", "battery", "clock"],
 
@@ -62,6 +62,17 @@
     "interval": 2,
     "format": "󰻠 {usage}%",
     "tooltip": true
+  },
+
+  "memory": {
+    "interval": 5,
+    "format": "󰍛 {percentage}%",
+    "tooltip-format": "RAM: {used:0.1f} / {total:0.1f} GiB ({percentage}%)\nSwap: {swapUsed:0.1f} / {swapTotal:0.1f} GiB",
+    "tooltip": true,
+    "states": {
+      "warning": 75,
+      "critical": 90
+    }
   },
 
   "pulseaudio": {

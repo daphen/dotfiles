@@ -1,0 +1,14 @@
+2026/03/18-09:13:45.588 1d2b73 Reusing MANIFEST /home/daphen/.config/qutebrowser/work/data/webengine/IndexedDB/https_www.lightningdesignsystem.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/18-09:13:45.588 1d2b73 Recovering log #10
+2026/03/18-09:13:45.588 1d2b73 Reusing old log /home/daphen/.config/qutebrowser/work/data/webengine/IndexedDB/https_www.lightningdesignsystem.com_0.indexeddb.leveldb/000010.log 
+2026/03/18-09:13:45.588 1d2b73 Delete type=2 #8
+2026/03/18-09:13:45.611 1d2b73 Level-0 table #15: started
+2026/03/18-09:13:45.614 1d2b73 Level-0 table #15: 529 bytes OK
+2026/03/18-09:13:45.617 1d2b73 Delete type=0 #10
+2026/03/18-09:13:45.618 1d2b5a Manual compaction at level-0 from '\x00\x05\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x06\x00\x00\x00' @ 0 : 0; will stop at '\x00\x05\x00\x00\x05' @ 146 : 1
+2026/03/18-09:13:45.618 1d2b5a Compacting 1@0 + 1@1 files
+2026/03/18-09:13:45.620 1d2b5a Generated table #16@0: 7 keys, 503 bytes
+2026/03/18-09:13:45.620 1d2b5a Compacted 1@0 + 1@1 files => 503 bytes
+2026/03/18-09:13:45.624 1d2b5a compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/03/18-09:13:45.624 1d2b5a Delete type=2 #15
+2026/03/18-09:13:45.624 1d2b5a Manual compaction at level-0 from '\x00\x05\x00\x00\x05' @ 146 : 1 .. '\x00\x06\x00\x00\x00' @ 0 : 0; will stop at (end)

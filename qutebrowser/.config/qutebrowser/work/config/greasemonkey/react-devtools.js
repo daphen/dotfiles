@@ -1,1 +1,0 @@
-/home/daphen/dotfiles/qutebrowser/.config/qutebrowser/greasemonkey/react-devtools.js

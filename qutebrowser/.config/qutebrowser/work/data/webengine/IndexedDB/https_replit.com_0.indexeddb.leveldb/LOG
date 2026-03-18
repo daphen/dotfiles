@@ -1,7 +1,0 @@
-2026/03/09-15:29:24.610 17ecc Reusing MANIFEST /home/daphen/.config/qutebrowser-work/data/webengine/IndexedDB/https_replit.com_0.indexeddb.leveldb/MANIFEST-000001
-2026/03/09-15:29:24.610 17ecc Recovering log #3
-2026/03/09-15:29:24.610 17ecc Reusing old log /home/daphen/.config/qutebrowser-work/data/webengine/IndexedDB/https_replit.com_0.indexeddb.leveldb/000003.log 
-2026/03/09-15:29:24.714 17ee6 Level-0 table #5: started
-2026/03/09-15:29:24.717 17ee6 Level-0 table #5: 4010 bytes OK
-2026/03/09-15:29:24.720 17ee6 Delete type=0 #3
-2026/03/09-15:29:24.721 17ee6 Manual compaction at level-0 from '\x00\x05\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x06\x00\x00\x00' @ 0 : 0; will stop at (end)

@@ -1,6 +1,0 @@
-2026/03/16-16:11:59.609 8ecc Creating DB /home/daphen/.config/qutebrowser-work/data/webengine/WebStorage/26/IndexedDB/indexeddb.leveldb since it was missing.
-2026/03/16-16:11:59.619 8ecc Reusing MANIFEST /home/daphen/.config/qutebrowser-work/data/webengine/WebStorage/26/IndexedDB/indexeddb.leveldb/MANIFEST-000001
-2026/03/16-16:12:14.321 8ecb Level-0 table #5: started
-2026/03/16-16:12:14.324 8ecb Level-0 table #5: 15947 bytes OK
-2026/03/16-16:12:14.328 8ecb Delete type=0 #3
-2026/03/16-16:12:14.328 8ecb Manual compaction at level-0 from (begin) .. (end); will stop at (end)

@@ -63,6 +63,9 @@ abbr -a vi nvim
 abbr -a lsa ls -la
 abbr -a prd pnpm run dev
 abbr -a nrd npm run dev
+abbr -a wtc 'wt switch --create'
+abbr -a wtd 'wt remove'
+abbr -a wtls 'wt list'
 
 # NixOS rebuild aliases (ALWAYS use flake!)
 abbr -a rebuild 'sudo nixos-rebuild switch --flake /home/daphen/nixos#nixos'
@@ -79,6 +82,10 @@ set -gx VISUAL nvim
 
 if command -v zoxide >/dev/null 2>&1
     zoxide init fish | source
+end
+
+if command -v wt >/dev/null 2>&1
+    wt config shell init fish | source
 end
 
 if type -q fzf

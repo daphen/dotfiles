@@ -9,13 +9,18 @@ TRACKER_DIR="/tmp/niri-focus-tracker"
 PERSONAL_STATE="$TRACKER_DIR/app-qutebrowser-personal"
 WORK_STATE="$TRACKER_DIR/app-qutebrowser-work"
 
-WORK_BASEDIR="$HOME/.config/qutebrowser-work"
+WORK_BASEDIR="$HOME/.config/qutebrowser/work"
 WORK_CONFIG="$HOME/.config/qutebrowser/config.py"
 
 # URLs matching these patterns always open in personal profile
 is_personal_url() {
     [[ "$1" =~ ^https?://(www\.|m\.|music\.)?youtube\.com ]] || \
     [[ "$1" =~ ^https?://youtu\.be ]]
+}
+
+# URLs matching these patterns always open in work profile
+is_work_url() {
+    [[ "$1" =~ lovable ]]
 }
 
 # Determine which profile was last focused by comparing file modification times
@@ -43,7 +48,11 @@ pick_profile() {
 
 PROFILE=$(pick_profile)
 
-# Always send YouTube to personal, regardless of last-focused profile
+# Override profile for URLs that belong to a specific profile
+# Personal takes priority if both match
+if is_work_url "$URL"; then
+    PROFILE="work"
+fi
 if is_personal_url "$URL"; then
     PROFILE="personal"
 fi

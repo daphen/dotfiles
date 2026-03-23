@@ -6,5 +6,13 @@
     },
     "installLocation": "/home/daphen/.claude/plugins/marketplaces/claude-plugins-official",
     "lastUpdated": "2026-03-08T21:08:18.677Z"
+  },
+  "lovable-internal": {
+    "source": {
+      "source": "directory",
+      "path": "/home/daphen/work/lovable"
+    },
+    "installLocation": "/home/daphen/work/lovable",
+    "lastUpdated": "2026-03-20T08:07:50.190Z"
   }
 }

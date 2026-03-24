@@ -472,6 +472,8 @@ binds {
 
     // Suggested binds for running programs: app launcher, screen locker.
     Super+Space hotkey-overlay-title="Run an Application" { spawn "rofi" "-show" "drun"; }
+    Super+BackSpace { spawn "rofi" "-show" "drun"; }
+    Super+P { spawn "1password"; }
     Super+Ctrl+q hotkey-overlay-title="Force Kill Focused Window" { spawn "/home/daphen/.config/niri/scripts/force-kill-focused"; }
     Super+Shift+Ctrl+q hotkey-overlay-title="Lock the Screen" { spawn "swaylock"; }
 

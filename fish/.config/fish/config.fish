@@ -79,6 +79,7 @@ fish_vi_key_bindings
 
 set -gx EDITOR nvim
 set -gx VISUAL nvim
+set -gx OP_SESSION_TIMEOUT 480 # 8 hours
 
 if command -v zoxide >/dev/null 2>&1
     zoxide init fish | source

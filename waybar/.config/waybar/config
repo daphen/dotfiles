@@ -29,8 +29,8 @@
   },
 
   "battery": {
-    "bat": "BAT0",
-    "adapter": "AC",
+    "bat": "BAT1",
+    "adapter": "ACAD",
     "states": {
       "warning": 30,
       "critical": 15

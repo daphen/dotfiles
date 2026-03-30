@@ -17,3 +17,5 @@
 	path = ~/.config/git/personal
 [core]
 	excludesfile = /home/daphen/.gitignore_global
+[safe]
+	directory = /home/daphen/nixos

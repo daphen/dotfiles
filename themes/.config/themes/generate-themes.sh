@@ -4,10 +4,12 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Read current theme mode
+# Read current theme mode, creating the file if it doesn't exist
 CURRENT_THEME="dark"
 if [[ -f "$HOME/.config/theme_mode" ]]; then
     CURRENT_THEME=$(cat "$HOME/.config/theme_mode")
+else
+    echo "$CURRENT_THEME" > "$HOME/.config/theme_mode"
 fi
 
 echo "Generating and applying themes (current: $CURRENT_THEME)..."

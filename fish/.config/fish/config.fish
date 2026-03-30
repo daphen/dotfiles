@@ -24,7 +24,7 @@ end
 if test -f ~/.config/themes/generated/fish/dark.theme -a -f ~/.config/themes/generated/fish/light.theme
     # Use centralized theme system
     # Check theme from file (created by theme toggle system)
-    set -l system_theme "light"
+    set -l system_theme "dark"
     if test -f ~/.config/theme_mode
         set system_theme (cat ~/.config/theme_mode)
     end
@@ -38,7 +38,7 @@ if test -f ~/.config/themes/generated/fish/dark.theme -a -f ~/.config/themes/gen
     end
 else
     # Fallback to manual theme functions
-    set -l system_theme "light"
+    set -l system_theme "dark"
     if test -f ~/.config/theme_mode
         set system_theme (cat ~/.config/theme_mode)
     end
@@ -68,9 +68,9 @@ abbr -a wtd 'wt remove'
 abbr -a wtls 'wt list'
 
 # NixOS rebuild aliases (ALWAYS use flake!)
-abbr -a rebuild 'sudo nixos-rebuild switch --flake /home/daphen/nixos#nixos'
-abbr -a nixos-rebuild-test 'sudo nixos-rebuild test --flake /home/daphen/nixos#nixos'
-abbr -a nixos-rebuild-boot 'sudo nixos-rebuild boot --flake /home/daphen/nixos#nixos'
+abbr -a rebuild "sudo nixos-rebuild switch --flake /home/daphen/nixos#(hostname)"
+abbr -a nixos-rebuild-test "sudo nixos-rebuild test --flake /home/daphen/nixos#(hostname)"
+abbr -a nixos-rebuild-boot "sudo nixos-rebuild boot --flake /home/daphen/nixos#(hostname)"
 
 set -g fish_clipboard_copy_cmd wl-copy
 set -g fish_clipboard_paste_cmd wl-paste

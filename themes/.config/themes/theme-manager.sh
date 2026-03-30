@@ -182,6 +182,7 @@ apply_tool_theme() {
             local target_dir is_managed
             if get_tool_target "$tool"; then
                 mkdir -p "$target_dir"
+                rm -f "$target_dir/config"
                 cp "$generated_file" "$target_dir/config"
                 local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
                 if pgrep -x mako > /dev/null; then

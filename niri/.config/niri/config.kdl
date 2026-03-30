@@ -83,10 +83,10 @@ input {
 // Remember to uncomment the node by removing "/-"!
 
 // Built-in laptop display - always at origin
-// Logical size: 2880/1.5 x 1800/1.5 = 1920x1200
+// Logical size: 3840/1.5 x 2400/1.5 = 2560x1600
 output "eDP-1" {
-    mode "2880x1800@120.000"
-    scale 1.5
+    mode "3840x2400@120.000"
+    scale 1.75
     position x=0 y=0
 }
 
@@ -345,6 +345,12 @@ animations {
 
     // Slow down all animations by this factor. Values below 1 speed them up instead.
     // slowdown 3.0
+}
+
+// Use AMD iGPU for rendering (eDP-1 is connected to card2/AMD)
+// Avoids cross-GPU copies from NVIDIA that cause sluggish animations
+debug {
+    render-drm-device "/dev/dri/renderD129"
 }
 
 // Window rules let you adjust behavior for individual windows.

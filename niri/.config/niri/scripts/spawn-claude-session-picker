@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# Pick a recent Claude Code session with fzf and resume it in the correct directory
+
+SESSIONS_DIR="$HOME/.claude/projects"
+
+if [ ! -d "$SESSIONS_DIR" ]; then
+    echo "No sessions found"
+    sleep 2
+    exit 1
+fi
+
+# Build entries. Each line has a hidden prefix: session_id:cwd:jsonl_path<NUL>display_text
+# We use NUL as separator since it can't appear in text, but fzf doesn't support that.
+# Instead: prefix each line with "IDX " and keep a parallel array in a temp file.
+
+meta_file=$(mktemp)
+display_file=$(mktemp)
+trap 'rm -f "$meta_file" "$display_file"' EXIT
+
+while IFS= read -r line; do
+    jsonl="${line#* }"
+    first_line=$(head -1 "$jsonl" 2>/dev/null)
+    [ -z "$first_line" ] && continue
+
+    session_id=$(basename "$jsonl" .jsonl)
+
+    meta_output=$(echo "$first_line" | python3 -c "
+import sys, json
+from datetime import datetime, timezone
+d = json.load(sys.stdin)
+cwd = d.get('cwd', '')
+branch = d.get('gitBranch', '') or ''
+ts = d.get('timestamp', '')
+try:
+    dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+    delta = datetime.now(timezone.utc) - dt
+    secs = int(delta.total_seconds())
+    if secs < 3600:
+        ago = f'{secs // 60}m ago'
+    elif secs < 86400:
+        ago = f'{secs // 3600}h ago'
+    elif secs < 604800:
+        ago = f'{secs // 86400}d ago'
+    else:
+        ago = dt.strftime('%b %d')
+except:
+    ago = '-'
+print(f'{cwd}\t{branch}\t{ago}')
+" 2>/dev/null)
+
+    IFS=$'\t' read -r cwd branch time_ago <<< "$meta_output"
+    [ -z "$cwd" ] && continue
+
+    first_msg=$(grep -m1 '"type":"user"' "$jsonl" 2>/dev/null | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    content = data.get('message', {}).get('content', '')
+    if isinstance(content, list):
+        for c in content:
+            if isinstance(c, dict) and c.get('type') == 'text':
+                content = c['text']
+                break
+        else:
+            content = str(content)
+    content = content.replace('\n', ' ').strip()[:120]
+    print(content)
+except:
+    print('')
+" 2>/dev/null)
+    [ -z "$first_msg" ] && continue
+
+    short_branch="${branch#*/}"
+    [ -z "$short_branch" ] && short_branch="-"
+
+    printf '%s\t%s\t%s\n' "$session_id" "$cwd" "$jsonl" >> "$meta_file"
+    printf '%-8s  %-30s  %s\n' "$time_ago" "$short_branch" "$first_msg" >> "$display_file"
+done < <(find "$SESSIONS_DIR" -name '*.jsonl' -printf '%T@ %p\n' | sort -rn)
+
+if [ ! -s "$display_file" ]; then
+    echo "No sessions found"
+    sleep 2
+    exit 1
+fi
+
+total=$(wc -l < "$display_file")
+
+# Prepend line numbers (hidden from display via --with-nth)
+numbered=$(paste -d$'\t' <(seq 1 "$total") "$display_file")
+
+selected=$(echo "$numbered" | fzf \
+    --delimiter=$'\t' \
+    --with-nth=2 \
+    --height=100% \
+    --reverse \
+    --border=rounded \
+    --prompt='  ' \
+    --no-sort \
+    --preview="$HOME/.config/niri/scripts/claude-session-preview {1} $meta_file" \
+    --preview-window=down:60%:wrap \
+    --bind='ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up')
+
+[ -z "$selected" ] && exit 0
+
+line_num=$(echo "$selected" | cut -f1)
+meta_line=$(sed -n "${line_num}p" "$meta_file")
+session_id=$(echo "$meta_line" | cut -f1)
+cwd=$(echo "$meta_line" | cut -f2)
+
+cd "$cwd" || exit 1
+exec claude --resume "$session_id"

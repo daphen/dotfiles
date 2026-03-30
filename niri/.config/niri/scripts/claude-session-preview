@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Preview helper for claude session picker
+# Args: $1 = line number, $2 = meta_file path
+
+line_num="$1"
+meta_file="$2"
+
+meta=$(sed -n "${line_num}p" "$meta_file")
+session_id=$(echo "$meta" | cut -f1)
+cwd=$(echo "$meta" | cut -f2)
+jsonl=$(echo "$meta" | cut -f3)
+
+short_cwd="${cwd/#$HOME/\~}"
+
+# Build markdown and pipe through glow
+python3 -c "
+import json
+
+jsonl = '$jsonl'
+short_cwd = '$short_cwd'
+session_id = '${session_id:0:8}'
+
+print(f'# {short_cwd}')
+print(f'Session \`{session_id}…\`')
+print()
+print('---')
+print()
+
+with open(jsonl) as f:
+    messages = []
+    for line in f:
+        try:
+            d = json.loads(line)
+        except:
+            continue
+        if d.get('type') == 'user':
+            content = d.get('message', {}).get('content', '')
+            if isinstance(content, list):
+                for c in content:
+                    if isinstance(c, dict) and c.get('type') == 'text':
+                        content = c['text']
+                        break
+                else:
+                    continue
+            content = content.strip()
+            if content and not content.startswith('<'):
+                messages.append(('you', content[:300]))
+        elif d.get('type') == 'assistant':
+            content = d.get('message', {}).get('content', [])
+            if isinstance(content, list):
+                for c in content:
+                    if isinstance(c, dict) and c.get('type') == 'text':
+                        text = c['text'].strip()[:300]
+                        if text:
+                            messages.append(('claude', text))
+                        break
+
+    for role, text in messages[:15]:
+        if role == 'you':
+            print(f'> **You:** {text}')
+        else:
+            print(f'**Claude:** {text}')
+        print()
+" 2>/dev/null | glow -s dark -w 0 - 2>/dev/null

@@ -485,6 +485,7 @@ binds {
     // Jump-or-exec keybinds for quick app access
     Super+c { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec vesktop 'vesktop --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-features=WaylandWindowDecorations'"; }
     Super+e { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-yazi"; }
+    Super+Shift+g { spawn-sh "kitty $HOME/.config/niri/scripts/spawn-claude-session-picker"; }
     Super+r { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-zoxide-picker"; }
     Super+g { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-claude"; }
     Super+f { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec zen zen-browser"; }

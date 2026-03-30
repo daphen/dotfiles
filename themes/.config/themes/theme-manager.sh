@@ -361,6 +361,55 @@ apply_tool_theme() {
                 log_success "Applied swaylock theme ($label)"
             fi
             ;;
+        "gtk")
+            # Apply GTK CSS to both GTK 3.0 and GTK 4.0
+            local gtk3_dir="$HOME/.config/gtk-3.0"
+            local gtk4_dir="$HOME/.config/gtk-4.0"
+            mkdir -p "$gtk3_dir" "$gtk4_dir"
+            cp "$generated_file" "$gtk3_dir/gtk.css"
+            cp "$generated_file" "$gtk4_dir/gtk.css"
+
+            # Write settings.ini for both versions
+            local dark_pref="false"
+            local gtk_theme_name="Adwaita"
+            if [[ "$theme_mode" == "dark" ]]; then
+                dark_pref="true"
+                gtk_theme_name="Adwaita-dark"
+            fi
+            for settings_dir in "$gtk3_dir" "$gtk4_dir"; do
+                cat > "$settings_dir/settings.ini" << EOF
+[Settings]
+gtk-application-prefer-dark-theme=${dark_pref}
+gtk-cursor-theme-name=Adwaita
+gtk-cursor-theme-size=24
+gtk-theme-name=${gtk_theme_name}
+gtk-font-name=GeistMono Nerd Font 11
+EOF
+            done
+            log_success "Applied GTK theme (gtk-3.0 + gtk-4.0)"
+            ;;
+        "kvantum")
+            # Apply Kvantum theme for Qt apps (polkit agent, etc.)
+            local kvantum_dir="$HOME/.config/Kvantum/CustomTheme"
+            mkdir -p "$kvantum_dir"
+            cp "$generated_file" "$kvantum_dir/CustomTheme.kvconfig"
+
+            # Set CustomTheme as the active Kvantum theme
+            mkdir -p "$HOME/.config/Kvantum"
+            cat > "$HOME/.config/Kvantum/kvantum.kvconfig" << EOF
+[General]
+theme=CustomTheme
+EOF
+
+            # Create minimal SVG (Kvantum requires one, uses fallback rendering without it)
+            if [[ ! -f "$kvantum_dir/CustomTheme.svg" ]]; then
+                cat > "$kvantum_dir/CustomTheme.svg" << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="none"/></svg>
+SVGEOF
+            fi
+
+            log_success "Applied Kvantum Qt theme"
+            ;;
         *)
             log_warning "Unknown tool: $tool"
             return 1
@@ -385,7 +434,7 @@ apply_all() {
     log_success "All themes applied for $theme_mode mode"
 }
 
-# Apply system-wide theme settings (GTK, gsettings, wezterm hot-reload)
+# Apply system-wide theme settings (gsettings, wezterm hot-reload)
 apply_system_theme() {
     local theme_mode=$1
     local gtk_theme
@@ -396,36 +445,18 @@ apply_system_theme() {
         gtk_theme="prefer-light"
     fi
 
-    # Update GTK 3.0 settings
-    local gtk3_settings="$HOME/.config/gtk-3.0/settings.ini"
-    if [[ -f "$gtk3_settings" ]]; then
-        if grep -q "gtk-application-prefer-dark-theme" "$gtk3_settings"; then
-            if [[ "$theme_mode" == "dark" ]]; then
-                sed -i 's/gtk-application-prefer-dark-theme=.*/gtk-application-prefer-dark-theme=true/' "$gtk3_settings"
-            else
-                sed -i 's/gtk-application-prefer-dark-theme=.*/gtk-application-prefer-dark-theme=false/' "$gtk3_settings"
-            fi
-        fi
-        log_success "Updated GTK 3.0 settings"
-    fi
-
-    # Update GTK 4.0 settings
-    local gtk4_settings="$HOME/.config/gtk-4.0/settings.ini"
-    if [[ -f "$gtk4_settings" ]]; then
-        if grep -q "gtk-application-prefer-dark-theme" "$gtk4_settings"; then
-            if [[ "$theme_mode" == "dark" ]]; then
-                sed -i 's/gtk-application-prefer-dark-theme=.*/gtk-application-prefer-dark-theme=true/' "$gtk4_settings"
-            else
-                sed -i 's/gtk-application-prefer-dark-theme=.*/gtk-application-prefer-dark-theme=false/' "$gtk4_settings"
-            fi
-        fi
-        log_success "Updated GTK 4.0 settings"
-    fi
+    # GTK settings.ini is now handled by the "gtk" apply case above
 
     # Update gsettings color scheme (for GNOME/GTK apps)
     if command -v gsettings &> /dev/null; then
         gsettings set org.gnome.desktop.interface color-scheme "$gtk_theme" 2>/dev/null || true
         log_success "Updated gsettings color-scheme"
+    fi
+
+    # Set Qt platform theme to kvantum
+    # (actual env vars are set in NixOS config, this is just a reminder log)
+    if [[ -f "$HOME/.config/Kvantum/kvantum.kvconfig" ]]; then
+        log_success "Kvantum Qt theme is configured"
     fi
 
     # Touch wezterm config to trigger hot-reload

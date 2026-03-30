@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Fork the Claude Code session in the focused window into a new terminal
+
+# Get the PID of the currently focused window
+FOCUSED_PID=$(niri msg --json windows | python3 -c "
+import sys, json
+windows = json.load(sys.stdin)
+for w in windows:
+    if w.get('is_focused', False):
+        print(w.get('pid', ''))
+        break
+")
+
+if [ -z "$FOCUSED_PID" ] || [ "$FOCUSED_PID" = "None" ]; then
+    notify-send "Fork Claude" "No focused window found"
+    exit 1
+fi
+
+# Find the cwd from a shell process under the focused window
+SHELL_PID=$(pgrep -P "$FOCUSED_PID" | sort -rn | while read pid; do
+    comm=$(cat /proc/$pid/comm 2>/dev/null)
+    if [[ "$comm" =~ ^(fish|bash|zsh)$ ]]; then
+        echo $pid
+        break
+    fi
+done | head -n1)
+
+if [ -n "$SHELL_PID" ]; then
+    CWD=$(readlink -f /proc/$SHELL_PID/cwd 2>/dev/null)
+fi
+
+CWD="${CWD:-$HOME}"
+
+# Spawn a new terminal and fork the current session
+kitty --directory "$CWD" fish -c "claude --continue --fork-session"

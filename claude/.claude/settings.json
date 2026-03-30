@@ -1,18 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pacman -Q:*)",
-      "Bash(systemctl:*)",
-      "Read(/home/daphen/**)",
+      "Bash(*)",
+      "Read",
+      "Grep",
       "Write(/home/daphen/**)",
       "Edit(/home/daphen/**)",
-      "Read(/tmp/**)",
       "Write(/tmp/**)",
       "Edit(/tmp/**)"
     ],
     "deny": [],
     "ask": []
   },
+  "model": "opus[1m]",
   "hooks": {
     "PostToolUse": [
       {

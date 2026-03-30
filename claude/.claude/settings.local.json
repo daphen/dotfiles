@@ -4,7 +4,10 @@
       "Bash(pacman -Q:*)",
       "Bash(systemctl:*)",
       "Bash(journalctl:*)",
-      "Bash(pacman -Qi:*)"
+      "Bash(pacman -Qi:*)",
+      "Bash(node:*)",
+      "Bash(claude auth:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []

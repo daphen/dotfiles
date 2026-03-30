@@ -54,3 +54,7 @@ claude/.claude/plugins/installed_plugins.json
 claude/.claude/mcp-needs-auth-cache.json
 claude/.claude/policy-limits.json
 claude/.claude/plans/
+claude/.claude/sessions/
+claude/.claude/image-cache/
+claude/.claude/paste-cache/
+claude/.claude/.claude/

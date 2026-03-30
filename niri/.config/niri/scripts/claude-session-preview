@@ -55,10 +55,25 @@ with open(jsonl) as f:
                             messages.append(('claude', text))
                         break
 
-    for role, text in messages[:15]:
+    total = len(messages)
+    head = messages[:15]
+    skipped = total - 15
+
+    for role, text in head:
         if role == 'you':
             print(f'> **You:** {text}')
         else:
             print(f'**Claude:** {text}')
         print()
+
+    if skipped > 0 and messages:
+        print(f'*… {skipped} more messages …*')
+        print()
+        print('---')
+        print()
+        role, text = messages[-1]
+        if role == 'you':
+            print(f'> **You (latest):** {text}')
+        else:
+            print(f'**Claude (latest):** {text}')
 " 2>/dev/null | glow -s dark -w 0 - 2>/dev/null

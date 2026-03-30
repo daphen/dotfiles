@@ -43,9 +43,9 @@
   },
 
   "custom/weather": {
-    "format": "󰖙 {}",
-    "interval": 1800,
-    "exec": "curl -s 'wttr.in/Stockholm?format=%t'",
+    "format": "{}",
+    "interval": 900,
+    "exec": "~/.config/waybar/scripts/weather.sh",
     "return-type": ""
   },
 

@@ -24,7 +24,10 @@ end
 -- Returns git root if available, otherwise falls back to closest project marker
 function M.get_project_root_git_priority(starting_path)
 	-- First try to find git root (for monorepo support)
-	local git_root = vim.fn.system("git rev-parse --show-toplevel 2>/dev/null"):gsub("\n", "")
+	-- Use -C with the file's directory so git looks at the right repo,
+	-- not the shell's CWD (which breaks when Neovim is opened from elsewhere)
+	local dir = vim.fn.fnamemodify(starting_path, ":p:h")
+	local git_root = vim.fn.system("git -C " .. vim.fn.shellescape(dir) .. " rev-parse --show-toplevel 2>/dev/null"):gsub("\n", "")
 	if vim.v.shell_error == 0 and git_root ~= "" then
 		return git_root
 	end

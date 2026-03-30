@@ -19,18 +19,21 @@ trap 'rm -f "$meta_file" "$display_file"' EXIT
 
 while IFS= read -r line; do
     jsonl="${line#* }"
-    first_line=$(head -1 "$jsonl" 2>/dev/null)
-    [ -z "$first_line" ] && continue
+    first_user_line=$(grep -m1 '"type":"user"' "$jsonl" 2>/dev/null)
+    [ -z "$first_user_line" ] && continue
 
     session_id=$(basename "$jsonl" .jsonl)
+    last_line=$(tail -1 "$jsonl" 2>/dev/null)
 
-    meta_output=$(echo "$first_line" | python3 -c "
+    meta_output=$(printf '%s\n%s' "$first_user_line" "$last_line" | python3 -c "
 import sys, json
 from datetime import datetime, timezone
-d = json.load(sys.stdin)
-cwd = d.get('cwd', '')
-branch = d.get('gitBranch', '') or ''
-ts = d.get('timestamp', '')
+lines = sys.stdin.read().strip().split('\n')
+first = json.loads(lines[0])
+last = json.loads(lines[-1]) if len(lines) > 1 else first
+cwd = first.get('cwd', '')
+branch = first.get('gitBranch', '') or ''
+ts = last.get('timestamp', '') or first.get('timestamp', '')
 try:
     dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
     delta = datetime.now(timezone.utc) - dt
@@ -75,7 +78,7 @@ except:
 
     printf '%s\t%s\t%s\n' "$session_id" "$cwd" "$jsonl" >> "$meta_file"
     printf '%-8s  %-30s  %s\n' "$time_ago" "$short_branch" "$first_msg" >> "$display_file"
-done < <(find "$SESSIONS_DIR" -name '*.jsonl' -printf '%T@ %p\n' | sort -rn)
+done < <(find "$SESSIONS_DIR" -name '*.jsonl' -not -path '*/subagents/*' -printf '%T@ %p\n' | sort -rn)
 
 if [ ! -s "$display_file" ]; then
     echo "No sessions found"

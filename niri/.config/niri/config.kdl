@@ -486,10 +486,9 @@ binds {
     Super+c { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec vesktop 'vesktop --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-features=WaylandWindowDecorations'"; }
     Super+e { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-yazi"; }
     Super+Shift+g { spawn-sh "kitty $HOME/.config/niri/scripts/spawn-claude-session-picker"; }
+    Super+Shift+f { spawn-sh "$HOME/.config/niri/scripts/fork-claude-session"; }
     Super+r { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-zoxide-picker"; }
     Super+g { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-claude"; }
-    Super+f { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec zen zen-browser"; }
-    Super+Shift+f { spawn "zen-browser"; }
     Super+d { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec kitty kitty"; }
     Super+Shift+d { spawn-sh "SHOW_FASTFETCH=1 kitty"; }
     Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack 'slack --disable-gpu-compositing --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime --enable-features=WebRTCPipeWireCapturer --enable-features=WaylandWindowDecorations --disable-features=WaylandFractionalScaleV1'"; }

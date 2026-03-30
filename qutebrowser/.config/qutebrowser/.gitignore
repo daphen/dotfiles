@@ -1,1 +1,7 @@
-work/
+work/*
+!work/config/
+work/config/*
+!work/config/quickmarks
+!work/config/bookmarks/
+work/config/bookmarks/*
+!work/config/bookmarks/urls

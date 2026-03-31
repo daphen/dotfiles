@@ -12,7 +12,7 @@
     "deny": [],
     "ask": []
   },
-  "model": "opus[1m]",
+  "model": "sonnet[1m]",
   "hooks": {
     "PostToolUse": [
       {

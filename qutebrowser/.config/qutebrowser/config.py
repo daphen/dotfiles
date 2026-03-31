@@ -104,7 +104,13 @@ config.bind('0', 'tab-focus -1')  # Jump to last tab
 c.qt.environ = {
     'QT_QPA_PLATFORM': 'wayland',
     'QT_QPA_PLATFORMTHEME': 'gnome',  # Help Qt detect GNOME dark mode preference
+    'DRI_PRIME': '0',  # Force AMD iGPU, prevent waking NVIDIA dGPU
 }
+
+# Spoof Chrome user agent for Google sign-in (Google blocks QtWebEngine)
+config.set('content.headers.user_agent',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'accounts.google.com')
 
 # Your custom settings below:
 

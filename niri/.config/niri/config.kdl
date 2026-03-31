@@ -513,23 +513,28 @@ binds {
     // Theme toggle
     Super+Ctrl+t hotkey-overlay-title="Toggle Theme" { spawn-sh "~/.config/themes/theme-manager.sh toggle"; }
 
-    // Media and function keys for Asus Zenbook
-    // Volume controls
+    // Media and function keys for Asus ProArt P16
+    // XF86 keycodes (for external keyboards / future use)
     XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+"; }
     XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"; }
     XF86AudioMute allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
     XF86AudioMicMute allow-when-locked=true { spawn-sh "$HOME/.config/niri/scripts/toggle-mic"; }
-
-    // Camera toggle (F10 key on Asus Zenbook)
     XF86WebCam allow-when-locked=true { spawn-sh "$HOME/.config/niri/scripts/toggle-camera"; }
-
-    // Brightness controls
     XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "set" "5%+"; }
     XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "set" "5%-"; }
-
-    // Keyboard backlight brightness (if your Asus has it)
     XF86KbdBrightnessUp allow-when-locked=true { spawn-sh "brightnessctl --device='*kbd_backlight' set 33%+"; }
     XF86KbdBrightnessDown allow-when-locked=true { spawn-sh "brightnessctl --device='*kbd_backlight' set 33%-"; }
+
+    // ProArt P16 function row (sends plain F-keys, not XF86)
+    F1  allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    F2  allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"; }
+    F3  allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+"; }
+    F4  allow-when-locked=true { spawn-sh "brightnessctl --device='*kbd_backlight' set 33%+"; }
+    F5  allow-when-locked=true { spawn "brightnessctl" "set" "5%-"; }
+    F6  allow-when-locked=true { spawn "brightnessctl" "set" "5%+"; }
+    F8  allow-when-locked=true { spawn "rofimoji" "--action" "copy" "type" "--selector" "rofi"; }
+    F9  allow-when-locked=true { spawn-sh "$HOME/.config/niri/scripts/toggle-mic"; }
+    F10 allow-when-locked=true { spawn-sh "$HOME/.config/niri/scripts/toggle-camera"; }
 
     // Media playback controls
     XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }

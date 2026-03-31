@@ -10,6 +10,7 @@
   linux-x11-repeat-delay-rate 400,50
   danger-enable-cmd yes
   linux-dev-names-exclude (
+    "Asus WMI hotkeys"
     "beekeeb Piantor Pro Keyboard"
     "beekeeb Piantor Pro Consumer Control"
     "beekeeb Piantor Pro System Control"

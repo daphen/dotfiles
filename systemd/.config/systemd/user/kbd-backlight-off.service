@@ -1,0 +1,13 @@
+[Unit]
+Description=Turn off ASUS keyboard backlight
+After=graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/run/current-system/sw/bin/sleep 3
+ExecStart=/run/current-system/sw/bin/asusctl aura power keyboard
+ExecStart=/run/current-system/sw/bin/asusctl leds set off
+
+[Install]
+WantedBy=graphical-session.target

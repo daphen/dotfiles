@@ -5,14 +5,14 @@
       "repo": "anthropics/claude-plugins-official"
     },
     "installLocation": "/home/daphen/.claude/plugins/marketplaces/claude-plugins-official",
-    "lastUpdated": "2026-03-30T19:04:31.063Z"
+    "lastUpdated": "2026-03-31T08:36:48.288Z"
   },
   "lovable-internal": {
     "source": {
       "source": "directory",
-      "path": "/home/daphen/work/lovable-attach-design-systems"
+      "path": "/home/daphen/work/lovable"
     },
-    "installLocation": "/home/daphen/work/lovable-attach-design-systems",
-    "lastUpdated": "2026-03-30T14:03:44.837Z"
+    "installLocation": "/home/daphen/work/lovable",
+    "lastUpdated": "2026-03-31T07:57:41.183Z"
   }
 }

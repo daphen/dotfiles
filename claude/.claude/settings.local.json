@@ -8,7 +8,10 @@
       "Bash(node:*)",
       "Bash(claude auth:*)",
       "Bash(bash:*)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:wiki.nixos.org)",
+      "WebFetch(domain:forums.developer.nvidia.com)"
     ],
     "deny": [],
     "ask": []

@@ -116,7 +116,7 @@ alias lsp-watch='lsp-guard'
 alias lsp-kill='lsp-guard kill'
 
 alias drag='dragon-drop -x -T -i -s 48'
-set -gx GTK_THEME Adwaita:dark
+set -gx GTK_THEME (if test -f ~/.config/theme_mode; and test (cat ~/.config/theme_mode) = dark; echo "Adwaita:dark"; else; echo "Adwaita"; end)
 
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/home/daphen/google-cloud-sdk/path.fish.inc' ]; . '/home/daphen/google-cloud-sdk/path.fish.inc'; end

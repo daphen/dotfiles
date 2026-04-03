@@ -91,12 +91,12 @@ output "eDP-1" {
 }
 
 // Dell P3425WE ultrawide - positioned above the laptop, centered
-// Laptop logical width = 1920, Dell logical width = 3440
-// x = (1920 - 3440) / 2 = -760 to center above; y = -1440 (above laptop)
-output "Dell Inc. DELL P3425WE 8Y8PY54" {
+// Laptop logical width = 2194 (3840/1.75), Dell logical width = 3440
+// x = (2194 - 3440) / 2 = -623 to center above; y = -1440 (above laptop)
+output "Dell Inc. DELL P3425WE B94NY54" {
     mode "3440x1440@59.973"
     scale 1.0
-    position x=-760 y=-1440
+    position x=-623 y=-1440
     focus-at-startup
 }
 
@@ -110,14 +110,13 @@ output "Dell Inc. DELL U2515H 9X2VY5840MWL" {
     focus-at-startup
 }
 
-// External monitor (Technical Concepts 27R83U) - HOME MONITOR - positioned on the RIGHT
-// Using full monitor name to avoid conflicts with other monitors that connect as DP-1/DP-2
-// Laptop is 2880x1800 @ scale 1.5 = 1920x1200 logical pixels wide
-// So external monitor starts at x=1920
+// External monitor (Technical Concepts 27R83U) - HOME MONITOR - positioned ABOVE laptop
+// 3840x2160 @ scale 1.5 = 2560x1440 logical pixels
+// Laptop is 1920 logical pixels wide, so center: x = (1920 - 2560) / 2 = -320
 output "Technical Concepts Ltd 27R83U X2414000823" {
     mode "3840x2160@144.000"
     scale 1.5
-    position x=1920 y=0
+    position x=-320 y=-1440
     focus-at-startup
 }
 
@@ -201,7 +200,7 @@ layout {
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#808080"
+        inactive-color "#3A3A3A"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -224,7 +223,7 @@ layout {
         // The settings are the same as for the focus ring.
         // If you enable the border, you probably want to disable the focus ring.
 
-        width 3
+        width 4
         active-color "#ffffff"
         inactive-color "#3A3A3A"
 

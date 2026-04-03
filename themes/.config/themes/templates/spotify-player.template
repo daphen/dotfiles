@@ -29,7 +29,8 @@ playback_album = { fg = "{{accent.yellow}}" }
 playback_genres = { fg = "{{foreground.muted}}" }
 current_playing = { fg = "{{accent.yellow}}", modifiers = ["Bold"] }
 selection = { fg = "{{foreground.primary}}", bg = "{{background.selection}}", modifiers = ["Bold"] }
-block_title = { fg = "{{accent.green}}", modifiers = ["Bold"] }
+block_title = { fg = "{{foreground.muted}}", modifiers = ["Bold"] }
+playback_progress_bar = { fg = "{{accent.blue}}", bg = "{{background.selection}}" }
 table_header = { fg = "{{foreground.muted}}" }
 playlist_desc = { fg = "{{foreground.muted}}" }
 like = { fg = "{{accent.red}}" }

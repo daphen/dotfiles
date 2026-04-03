@@ -185,7 +185,7 @@ apply_tool_theme() {
                 rm -f "$target_dir/config"
                 cp "$generated_file" "$target_dir/config"
                 local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
-                if pgrep -x mako > /dev/null; then
+                if pgrep mako > /dev/null; then
                     makoctl reload
                     log_success "Applied and reloaded Mako theme ($label)"
                 else
@@ -199,7 +199,7 @@ apply_tool_theme() {
                 mkdir -p "$target_dir"
                 cp "$generated_file" "$target_dir/style.css"
                 local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
-                if pgrep -x waybar > /dev/null; then
+                if pgrep waybar > /dev/null; then
                     killall -SIGUSR2 waybar
                     log_success "Applied and reloaded Waybar theme ($label)"
                 else
@@ -293,7 +293,7 @@ apply_tool_theme() {
                 mkdir -p "$target_dir"
                 cp "$generated_file" "$target_dir/theme.conf"
                 # Reload all kitty instances
-                if pgrep -x kitty > /dev/null; then
+                if pgrep kitty > /dev/null; then
                     for socket in /tmp/kitty-*; do
                         kitty @ --to "unix:$socket" set-colors -a -c "$generated_file" 2>/dev/null || true
                     done
@@ -326,7 +326,7 @@ apply_tool_theme() {
                 fi
                 local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
                 # Reload eww if running
-                if pgrep -x eww > /dev/null; then
+                if pgrep eww > /dev/null; then
                     eww reload
                     log_success "Applied and reloaded eww theme ($label)"
                 else
@@ -340,7 +340,12 @@ apply_tool_theme() {
                 mkdir -p "$target_dir"
                 cp "$generated_file" "$target_dir/theme.py"
                 local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
-                log_success "Applied qutebrowser theme ($label)"
+                if pgrep qutebrowser > /dev/null; then
+                    qutebrowser --target auto ':config-source' 2>/dev/null || true
+                    log_success "Applied and reloaded qutebrowser theme ($label)"
+                else
+                    log_success "Applied qutebrowser theme ($label, not running)"
+                fi
             fi
             ;;
         "qutebrowser-userstyles")
@@ -448,8 +453,25 @@ apply_system_theme() {
 
     # GTK settings.ini is now handled by the "gtk" apply case above
 
-    # Update gsettings color scheme (for GNOME/GTK apps)
-    if command -v gsettings &> /dev/null; then
+    # Update color scheme and GTK theme via dconf (for GTK/Electron apps)
+    if command -v dconf &> /dev/null; then
+        local dconf_gtk_theme
+        if [[ "$theme_mode" == "dark" ]]; then
+            dconf_gtk_theme="Adwaita-dark"
+        else
+            dconf_gtk_theme="Adwaita"
+        fi
+        dconf write /org/gnome/desktop/interface/color-scheme "'${gtk_theme}'" 2>/dev/null || true
+        dconf write /org/gnome/desktop/interface/gtk-theme "'${dconf_gtk_theme}'" 2>/dev/null || true
+        # Update GTK_THEME for running fish shells, new processes, and systemd user services
+        if command -v fish &> /dev/null; then
+            fish -c "set -Ux GTK_THEME ${dconf_gtk_theme}" 2>/dev/null || true
+        fi
+        if command -v systemctl &> /dev/null; then
+            systemctl --user set-environment GTK_THEME="${dconf_gtk_theme}" 2>/dev/null || true
+        fi
+        log_success "Updated dconf color-scheme=${gtk_theme}, gtk-theme=${dconf_gtk_theme}"
+    elif command -v gsettings &> /dev/null; then
         gsettings set org.gnome.desktop.interface color-scheme "$gtk_theme" 2>/dev/null || true
         log_success "Updated gsettings color-scheme"
     fi
@@ -465,6 +487,24 @@ apply_system_theme() {
     if [[ -f "$wezterm_config" ]]; then
         touch "$wezterm_config"
         log_success "Triggered Wezterm hot-reload"
+    fi
+
+    # Update niri border colors (niri auto-reloads on file write)
+    local niri_config="$DOTFILES_DIR/niri/.config/niri/config.kdl"
+    if [[ ! -f "$niri_config" ]]; then
+        niri_config="$HOME/.config/niri/config.kdl"
+    fi
+    if [[ -f "$niri_config" ]]; then
+        if [[ "$theme_mode" == "dark" ]]; then
+            local active_color="#ffffff"
+            local inactive_color="#3A3A3A"
+        else
+            local active_color=$(jq -r '.themes.light.semantic.cursor' "$COLORS_FILE")
+            local inactive_color="#999999"
+        fi
+        sed -i "s/active-color \"#[0-9a-fA-F]*\"/active-color \"${active_color}\"/g" "$niri_config"
+        sed -i "s/inactive-color \"#[0-9a-fA-F]*\"/inactive-color \"${inactive_color}\"/g" "$niri_config"
+        log_success "Applied niri border colors for ${theme_mode} mode"
     fi
 }
 

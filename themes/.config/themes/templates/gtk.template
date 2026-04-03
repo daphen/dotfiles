@@ -7,17 +7,17 @@
 @define-color theme_base_color {{background.primary}};
 @define-color theme_text_color {{foreground.primary}};
 @define-color theme_selected_bg_color {{accent.orange}};
-@define-color theme_selected_fg_color {{background.primary}};
+@define-color theme_selected_fg_color {{foreground.primary}};
 @define-color theme_unfocused_bg_color {{background.secondary}};
 @define-color theme_unfocused_fg_color {{foreground.secondary}};
 @define-color theme_unfocused_base_color {{background.secondary}};
 @define-color theme_unfocused_text_color {{foreground.secondary}};
 @define-color theme_unfocused_selected_bg_color {{accent.orange}};
-@define-color theme_unfocused_selected_fg_color {{background.primary}};
+@define-color theme_unfocused_selected_fg_color {{foreground.primary}};
 
 /* Accent and semantic colors */
 @define-color accent_bg_color {{accent.orange}};
-@define-color accent_fg_color {{background.primary}};
+@define-color accent_fg_color {{foreground.primary}};
 @define-color accent_color {{accent.orange}};
 
 @define-color destructive_bg_color {{accent.red}};
@@ -83,30 +83,64 @@ headerbar, .titlebar {
 
 /* Buttons */
 button {
+    background-image: none;
     background-color: {{background.overlay}};
     color: {{foreground.primary}};
     border-color: {{background.overlay}};
     border-radius: 6px;
+    box-shadow: none;
+    text-shadow: none;
 }
 
 button:hover {
+    background-image: none;
     background-color: {{background.selection}};
 }
 
 button:active, button:checked {
+    background-image: none;
     background-color: {{accent.orange}};
-    color: {{background.primary}};
+    color: {{foreground.primary}};
 }
 
 button.suggested-action {
+    background-image: none;
     background-color: {{accent.orange}};
-    color: {{background.primary}};
+    color: {{foreground.primary}};
 }
 
 button.destructive-action {
+    background-image: none;
     background-color: {{accent.red}};
-    color: {{background.primary}};
+    color: {{foreground.primary}};
 }
+
+/* Reset scroll arrow buttons inside combobox popup to avoid dead space */
+button.up, button.down,
+combobox window button.up,
+combobox window button.down {
+    min-height: 0;
+    min-width: 0;
+    padding: 2px;
+    background-color: transparent;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+}
+
+/* Dropdowns / ComboBox - use child combinators for higher specificity than Adwaita's .combo rule */
+combobox > box > button.combo {
+    background-image: none;
+    background-color: {{background.overlay}};
+    color: {{foreground.primary}};
+    box-shadow: none;
+}
+
+combobox > box > button.combo:hover {
+    background-image: none;
+    background-color: {{background.selection}};
+}
+
 
 /* Text entries */
 entry {
@@ -124,7 +158,7 @@ entry:focus {
 /* Selection */
 selection, *:selected {
     background-color: {{accent.orange}};
-    color: {{background.primary}};
+    color: {{foreground.primary}};
 }
 
 /* Lists and rows */
@@ -293,16 +327,6 @@ notebook header.top tab:checked {
     box-shadow: inset 0 -2px {{accent.orange}};
 }
 
-/* Combo box */
-combobox button.combo {
-    background-color: {{background.overlay}};
-    color: {{foreground.primary}};
-    border-color: {{background.overlay}};
-}
-
-combobox button.combo:hover {
-    background-color: {{background.selection}};
-}
 
 /* Menu and popover */
 menu, .context-menu, .popup {
@@ -312,7 +336,8 @@ menu, .context-menu, .popup {
 }
 
 menuitem:hover {
-    background-color: {{background.selection}};
+    background-color: {{background.overlay}};
+    color: {{foreground.primary}};
 }
 
 /* Separator */

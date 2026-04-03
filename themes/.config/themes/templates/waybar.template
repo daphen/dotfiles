@@ -8,6 +8,7 @@
 
 window#waybar {
   background: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 
 /* Left side modules */
@@ -19,7 +20,9 @@ window#waybar {
 }
 
 #clock.date,
-.modules-left #custom-weather {
+.modules-left #custom-weather,
+.modules-left #cpu,
+.modules-left #memory {
   padding: 6px 12px;
   margin: 0;
   background: transparent;

@@ -422,7 +422,7 @@ SVGEOF
                 log_warning "Vivaldi Preferences not found — has Vivaldi been launched at least once?"
                 return 1
             fi
-            if pgrep -x vivaldi > /dev/null 2>&1; then
+            if pgrep -x vivaldi-bin > /dev/null 2>&1; then
                 log_warning "Vivaldi is running — close it first, then re-run apply to update the theme"
                 return 1
             fi
@@ -452,9 +452,10 @@ else:
         theme["buttons"] = user_themes[0]["buttons"]
     user_themes.append(theme)
 
-# Set as active for the current OS mode
-schedule = vivaldi.setdefault("theme", {}).setdefault("schedule", {}).setdefault("o_s", {})
-schedule[mode] = theme_id
+# Set as active for the current OS mode and enable OS-based scheduling
+o_s = vivaldi.setdefault("theme", {}).setdefault("schedule", {}).setdefault("o_s", {})
+o_s["dark"] = theme_id
+o_s["light"] = theme_id
 
 with open(prefs_path, "w") as f:
     json.dump(prefs, f, separators=(",", ":"))
@@ -484,8 +485,9 @@ else:
         theme["buttons"] = user_themes[0]["buttons"]
     user_themes.append(theme)
 
-schedule = vivaldi.setdefault("theme", {}).setdefault("schedule", {}).setdefault("o_s", {})
-schedule[mode] = theme_id
+o_s = vivaldi.setdefault("theme", {}).setdefault("schedule", {}).setdefault("o_s", {})
+o_s["dark"] = theme_id
+o_s["light"] = theme_id
 
 with open(prefs_path, "w") as f:
     json.dump(prefs, f, separators=(",", ":"))

@@ -1,72 +1,60 @@
 #!/usr/bin/env bash
-# Routes URLs to the last-focused qutebrowser profile (personal or work).
-# Uses niri-focus-tracker state to determine which instance was most recently active.
-# Falls back to personal if neither has been focused or no instances are running.
+# Routes URLs to the correct Vivaldi profile (personal or work).
+# Uses URL pattern matching; falls back to personal profile.
+#
+# To revert to qutebrowser: comment the Vivaldi block, uncomment the qute block.
 
 URL="$1"
-TRACKER_DIR="/tmp/niri-focus-tracker"
 
-PERSONAL_STATE="$TRACKER_DIR/app-qutebrowser-personal"
-WORK_STATE="$TRACKER_DIR/app-qutebrowser-work"
+# ── URL routing rules ─────────────────────────────────────────────────────────
 
-WORK_BASEDIR="$HOME/.config/qutebrowser/work"
-WORK_CONFIG="$HOME/.config/qutebrowser/config.py"
-
-# URLs matching these patterns always open in personal profile
 is_personal_url() {
     [[ "$1" =~ ^https?://(www\.|m\.|music\.)?youtube\.com ]] || \
     [[ "$1" =~ ^https?://youtu\.be ]]
 }
 
-# URLs matching these patterns always open in work profile
 is_work_url() {
     [[ "$1" =~ lovable ]]
 }
 
-# Determine which profile was last focused by comparing file modification times
-pick_profile() {
-    local personal_exists=false
-    local work_exists=false
+# ── Profile selection ─────────────────────────────────────────────────────────
 
-    [[ -f "$PERSONAL_STATE" ]] && personal_exists=true
-    [[ -f "$WORK_STATE" ]] && work_exists=true
+PROFILE="personal"
+if is_work_url "$URL"; then PROFILE="work"; fi
+if is_personal_url "$URL"; then PROFILE="personal"; fi
 
-    if $personal_exists && $work_exists; then
-        # Both exist — compare modification times (focus tracker updates mtime on focus)
-        if [[ "$PERSONAL_STATE" -nt "$WORK_STATE" ]]; then
-            echo "personal"
-        else
-            echo "work"
-        fi
-    elif $work_exists; then
-        echo "work"
-    else
-        # Default to personal (also covers case where neither exists)
-        echo "personal"
-    fi
-}
-
-PROFILE=$(pick_profile)
-
-# Override profile for URLs that belong to a specific profile
-# Personal takes priority if both match
-if is_work_url "$URL"; then
-    PROFILE="work"
-fi
-if is_personal_url "$URL"; then
-    PROFILE="personal"
-fi
+# ── Vivaldi dispatch ──────────────────────────────────────────────────────────
 
 if [[ "$PROFILE" == "work" ]]; then
-    # Open in work profile — use --target tab to reuse existing window
-    exec qutebrowser --target tab \
-        --basedir "$WORK_BASEDIR" \
-        --config-py "$WORK_CONFIG" \
-        --desktop-file-name qutebrowser-work \
-        "$URL"
+    exec /run/current-system/sw/bin/vivaldi --profile-directory="Profile 2" "$URL"
 else
-    # Open in personal profile
-    exec qutebrowser --target tab \
-        --desktop-file-name qutebrowser-personal \
-        "$URL"
+    exec /run/current-system/sw/bin/vivaldi --profile-directory=Default "$URL"
 fi
+
+# ── Qutebrowser dispatch (commented out — uncomment to revert) ────────────────
+#
+# TRACKER_DIR="/tmp/niri-focus-tracker"
+# PERSONAL_STATE="$TRACKER_DIR/app-qutebrowser-personal"
+# WORK_STATE="$TRACKER_DIR/app-qutebrowser-work"
+# WORK_BASEDIR="$HOME/.config/qutebrowser/work"
+# WORK_CONFIG="$HOME/.config/qutebrowser/config.py"
+#
+# pick_profile() {
+#     local personal_exists=false work_exists=false
+#     [[ -f "$PERSONAL_STATE" ]] && personal_exists=true
+#     [[ -f "$WORK_STATE" ]] && work_exists=true
+#     if $personal_exists && $work_exists; then
+#         if [[ "$PERSONAL_STATE" -nt "$WORK_STATE" ]]; then echo "personal"
+#         else echo "work"; fi
+#     elif $work_exists; then echo "work"
+#     else echo "personal"; fi
+# }
+# PROFILE=$(pick_profile)
+# if is_work_url "$URL"; then PROFILE="work"; fi
+# if is_personal_url "$URL"; then PROFILE="personal"; fi
+# if [[ "$PROFILE" == "work" ]]; then
+#     exec qutebrowser --target tab --basedir "$WORK_BASEDIR" \
+#         --config-py "$WORK_CONFIG" --desktop-file-name qutebrowser-work "$URL"
+# else
+#     exec qutebrowser --target tab --desktop-file-name qutebrowser-personal "$URL"
+# fi

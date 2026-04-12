@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Launch Vivaldi personal profile (Default). Always uses AMD iGPU — PRIME offload
+# adds too much overhead for browsers. Games use NVIDIA via programs.steam.
+exec /run/current-system/sw/bin/vivaldi --profile-directory=Default "$@"

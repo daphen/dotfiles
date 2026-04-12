@@ -6,5 +6,7 @@
 
 config_version: 2
 settings:
+  content.javascript.clipboard:
+    https://console.x.com: access-paste
   content.notifications.enabled:
-    https://www.youtube.com: true
+    https://www.netflix.com: true

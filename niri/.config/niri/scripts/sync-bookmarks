@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""Sync links from Synced app to a Chrome/Chromium bookmarks folder."""
+
+import json
+import os
+import sys
+import uuid
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+import urllib.request
+import urllib.parse
+import http.cookiejar
+
+ENV_FILE = Path.home() / "personal/synced/.env"
+BOOKMARKS_FILE = Path.home() / ".config/vivaldi/Default/Bookmarks"
+SYNCED_URL = "https://synced-wine.vercel.app"
+FOLDER_NAME = "Synced"
+
+
+def load_env():
+    env = {}
+    if not ENV_FILE.exists():
+        return env
+    with open(ENV_FILE) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, _, value = line.partition("=")
+                env[key.strip()] = value.strip().strip("\"'")
+    return env
+
+
+NOTIFY_SEND = "/nix/store/p6bsxd08szarir0l0ixhfr03psnjplj2-libnotify-0.8.8/bin/notify-send"
+
+def notify(msg):
+    subprocess.run([NOTIFY_SEND, "Synced", msg], check=False)
+
+
+def chrome_timestamp():
+    """Microseconds since Jan 1, 1601 (Chrome's epoch)."""
+    epoch_diff = 11644473600
+    return str((int(datetime.now(timezone.utc).timestamp()) + epoch_diff) * 1000000)
+
+
+def get_links(password):
+    cjar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cjar))
+
+    auth_data = json.dumps({"password": password}).encode()
+    req = urllib.request.Request(
+        f"{SYNCED_URL}/api/auth",
+        data=auth_data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        opener.open(req)
+    except Exception as e:
+        notify(f"Auth failed: {e}")
+        sys.exit(1)
+
+    req = urllib.request.Request(f"{SYNCED_URL}/api/links")
+    try:
+        resp = opener.open(req)
+        return json.loads(resp.read())
+    except Exception as e:
+        notify(f"Fetch failed: {e}")
+        sys.exit(1)
+
+
+def get_max_id(node, current=0):
+    try:
+        current = max(current, int(node.get("id", 0)))
+    except (ValueError, TypeError):
+        pass
+    for child in node.get("children", []):
+        current = get_max_id(child, current)
+    return current
+
+
+def url_to_title(url):
+    try:
+        return urllib.parse.urlparse(url).netloc
+    except Exception:
+        return url
+
+
+def sync(links):
+    if not BOOKMARKS_FILE.exists():
+        notify("Bookmarks file not found — has Chrome been opened at least once?")
+        sys.exit(1)
+
+    # Warn if Chromium is running (it will overwrite the file on exit)
+    result = subprocess.run(["pgrep", "-x", "vivaldi"], capture_output=True)
+    if result.returncode == 0:
+        notify("Close Chromium before syncing bookmarks")
+        sys.exit(1)
+
+    with open(BOOKMARKS_FILE) as f:
+        bookmarks = json.load(f)
+
+    other = bookmarks["roots"]["bookmark_bar"]
+    if "children" not in other:
+        other["children"] = []
+
+    # Find or create Synced folder
+    synced_folder = next(
+        (c for c in other["children"] if c.get("type") == "folder" and c.get("name") == FOLDER_NAME),
+        None,
+    )
+
+    max_id = max(get_max_id(root) for root in bookmarks["roots"].values())
+
+    if synced_folder is None:
+        max_id += 1
+        synced_folder = {
+            "children": [],
+            "date_added": chrome_timestamp(),
+            "date_last_used": "0",
+            "date_modified": chrome_timestamp(),
+            "guid": str(uuid.uuid4()),
+            "id": str(max_id),
+            "name": FOLDER_NAME,
+            "type": "folder",
+        }
+        other["children"].insert(0, synced_folder)
+
+    existing_urls = {b["url"] for b in synced_folder["children"] if b.get("type") == "url"}
+
+    count = 0
+    for link in reversed(links):  # reversed so newest ends on top
+        url = link.get("url", "")
+        if not url or url in existing_urls:
+            continue
+        title = link.get("title") or url_to_title(url)
+        max_id += 1
+        synced_folder["children"].insert(0, {
+            "date_added": chrome_timestamp(),
+            "date_last_used": "0",
+            "guid": str(uuid.uuid4()),
+            "id": str(max_id),
+            "name": title[:100],
+            "type": "url",
+            "url": url,
+        })
+        existing_urls.add(url)
+        count += 1
+
+    synced_folder["date_modified"] = chrome_timestamp()
+
+    with open(BOOKMARKS_FILE, "w") as f:
+        json.dump(bookmarks, f, indent=3, ensure_ascii=False)
+
+    return count
+
+
+def main():
+    env = load_env()
+    password = env.get("AUTH_PASSWORD")
+    if not password:
+        notify("AUTH_PASSWORD not found in ~/personal/synced/.env")
+        sys.exit(1)
+
+    links = get_links(password)
+    count = sync(links)
+    notify(f"Added {count} new bookmarks to '{FOLDER_NAME}' folder")
+
+
+if __name__ == "__main__":
+    main()

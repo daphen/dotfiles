@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+#                               __ _ _
+#  _ __ ___   __ _ ___ _   _ __/ _(_) | ___
+# | '__/ _ \ / _` / __| | | | |_| | |/ _ \
+# | | | (_) | (_| \__ \ |_| |  _| | |  __/
+# |_|  \___/ \__,_|___/\__,_|_| |_|_|\___|
+#
+# A rofi menu for switching ASUS performance profiles via asusctl.
+
+# Rofi command to pipe into, can add any options here
+rofi_command="rofi -dmenu $* -p"
+
+# Get the currently active profile
+get_active() {
+    /run/current-system/sw/bin/asusctl profile get | grep "Active profile:" | cut -d ' ' -f 3
+}
+
+# Prints current profile for status bars
+print_status() {
+    echo "$(get_active)"
+}
+
+show_menu() {
+    active=$(get_active)
+
+    # Build options, marking the active profile
+    options=""
+    while IFS= read -r profile; do
+        if [ "$profile" = "$active" ]; then
+            options="${options}${profile} (active)\n"
+        else
+            options="${options}${profile}\n"
+        fi
+    done < <(/run/current-system/sw/bin/asusctl profile list)
+
+    chosen="$(echo -e "$options" | $rofi_command "Profile")"
+
+    # Strip the "(active)" marker if present, then set
+    profile=$(echo "$chosen" | sed 's/ (active)//')
+
+    case "$chosen" in
+        "" )
+            echo "No option chosen."
+            ;;
+        *)
+            /run/current-system/sw/bin/asusctl profile set "$profile"
+            ;;
+    esac
+}
+
+case "$1" in
+    --status)
+        print_status
+        ;;
+    *)
+        show_menu
+        ;;
+esac

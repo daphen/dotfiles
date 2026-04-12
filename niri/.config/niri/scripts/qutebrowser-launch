@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Launch qutebrowser on the AMD iGPU (same as Vivaldi — PRIME adds too much overhead for browsers).
+exec /run/current-system/sw/bin/qutebrowser "$@"

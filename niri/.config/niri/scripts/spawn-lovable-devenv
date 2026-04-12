@@ -1,4 +1,33 @@
 #!/usr/bin/env bash
-# Spawn a kitty terminal in the lovable folder, wait for direnv, then run devenv up
+# Spawn a kitty terminal in the focused window's git worktree, then run devenv up
 
-kitty --class lovable_devenv --directory /home/daphen/work/lovable fish -c "direnv exec . devenv up"
+FOCUSED_PID=$(niri msg --json windows | python3 -c "
+import sys, json
+windows = json.load(sys.stdin)
+for w in windows:
+    if w.get('is_focused', False):
+        print(w.get('pid', ''))
+        break
+")
+
+WORKTREE_DIR=""
+if [ -n "$FOCUSED_PID" ] && [ "$FOCUSED_PID" != "None" ]; then
+    SHELL_PID=$(pgrep -P "$FOCUSED_PID" | sort -rn | while read pid; do
+        comm=$(cat /proc/$pid/comm 2>/dev/null)
+        if [[ "$comm" =~ ^(fish|bash|zsh)$ ]]; then
+            echo $pid
+            break
+        fi
+    done | head -n1)
+
+    if [ -n "$SHELL_PID" ]; then
+        CWD=$(readlink -f /proc/$SHELL_PID/cwd 2>/dev/null)
+        GIT_ROOT=$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null)
+        [ -n "$GIT_ROOT" ] && WORKTREE_DIR="$GIT_ROOT"
+    fi
+fi
+
+# Fall back to the lovable directory if we couldn't detect a worktree
+WORKTREE_DIR="${WORKTREE_DIR:-$HOME/work/lovable}"
+
+kitty --class lovable_devenv --directory "$WORKTREE_DIR" fish -c "direnv exec . devenv up"

@@ -2,21 +2,21 @@
 
 * {
     /* Background colors */
-    bg-primary:     #181818;
-    bg-secondary:   #1B1B1B;
-    bg-selection:   #282F38;
-    bg-overlay:     #292826;
+    bg-primary:     #FDF6E3;
+    bg-secondary:   #F9F2DF;
+    bg-selection:   #E0D5C5;
+    bg-overlay:     #EBE4D6;
 
     /* Foreground colors */
-    fg-primary:     #EDEDED;
-    fg-secondary:   #C3C8C6;
-    fg-muted:       #707B84;
+    fg-primary:     #2D4A3D;
+    fg-secondary:   #575279;
+    fg-muted:       #9893a5;
 
     /* Accent colors */
-    accent-orange:  #FF570D;
-    accent-green:   #97B5A6;
-    accent-blue:    #CCD5E4;
-    accent-red:     #FF7B72;
+    accent-orange:  #d7827e;
+    accent-green:   #5E7270;
+    accent-blue:    #286983;
+    accent-red:     #ED333B;
 
     /* Apply to rofi */
     background-color:   transparent;

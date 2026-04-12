@@ -11,7 +11,19 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:wiki.nixos.org)",
-      "WebFetch(domain:forums.developer.nvidia.com)"
+      "WebFetch(domain:forums.developer.nvidia.com)",
+      "WebFetch(domain:chromium-bugs.chromium.narkive.com)",
+      "WebFetch(domain:bugs.chromium.org)",
+      "WebFetch(domain:discourse.gnome.org)",
+      "WebFetch(domain:issues.chromium.org)",
+      "WebFetch(domain:wiki.archlinux.org)",
+      "WebFetch(domain:blogs.gnome.org)",
+      "WebFetch(domain:chromium.googlesource.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:www.januschka.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:forum.vivaldi.net)",
+      "WebFetch(domain:davidkarlsson.dev)"
     ],
     "deny": [],
     "ask": []

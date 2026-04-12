@@ -75,6 +75,7 @@ window, dialog {
     color: {{foreground.primary}};
 }
 
+
 headerbar, .titlebar {
     background-color: {{background.secondary}};
     color: {{foreground.primary}};
@@ -344,6 +345,7 @@ menuitem:hover {
 separator {
     background-color: {{background.overlay}};
 }
+
 
 /* Links */
 *:link, button.link {

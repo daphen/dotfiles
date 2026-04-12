@@ -416,6 +416,84 @@ SVGEOF
 
             log_success "Applied Kvantum Qt theme"
             ;;
+        "vivaldi")
+            local prefs="$HOME/.config/vivaldi/Default/Preferences"
+            if [[ ! -f "$prefs" ]]; then
+                log_warning "Vivaldi Preferences not found — has Vivaldi been launched at least once?"
+                return 1
+            fi
+            if pgrep -x vivaldi > /dev/null 2>&1; then
+                log_warning "Vivaldi is running — close it first, then re-run apply to update the theme"
+                return 1
+            fi
+            # Inject generated theme into Preferences and set as active
+            python3 - "$prefs" "$generated_file" "$theme_mode" << 'PYEOF'
+import json, sys
+prefs_path, theme_path, mode = sys.argv[1], sys.argv[2], sys.argv[3]
+
+with open(prefs_path) as f:
+    prefs = json.load(f)
+with open(theme_path) as f:
+    theme = json.load(f)
+
+theme_id = theme["id"]
+vivaldi = prefs.setdefault("vivaldi", {})
+themes = vivaldi.setdefault("themes", {})
+user_themes = themes.setdefault("user", [])
+
+# Find existing theme with same id to preserve buttons and other Vivaldi-managed fields
+existing = next((t for t in user_themes if t.get("id") == theme_id), None)
+if existing:
+    # Preserve buttons object Vivaldi manages, update our color/setting fields
+    existing.update(theme)
+else:
+    # Copy buttons from first existing user theme if available (Vivaldi adds these)
+    if user_themes and "buttons" in user_themes[0]:
+        theme["buttons"] = user_themes[0]["buttons"]
+    user_themes.append(theme)
+
+# Set as active for the current OS mode
+schedule = vivaldi.setdefault("theme", {}).setdefault("schedule", {}).setdefault("o_s", {})
+schedule[mode] = theme_id
+
+with open(prefs_path, "w") as f:
+    json.dump(prefs, f, separators=(",", ":"))
+PYEOF
+            # Also apply to Profile 2 (work profile) if it exists
+            local work_prefs="$HOME/.config/vivaldi/Profile 2/Preferences"
+            if [[ -f "$work_prefs" ]]; then
+                python3 - "$work_prefs" "$generated_file" "$theme_mode" << 'PYEOF'
+import json, sys
+prefs_path, theme_path, mode = sys.argv[1], sys.argv[2], sys.argv[3]
+
+with open(prefs_path) as f:
+    prefs = json.load(f)
+with open(theme_path) as f:
+    theme = json.load(f)
+
+theme_id = theme["id"]
+vivaldi = prefs.setdefault("vivaldi", {})
+themes = vivaldi.setdefault("themes", {})
+user_themes = themes.setdefault("user", [])
+
+existing = next((t for t in user_themes if t.get("id") == theme_id), None)
+if existing:
+    existing.update(theme)
+else:
+    if user_themes and "buttons" in user_themes[0]:
+        theme["buttons"] = user_themes[0]["buttons"]
+    user_themes.append(theme)
+
+schedule = vivaldi.setdefault("theme", {}).setdefault("schedule", {}).setdefault("o_s", {})
+schedule[mode] = theme_id
+
+with open(prefs_path, "w") as f:
+    json.dump(prefs, f, separators=(",", ":"))
+PYEOF
+            fi
+            log_success "Applied Vivaldi theme (${theme_mode}) — reopen Vivaldi to see changes"
+            ;;
+
         *)
             log_warning "Unknown tool: $tool"
             return 1

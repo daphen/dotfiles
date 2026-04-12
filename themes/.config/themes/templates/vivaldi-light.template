@@ -1,0 +1,32 @@
+{
+  "name": "Proart Light",
+  "id": "proart-light-theme-david-karlsson-v1",
+  "engineVersion": 1,
+  "version": 1,
+
+  "colorBg":          "{{background.secondary}}",
+  "colorFg":          "{{foreground.primary}}",
+  "colorAccentBg":    "{{background.overlay}}",
+  "colorHighlightBg": "{{semantic.cursor}}",
+  "colorWindowBg":    "{{background.primary}}",
+  "defaultBackground": "{{background.primary}}",
+
+  "accentFromPage":        false,
+  "accentOnWindow":        false,
+  "preferSystemAccent":    false,
+  "accentSaturationLimit": 1,
+
+  "dimBlurred":         false,
+  "transparencyTabBar": false,
+  "transparencyTabs":   false,
+  "simpleScrollbar":    true,
+
+  "radius":   4,
+  "contrast": 0,
+  "alpha":    1,
+  "blur":     0,
+
+  "backgroundImage":    "",
+  "backgroundPosition": "stretch",
+  "url":                ""
+}

@@ -1,0 +1,32 @@
+{
+  "name": "Proart Dark",
+  "id": "015932e6-610d-4bbe-8114-184fc2b565ae",
+  "engineVersion": 1,
+  "version": 1,
+
+  "colorBg":          "{{background.primary}}",
+  "colorFg":          "{{foreground.primary}}",
+  "colorAccentBg":    "#2d2d2d",
+  "colorHighlightBg": "{{semantic.cursor}}",
+  "colorWindowBg":    "{{background.primary}}",
+
+  "accentFromPage":        false,
+  "accentOnWindow":        false,
+  "preferSystemAccent":    false,
+  "accentSaturationLimit": 1,
+
+  "dimBlurred":         false,
+  "transparencyTabBar": false,
+  "transparencyTabs":   false,
+  "simpleScrollbar":    true,
+
+  "radius":   4,
+  "contrast": 0,
+  "defaultBackground": "{{background.primary}}",
+  "alpha":    1,
+  "blur":     0,
+
+  "backgroundImage":    "",
+  "backgroundPosition": "stretch",
+  "url":                ""
+}

@@ -110,13 +110,13 @@ output "Dell Inc. DELL U2515H 9X2VY5840MWL" {
     focus-at-startup
 }
 
-// External monitor (Technical Concepts 27R83U) - HOME MONITOR - positioned ABOVE laptop
+// External monitor (Technical Concepts 27R83U) - HOME MONITOR - positioned to the RIGHT of laptop
 // 3840x2160 @ scale 1.5 = 2560x1440 logical pixels
-// Laptop is 1920 logical pixels wide, so center: x = (1920 - 2560) / 2 = -320
+// eDP-1 logical width = 3840/1.75 = 2194
 output "Technical Concepts Ltd 27R83U X2414000823" {
     mode "3840x2160@144.000"
     scale 1.5
-    position x=-320 y=-1440
+    position x=2194 y=0
     focus-at-startup
 }
 
@@ -194,13 +194,13 @@ layout {
         // - CSS-like notation: "rgb(255, 127, 0)", rgba(), hsl() and a few others.
 
         // Color of the ring on the active monitor.
-        active-color "#ffffff"
+        active-color "#FF570D"
 
         // Color of the ring on inactive monitors.
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#3A3A3A"
+        inactive-color "#999999"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -224,8 +224,8 @@ layout {
         // If you enable the border, you probably want to disable the focus ring.
 
         width 4
-        active-color "#ffffff"
-        inactive-color "#3A3A3A"
+        active-color "#FF570D"
+        inactive-color "#999999"
 
         // Color of the border around windows that request your attention.
         urgent-color "#9b0000"
@@ -498,10 +498,10 @@ binds {
     Super+Shift+d { spawn-sh "SHOW_FASTFETCH=1 kitty"; }
     Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack slack"; }
     Super+a { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'title:spotify_player' 'kitty --class spotify_player spotify_player'"; }
-    Super+q { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec qutebrowser-personal 'qutebrowser --desktop-file-name qutebrowser-personal'"; }
-    Super+Shift+q { spawn "qutebrowser" "--desktop-file-name" "qutebrowser-personal"; }
-   Super+w { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec qutebrowser-work 'qutebrowser --basedir /home/daphen/.config/qutebrowser/work --config-py /home/daphen/.config/qutebrowser/config.py --desktop-file-name qutebrowser-work'"; }
-   Super+Shift+w { spawn-sh "qutebrowser --basedir /home/daphen/.config/qutebrowser/work --config-py /home/daphen/.config/qutebrowser/config.py --desktop-file-name qutebrowser-work"; }
+    Super+q { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec vivaldi-stable '/home/daphen/.config/niri/scripts/chromium-launch'"; }
+    Super+Shift+q { spawn-sh "/home/daphen/.config/niri/scripts/chromium-launch"; }
+    Super+w { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-work"; }
+    Super+Shift+w { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-work"; }
     Super+m { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec lovable_devenv $HOME/.config/niri/scripts/spawn-lovable-devenv"; }
 
     // Notes - tiled window like spotify/claude
@@ -606,6 +606,7 @@ binds {
     Super+Ctrl+V { spawn "kitty" "--class" "clipse" "-o" "initial_window_width=1000" "-o" "initial_window_height=750" "clipse"; }  // Open clipboard history (clipse in floating terminal)
     Super+Ctrl+J { spawn "rofimoji" "--action" "copy" "type" "--selector" "rofi"; }  // Open emoji picker (copy + auto-type)
     Super+Ctrl+B { spawn "rofi-bluetooth"; }  // Open bluetooth menu
+    Super+Ctrl+P { spawn "/home/daphen/.config/niri/scripts/rofi-asus-profile"; }  // Switch ASUS performance profile
     Super+Ctrl+A { spawn "/home/daphen/.config/niri/scripts/toggle-airpods"; }  // Toggle AirPods connection
 
     // Dismiss all notifications

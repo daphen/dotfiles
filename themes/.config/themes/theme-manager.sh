@@ -334,6 +334,12 @@ apply_tool_theme() {
                 fi
             fi
             ;;
+        "pi")
+            local pi_dir="$HOME/.pi/agent/themes"
+            mkdir -p "$pi_dir"
+            cp "$generated_file" "$pi_dir/${theme_mode}.json"
+            log_success "Applied Pi coding agent ${theme_mode} theme"
+            ;;
         "qutebrowser")
             local target_dir is_managed
             if get_tool_target "$tool"; then

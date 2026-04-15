@@ -24,7 +24,9 @@
         "primary": "#EDEDED",
         "secondary": "#C3C8C6",
         "muted": "#707B84",
-        "subtle": "#707B84"
+        "subtle": "#707B84",
+        "white": "#A8ADAB",
+        "bright_white": "#D5DAD8"
       },
       "accent": {
         "red": "#FF7B72",
@@ -71,7 +73,7 @@
         "blue": "#4A6E9A",
         "magenta": "#6060A0",
         "cyan": "#4A7A8A",
-        "white": "foreground.secondary",
+        "white": "foreground.white",
         "bright_black": "foreground.muted",
         "bright_red": "accent.red",
         "bright_green": "accent.green",
@@ -79,7 +81,7 @@
         "bright_blue": "accent.blue",
         "bright_magenta": "accent.purple",
         "bright_cyan": "accent.cyan",
-        "bright_white": "foreground.primary"
+        "bright_white": "foreground.bright_white"
       }
     },
     "light": {
@@ -100,7 +102,9 @@
         "primary": "#2D4A3D",
         "secondary": "#575279",
         "muted": "#9893a5",
-        "subtle": "#8A92A7"
+        "subtle": "#8A92A7",
+        "white": "#B0ACA0",
+        "bright_white": "#D5D1C5"
       },
       "accent": {
         "red": "#ED333B",
@@ -141,21 +145,21 @@
       },
       "terminal": {
         "black": "#1C1C1C",
-        "red": "#F0B8B8",
-        "green": "#B8D4C8",
-        "yellow": "#F0D0A8",
-        "blue": "#B8CCE0",
-        "magenta": "#D0C0DC",
-        "cyan": "#B8D4D8",
-        "white": "foreground.muted",
-        "bright_black": "background.overlay",
+        "red": "#B05050",
+        "green": "#4A7A60",
+        "yellow": "#907028",
+        "blue": "#4A7098",
+        "magenta": "#785898",
+        "cyan": "#4A7A80",
+        "white": "foreground.white",
+        "bright_black": "#7A7A7A",
         "bright_red": "accent.red",
         "bright_green": "accent.green",
         "bright_yellow": "accent.yellow",
         "bright_blue": "accent.blue",
         "bright_magenta": "accent.purple",
         "bright_cyan": "accent.cyan",
-        "bright_white": "foreground.primary"
+        "bright_white": "foreground.bright_white"
       }
     }
   }

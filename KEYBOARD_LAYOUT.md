@@ -56,7 +56,15 @@ Fish shell functions:
 The XKB keymap is referenced in niri config at `~/.config/niri/config.kdl`
 
 ### Device Handling
-The main kanata.kbd explicitly excludes "beekeeb Piantor Pro Keyboard" so it won't interfere with the Piantor's built-in QMK/ZMK firmware which handles its own layers and Swedish characters.
+The main kanata.kbd explicitly excludes the Piantor Pro so it won't interfere with the Piantor's built-in QMK/Vial firmware which handles its own layers and Swedish characters. Both old and new device names are excluded:
+- Old firmware names: "beekeeb Piantor Pro", "beekeeb Piantor Pro Keyboard", etc.
+- Custom firmware names: "beekeeb piantor_pro", "beekeeb piantor_pro Keyboard", etc.
+
+### Custom Firmware (QMK/Vial)
+The Piantor Pro runs custom Vial-QMK firmware built from `~/vial-qmk/keyboards/beekeeb/piantor_pro/keymaps/vial/`. Key changes from stock:
+- Debounce: 15ms with `sym_eager_pk` algorithm (stock was 5ms defer, caused double keypresses)
+- Vial layout backup: `~/.config/Vial/piantor-pro.vil`
+- Flash via bootmagic: hold top-left key while plugging in USB, copy `.uf2` to RPI-RP2 drive
 
 ## Reloading Changes
 

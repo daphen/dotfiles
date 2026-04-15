@@ -43,6 +43,7 @@ input {
         // natural-scroll
         accel-speed 0.1
         // accel-profile "flat"
+        scroll-factor 0.3
         // scroll-method "two-finger"
         // disabled-on-external-mouse
         // click-method "clickfinger"
@@ -94,6 +95,14 @@ output "eDP-1" {
 // Laptop logical width = 2194 (3840/1.75), Dell logical width = 3440
 // x = (2194 - 3440) / 2 = -623 to center above; y = -1440 (above laptop)
 output "Dell Inc. DELL P3425WE B94NY54" {
+    mode "3440x1440@59.973"
+    scale 1.0
+    position x=-623 y=-1440
+    focus-at-startup
+}
+
+// Dell P3425WE ultrawide (work unit - serial 8Y8PY54) - same position as home unit
+output "Dell Inc. DELL P3425WE 8Y8PY54" {
     mode "3440x1440@59.973"
     scale 1.0
     position x=-623 y=-1440
@@ -498,7 +507,7 @@ binds {
     Super+Shift+d { spawn-sh "SHOW_FASTFETCH=1 kitty"; }
     Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack slack"; }
     Super+a { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'title:spotify_player' 'kitty --class spotify_player spotify_player'"; }
-    Super+q { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec vivaldi-stable '/home/daphen/.config/niri/scripts/chromium-launch'"; }
+    Super+q { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-personal"; }
     Super+Shift+q { spawn-sh "/home/daphen/.config/niri/scripts/chromium-launch"; }
     Super+w { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-work"; }
     Super+Shift+w { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-work"; }
@@ -520,8 +529,9 @@ binds {
     XF86WebCam allow-when-locked=true { spawn-sh "$HOME/.config/niri/scripts/toggle-camera"; }
     XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "set" "5%+"; }
     XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "set" "5%-"; }
-    XF86KbdBrightnessUp allow-when-locked=true { spawn-sh "brightnessctl --device='*kbd_backlight' set 33%+"; }
-    XF86KbdBrightnessDown allow-when-locked=true { spawn-sh "brightnessctl --device='*kbd_backlight' set 33%-"; }
+    XF86KbdBrightnessUp allow-when-locked=true { spawn "asusctl" "leds" "next"; }
+    XF86KbdBrightnessDown allow-when-locked=true { spawn "asusctl" "leds" "prev"; }
+    XF86KbdLightOnOff allow-when-locked=true { spawn "asusctl" "leds" "next"; }
 
     // ProArt P16 function row (sends plain F-keys, not XF86)
     F1  allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }

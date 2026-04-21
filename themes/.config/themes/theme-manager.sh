@@ -184,12 +184,11 @@ apply_tool_theme() {
                 mkdir -p "$target_dir"
                 rm -f "$target_dir/config"
                 cp "$generated_file" "$target_dir/config"
-                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
                 if pgrep mako > /dev/null; then
                     makoctl reload
-                    log_success "Applied and reloaded Mako theme ($label)"
+                    log_success "Applied and reloaded Mako theme"
                 else
-                    log_success "Applied Mako theme ($label, not running)"
+                    log_success "Applied Mako theme (not running)"
                 fi
             fi
             ;;

@@ -1,7 +1,12 @@
 return {
 	"rmagatti/auto-session",
+	cond = function()
+		return vim.env.KITTY_SCROLLBACK_NVIM ~= "true"
+	end,
 	config = function()
 		local auto_session = require("auto-session")
+
+		vim.opt.sessionoptions:remove("terminal")
 
 		auto_session.setup({
 			auto_restore_enabled = true,

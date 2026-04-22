@@ -83,11 +83,6 @@ function set_dark_theme --description "Set dark theme"
         systemctl --user restart xdg-desktop-portal.service 2>/dev/null &
     end
 
-    # Reload wezterm by touching config file to trigger auto-reload (non-blocking)
-    if pgrep -x wezterm-gui >/dev/null 2>&1
-        touch ~/.config/wezterm/wezterm.lua 2>/dev/null &
-    end
-
     # Update Mako notification daemon
     set -l mako_theme ~/.config/themes/generated/mako/dark.theme
     if test -f $mako_theme

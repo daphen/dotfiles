@@ -19,7 +19,25 @@ is_work_url() {
 
 # ── Profile selection ─────────────────────────────────────────────────────────
 
-PROFILE="personal"
+# Default: whichever Vivaldi profile was last focused. The niri-focus-tracker
+# writes the most-recently-focused vivaldi-stable window id to
+# /tmp/niri-focus-tracker/app-vivaldi-stable; vivaldi-personal / vivaldi-work
+# stash each profile's window id in /tmp/vivaldi-{personal,work}-window-id.
+pick_last_focused_profile() {
+    local last_id personal_id work_id
+    last_id=$(cat /tmp/niri-focus-tracker/app-vivaldi-stable 2>/dev/null)
+    personal_id=$(cat /tmp/vivaldi-personal-window-id 2>/dev/null)
+    work_id=$(cat /tmp/vivaldi-work-window-id 2>/dev/null)
+    if [[ -n "$last_id" && "$last_id" == "$work_id" ]]; then
+        echo "work"
+    elif [[ -n "$last_id" && "$last_id" == "$personal_id" ]]; then
+        echo "personal"
+    else
+        echo "personal"
+    fi
+}
+
+PROFILE=$(pick_last_focused_profile)
 if is_work_url "$URL"; then PROFILE="work"; fi
 if is_personal_url "$URL"; then PROFILE="personal"; fi
 

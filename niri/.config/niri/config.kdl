@@ -355,10 +355,11 @@ animations {
     // slowdown 3.0
 }
 
-// Use AMD iGPU for rendering (eDP-1 is connected to card2/AMD)
+// Use AMD iGPU for rendering (eDP-1 is connected to AMD)
 // Avoids cross-GPU copies from NVIDIA that cause sluggish animations
+// Using stable PCI path so it survives render device reordering across boots
 debug {
-    render-drm-device "/dev/dri/renderD129"
+    render-drm-device "/dev/dri/by-path/pci-0000:65:00.0-render"
 }
 
 // Window rules let you adjust behavior for individual windows.
@@ -403,12 +404,6 @@ layer-rule {
 layer-rule {
     match namespace="^wallpaper$"
     place-within-backdrop true
-}
-
-// Work around WezTerm's initial configure bug
-window-rule {
-    match app-id=r#"^org\.wezfurlong\.wezterm$"#
-    default-column-width { }
 }
 
 // Kitty terminal - fixed size

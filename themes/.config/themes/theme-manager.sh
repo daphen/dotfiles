@@ -211,15 +211,6 @@ apply_tool_theme() {
                 log_success "Fish theme generated (will be applied by Fish shells)"
             fi
             ;;
-        "ghostty")
-            local target_dir is_managed
-            if get_tool_target "$tool"; then
-                mkdir -p "$target_dir/themes"
-                cp "$generated_file" "$target_dir/themes/$theme_mode"
-                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
-                log_success "Applied Ghostty theme ($label)"
-            fi
-            ;;
         "tmux")
             if command -v tmux &> /dev/null; then
                 if tmux list-sessions &> /dev/null; then
@@ -239,15 +230,6 @@ apply_tool_theme() {
             if command -v fish &> /dev/null; then
                 fish -c "source '$generated_file'"
                 log_success "Applied Tide prompt theme"
-            fi
-            ;;
-        "wezterm")
-            local target_dir is_managed
-            if get_tool_target "$tool"; then
-                mkdir -p "$target_dir/colors"
-                cp "$generated_file" "$target_dir/colors/${theme_mode}.lua"
-                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
-                log_success "Applied Wezterm ${theme_mode} theme ($label)"
             fi
             ;;
         "spotify-player")
@@ -525,7 +507,7 @@ apply_all() {
     log_success "All themes applied for $theme_mode mode"
 }
 
-# Apply system-wide theme settings (gsettings, wezterm hot-reload)
+# Apply system-wide theme settings (gsettings, GTK/Qt)
 apply_system_theme() {
     local theme_mode=$1
     local gtk_theme
@@ -565,13 +547,6 @@ apply_system_theme() {
     # (actual env vars are set in NixOS config, this is just a reminder log)
     if [[ -f "$HOME/.config/Kvantum/kvantum.kvconfig" ]]; then
         log_success "Kvantum Qt theme is configured"
-    fi
-
-    # Touch wezterm config to trigger hot-reload
-    local wezterm_config="$HOME/.config/wezterm/wezterm.lua"
-    if [[ -f "$wezterm_config" ]]; then
-        touch "$wezterm_config"
-        log_success "Triggered Wezterm hot-reload"
     fi
 
     # Update niri border colors (niri auto-reloads on file write)

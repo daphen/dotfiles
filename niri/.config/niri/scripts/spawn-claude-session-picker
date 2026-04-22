@@ -17,68 +17,84 @@ meta_file=$(mktemp)
 display_file=$(mktemp)
 trap 'rm -f "$meta_file" "$display_file"' EXIT
 
-while IFS= read -r line; do
-    jsonl="${line#* }"
-    first_user_line=$(grep -m1 '"type":"user"' "$jsonl" 2>/dev/null)
-    [ -z "$first_user_line" ] && continue
-
-    session_id=$(basename "$jsonl" .jsonl)
-    last_line=$(tail -1 "$jsonl" 2>/dev/null)
-
-    meta_output=$(printf '%s\n%s' "$first_user_line" "$last_line" | python3 -c "
-import sys, json
+SESSIONS_DIR="$SESSIONS_DIR" META_FILE="$meta_file" DISPLAY_FILE="$display_file" python3 <<'PY'
+import json, os, sys
 from datetime import datetime, timezone
-lines = sys.stdin.read().strip().split('\n')
-first = json.loads(lines[0])
-last = json.loads(lines[-1]) if len(lines) > 1 else first
-cwd = first.get('cwd', '')
-branch = first.get('gitBranch', '') or ''
-ts = last.get('timestamp', '') or first.get('timestamp', '')
-try:
-    dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
-    delta = datetime.now(timezone.utc) - dt
-    secs = int(delta.total_seconds())
-    if secs < 3600:
-        ago = f'{secs // 60}m ago'
-    elif secs < 86400:
-        ago = f'{secs // 3600}h ago'
-    elif secs < 604800:
-        ago = f'{secs // 86400}d ago'
-    else:
-        ago = dt.strftime('%b %d')
-except:
-    ago = '-'
-print(f'{cwd}\t{branch}\t{ago}')
-" 2>/dev/null)
+from pathlib import Path
 
-    IFS=$'\t' read -r cwd branch time_ago <<< "$meta_output"
-    [ -z "$cwd" ] && continue
+sessions_dir = Path(os.environ['SESSIONS_DIR'])
+meta_out = open(os.environ['META_FILE'], 'w')
+display_out = open(os.environ['DISPLAY_FILE'], 'w')
 
-    first_msg=$(grep -m1 '"type":"user"' "$jsonl" 2>/dev/null | python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    content = data.get('message', {}).get('content', '')
+now = datetime.now(timezone.utc)
+
+def fmt_ago(ts):
+    if not ts:
+        return '-'
+    try:
+        dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+        secs = int((now - dt).total_seconds())
+        if secs < 3600: return f'{secs // 60}m ago'
+        if secs < 86400: return f'{secs // 3600}h ago'
+        if secs < 604800: return f'{secs // 86400}d ago'
+        return dt.strftime('%b %d')
+    except Exception:
+        return '-'
+
+def first_user_text(obj):
+    content = obj.get('message', {}).get('content', '')
     if isinstance(content, list):
         for c in content:
             if isinstance(c, dict) and c.get('type') == 'text':
-                content = c['text']
-                break
-        else:
-            content = str(content)
-    content = content.replace('\n', ' ').strip()[:120]
-    print(content)
-except:
-    print('')
-" 2>/dev/null)
-    [ -z "$first_msg" ] && continue
+                return c.get('text', '') or ''
+        return ''
+    return content or ''
 
-    short_branch="${branch#*/}"
-    [ -z "$short_branch" ] && short_branch="-"
+jsonls = []
+for p in sessions_dir.rglob('*.jsonl'):
+    if '/subagents/' in str(p):
+        continue
+    try:
+        jsonls.append((p.stat().st_mtime, p))
+    except OSError:
+        continue
+jsonls.sort(key=lambda x: -x[0])
 
-    printf '%s\t%s\t%s\n' "$session_id" "$cwd" "$jsonl" >> "$meta_file"
-    printf '%-8s  %-30s  %s\n' "$time_ago" "$short_branch" "$first_msg" >> "$display_file"
-done < <(find "$SESSIONS_DIR" -name '*.jsonl' -not -path '*/subagents/*' -printf '%T@ %p\n' | sort -rn)
+for _, path in jsonls:
+    try:
+        first_user = None
+        last_line = None
+        with open(path, 'rb') as f:
+            for raw in f:
+                if raw.strip():
+                    last_line = raw
+                if first_user is None and b'"type":"user"' in raw:
+                    first_user = raw
+        if first_user is None or last_line is None:
+            continue
+        try:
+            first = json.loads(first_user)
+            last = json.loads(last_line)
+        except Exception:
+            continue
+        cwd = first.get('cwd', '')
+        if not cwd:
+            continue
+        branch = first.get('gitBranch', '') or ''
+        ts = last.get('timestamp', '') or first.get('timestamp', '')
+        text = first_user_text(first).replace('\n', ' ').strip()[:120]
+        if not text:
+            continue
+        short_branch = branch.split('/', 1)[1] if '/' in branch else (branch or '-')
+        session_id = path.stem
+        meta_out.write(f'{session_id}\t{cwd}\t{path}\n')
+        display_out.write(f'{fmt_ago(ts):<8}  {short_branch:<30}  {text}\n')
+    except Exception:
+        continue
+
+meta_out.close()
+display_out.close()
+PY
 
 if [ ! -s "$display_file" ]; then
     echo "No sessions found"
@@ -100,7 +116,7 @@ selected=$(echo "$numbered" | fzf \
     --prompt='  ' \
     --no-sort \
     --preview="$HOME/.config/niri/scripts/claude-session-preview {1} $meta_file" \
-    --preview-window=down:60%:wrap \
+    --preview-window=down:60%:wrap:follow \
     --bind='ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up')
 
 [ -z "$selected" ] && exit 0

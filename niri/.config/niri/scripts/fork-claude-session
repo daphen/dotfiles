@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Fork the Claude Code session in the focused window into a new terminal
+# Fork the Claude Code session running in the focused window into a new terminal.
+# Works for both picker-resumed sessions (kitty → claude) and Super+G sessions (kitty → fish → claude).
 
-# Get the PID of the currently focused window
 FOCUSED_PID=$(niri msg --json windows | python3 -c "
 import sys, json
-windows = json.load(sys.stdin)
-for w in windows:
+for w in json.load(sys.stdin):
     if w.get('is_focused', False):
         print(w.get('pid', ''))
         break
@@ -16,20 +15,40 @@ if [ -z "$FOCUSED_PID" ] || [ "$FOCUSED_PID" = "None" ]; then
     exit 1
 fi
 
-# Find the cwd from a shell process under the focused window
-SHELL_PID=$(pgrep -P "$FOCUSED_PID" | sort -rn | while read pid; do
-    comm=$(cat /proc/$pid/comm 2>/dev/null)
-    if [[ "$comm" =~ ^(fish|bash|zsh)$ ]]; then
-        echo $pid
-        break
-    fi
-done | head -n1)
+# Find the claude process in the focused window's subtree.
+# First pass: direct children. Second pass: grandchildren under a shell.
+find_claude() {
+    for pid in $(pgrep -P "$1" 2>/dev/null); do
+        [ "$(cat /proc/$pid/comm 2>/dev/null)" = "claude" ] && { echo "$pid"; return; }
+    done
+    for pid in $(pgrep -P "$1" 2>/dev/null); do
+        comm=$(cat /proc/$pid/comm 2>/dev/null)
+        if [[ "$comm" =~ ^(fish|bash|zsh)$ ]]; then
+            for cpid in $(pgrep -P "$pid" 2>/dev/null); do
+                [ "$(cat /proc/$cpid/comm 2>/dev/null)" = "claude" ] && { echo "$cpid"; return; }
+            done
+        fi
+    done
+}
 
-if [ -n "$SHELL_PID" ]; then
-    CWD=$(readlink -f /proc/$SHELL_PID/cwd 2>/dev/null)
+CLAUDE_PID=$(find_claude "$FOCUSED_PID")
+
+if [ -z "$CLAUDE_PID" ]; then
+    notify-send "Fork Claude" "No claude process in focused window"
+    exit 1
 fi
 
-CWD="${CWD:-$HOME}"
+CWD=$(readlink -f /proc/$CLAUDE_PID/cwd 2>/dev/null)
+CMDLINE=$(tr '\0' ' ' < /proc/$CLAUDE_PID/cmdline 2>/dev/null)
+SESSION_ID=$(echo "$CMDLINE" | grep -oE -- '--resume[= ]+[0-9a-f-]{36}' | head -1 | grep -oE '[0-9a-f-]{36}')
 
-# Spawn a new terminal and fork the current session
-kitty --directory "$CWD" fish -c "claude --continue --fork-session"
+if [ -z "$CWD" ]; then
+    notify-send "Fork Claude" "Could not read cwd of claude PID $CLAUDE_PID"
+    exit 1
+fi
+
+if [ -n "$SESSION_ID" ]; then
+    kitty --directory "$CWD" fish -c "claude --resume $SESSION_ID --fork-session"
+else
+    kitty --directory "$CWD" fish -c "claude --continue --fork-session"
+fi

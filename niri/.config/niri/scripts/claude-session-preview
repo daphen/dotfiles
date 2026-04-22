@@ -15,65 +15,78 @@ short_cwd="${cwd/#$HOME/\~}"
 # Build markdown and pipe through glow
 python3 -c "
 import json
+from datetime import datetime, timezone
 
 jsonl = '$jsonl'
 short_cwd = '$short_cwd'
 session_id = '${session_id:0:8}'
 
-print(f'# {short_cwd}')
-print(f'Session \`{session_id}…\`')
-print()
-print('---')
-print()
+def fmt_time(ts):
+    if not ts:
+        return ''
+    try:
+        dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+        delta = datetime.now(timezone.utc) - dt
+        secs = int(delta.total_seconds())
+        if secs < 60: return f'{secs}s ago'
+        if secs < 3600: return f'{secs // 60}m ago'
+        if secs < 86400: return f'{secs // 3600}h ago'
+        if secs < 604800: return f'{secs // 86400}d ago'
+        return dt.strftime('%b %d')
+    except:
+        return ''
 
+messages = []
 with open(jsonl) as f:
-    messages = []
     for line in f:
         try:
             d = json.loads(line)
         except:
             continue
+        ts = d.get('timestamp', '')
         if d.get('type') == 'user':
             content = d.get('message', {}).get('content', '')
             if isinstance(content, list):
+                text = ''
                 for c in content:
                     if isinstance(c, dict) and c.get('type') == 'text':
-                        content = c['text']
+                        text = c.get('text', '')
                         break
-                else:
-                    continue
-            content = content.strip()
+                content = text
+            content = (content or '').strip()
             if content and not content.startswith('<'):
-                messages.append(('you', content[:300]))
+                messages.append(('you', content, ts))
         elif d.get('type') == 'assistant':
             content = d.get('message', {}).get('content', [])
             if isinstance(content, list):
                 for c in content:
                     if isinstance(c, dict) and c.get('type') == 'text':
-                        text = c['text'].strip()[:300]
+                        text = c.get('text', '').strip()
                         if text:
-                            messages.append(('claude', text))
-                        break
+                            messages.append(('claude', text, ts))
+                            break
 
-    total = len(messages)
-    head = messages[:15]
-    skipped = total - 15
+total = len(messages)
+latest_ts = messages[-1][2] if messages else ''
 
-    for role, text in head:
+print(f'# {short_cwd}')
+print(f'\`{session_id}…\` · {total} message{\"\" if total == 1 else \"s\"} · {fmt_time(latest_ts)}')
+print()
+print('---')
+print()
+
+if not messages:
+    print('_(no messages)_')
+else:
+    for role, text, ts in messages:
+        label = 'You' if role == 'you' else 'Claude'
+        snippet = text[:400]
+        print(f'**{label}** · {fmt_time(ts)}')
+        print()
         if role == 'you':
-            print(f'> **You:** {text}')
+            for ln in snippet.split('\n'):
+                print(f'> {ln}' if ln else '>')
         else:
-            print(f'**Claude:** {text}')
+            print(snippet)
         print()
-
-    if skipped > 0 and messages:
-        print(f'*… {skipped} more messages …*')
-        print()
-        print('---')
-        print()
-        role, text = messages[-1]
-        if role == 'you':
-            print(f'> **You (latest):** {text}')
-        else:
-            print(f'**Claude (latest):** {text}')
 " 2>/dev/null | glow -s dark -w 0 - 2>/dev/null

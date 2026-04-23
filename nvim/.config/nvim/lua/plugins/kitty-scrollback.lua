@@ -6,6 +6,7 @@ return {
   config = function()
     require('kitty-scrollback').setup({
       {
+        status_window = { enabled = false },
         callbacks = {
           after_ready = function()
             vim.o.number = true

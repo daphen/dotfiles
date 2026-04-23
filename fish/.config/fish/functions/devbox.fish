@@ -4,12 +4,19 @@ function devbox --description "Spawn a fresh Docker container with my portable d
         set image "ubuntu:24.04"
     end
 
-    set -l gh_mount
-    if test -d "$HOME/.config/gh"
-        set gh_mount -v "$HOME/.config/gh":/tmp/host-gh:ro
+    # Extract host's GitHub token so the container can auth without dbus/keyring.
+    # gh auth token reads from wherever gh stores credentials (keyring on Linux
+    # usually). Passing it as GH_TOKEN env var in the container bypasses config
+    # migration issues + secret-service lookups that need dbus.
+    set -l docker_env
+    if command -v gh >/dev/null 2>&1
+        set -l token (gh auth token 2>/dev/null)
+        if test -n "$token"
+            set docker_env -e "GH_TOKEN=$token"
+        end
     end
 
-    docker run -it --rm $gh_mount "$image" bash -c '
+    docker run -it --rm $docker_env "$image" bash -c '
         # Install apt/dnf/apk deps
         if command -v apt-get >/dev/null 2>&1; then
             apt-get update -qq && apt-get install -y -qq curl ca-certificates
@@ -19,28 +26,22 @@ function devbox --description "Spawn a fresh Docker container with my portable d
             dnf install -y curl ca-certificates
         fi
 
-        # Run the bootstrap (downloads Nix, installs home-manager, deploys env)
+        # Run the bootstrap (installs Nix, home-manager, deploys portable env)
         curl -sL https://raw.githubusercontent.com/daphen/nixos-portable-config/main/bootstrap.sh | bash || exit 1
 
-        # Copy gh auth from the read-only host mount
-        if [ -d /tmp/host-gh ]; then
-            mkdir -p "$HOME/.config/gh"
-            cp -r /tmp/host-gh/. "$HOME/.config/gh/"
-            chmod -R u+rw "$HOME/.config/gh"
-            echo "==> GitHub auth copied from host"
+        # GH_TOKEN from the env is read automatically by gh — no config migration,
+        # no keyring, no dbus. Confirm for visibility:
+        if [ -n "${GH_TOKEN:-}" ]; then
+            echo "==> GH_TOKEN present — gh commands will use host token"
         fi
 
-        # Find fish on the home-manager profile path and exec into it.
-        # Standalone HM uses ~/.local/state/nix/profile/bin (newer) or
-        # ~/.nix-profile/bin (older). /nix/var/nix/profiles/default/bin is for
-        # system-wide Nix. Cover all three in PATH.
+        # Ensure home-manager profile bins are on PATH before exec fish
         export PATH="$HOME/.local/state/nix/profile/bin:$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH"
 
         if command -v fish >/dev/null 2>&1; then
             exec fish
         else
             echo "!! fish not found on PATH after bootstrap. PATH=$PATH"
-            echo "!! Searching for fish binary..."
             find "$HOME" /nix -maxdepth 6 -name fish -type f 2>/dev/null | head -5
             exec bash
         fi

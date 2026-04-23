@@ -1,0 +1,140 @@
+# Starship prompt configuration
+# Generated from centralized theme system — palette values come from colors.json
+# Reference: https://starship.rs/config/
+
+# ─────────────────────────────────────────────────────────────────────
+# Palette — pulled from the custom theme system's colors.json
+# ─────────────────────────────────────────────────────────────────────
+palette = "custom"
+
+[palettes.custom]
+bg        = "{{background.primary}}"
+bg_alt    = "{{background.secondary}}"
+surface   = "{{background.surface}}"
+prompt    = "{{background.prompt}}"
+fg        = "{{foreground.primary}}"
+fg_muted  = "{{foreground.muted}}"
+red       = "{{accent.red}}"
+orange    = "{{accent.orange}}"
+yellow    = "{{accent.yellow}}"
+green     = "{{accent.green}}"
+cyan      = "{{accent.cyan}}"
+blue      = "{{accent.blue}}"
+purple    = "{{accent.purple}}"
+pink      = "{{accent.pink}}"
+success   = "{{background.success}}"
+warning   = "{{background.warning}}"
+error     = "{{background.error}}"
+
+# ─────────────────────────────────────────────────────────────────────
+# Prompt format — order and inclusion of modules
+# ─────────────────────────────────────────────────────────────────────
+format = """
+[](fg:purple)\
+$directory\
+[](fg:purple bg:prompt)\
+$git_branch\
+$git_status\
+[](fg:prompt bg:surface)\
+$nodejs\
+$python\
+$rust\
+$golang\
+$bun\
+[](fg:surface)\
+$fill\
+$cmd_duration\
+$time\
+$line_break\
+$character"""
+
+# Uncomment for right prompt:
+# right_format = "$status $jobs"
+
+# ─────────────────────────────────────────────────────────────────────
+# Individual module styles
+# ─────────────────────────────────────────────────────────────────────
+
+[fill]
+symbol = " "
+
+[directory]
+style = "bg:purple fg:bg bold"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+home_symbol = "~"
+
+[directory.substitutions]
+"Documents" = "󰈙"
+"Downloads" = ""
+"Music" = ""
+"Pictures" = ""
+"work" = ""
+
+[git_branch]
+symbol = ""
+style = "bg:prompt fg:green"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:prompt fg:red"
+format = '[$all_status$ahead_behind ]($style)'
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold blue)"
+vimcmd_replace_symbol = "[❮](bold purple)"
+vimcmd_visual_symbol = "[❮](bold yellow)"
+
+[cmd_duration]
+min_time = 500
+style = "fg:yellow"
+format = '[ $duration ]($style)'
+
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "fg:fg_muted"
+format = '[ $time ]($style)'
+
+[status]
+disabled = false
+style = "fg:red"
+symbol = "✘ "
+format = '[$symbol$status]($style)'
+
+[jobs]
+symbol = ""
+style = "fg:cyan"
+format = '[$symbol$number]($style)'
+
+# ─────────────────────────────────────────────────────────────────────
+# Language / toolchain indicators — show only when in a relevant project
+# ─────────────────────────────────────────────────────────────────────
+
+[nodejs]
+symbol = ""
+style = "bg:surface fg:green"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+symbol = ""
+style = "bg:surface fg:yellow"
+format = '[ $symbol ($version) ]($style)'
+
+[rust]
+symbol = ""
+style = "bg:surface fg:orange"
+format = '[ $symbol ($version) ]($style)'
+
+[golang]
+symbol = ""
+style = "bg:surface fg:cyan"
+format = '[ $symbol ($version) ]($style)'
+
+[bun]
+symbol = "🥟"
+style = "bg:surface fg:pink"
+format = '[ $symbol ($version) ]($style)'

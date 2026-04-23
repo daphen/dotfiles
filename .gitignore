@@ -24,6 +24,9 @@ qutebrowser/.config/qutebrowser/userstyles.css
 wezterm/.config/wezterm/colors/
 eww/.config/eww/eww.scss
 eww/.config/eww/assets/
+# Note: starship.toml is intentionally tracked (not gitignored) so the
+# portable daphen-remote config can fetch it via inputs.dotfiles. Theme
+# switches will produce diffs on the file — expected.
 
 # Temporary files
 *.swp

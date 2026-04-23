@@ -259,6 +259,26 @@ apply_tool_theme() {
                 log_success "Applied opencode theme ($label)"
             fi
             ;;
+        "starship")
+            # Starship uses a single file at ~/.config/starship.toml — not a dir —
+            # so get_tool_target's "symlinked directory" check doesn't apply.
+            # Write to the dotfiles path if the starship/ dotfile dir exists
+            # (managed), otherwise to ~/.config/starship.toml directly (local).
+            local dotfiles_path="$DOTFILES_DIR/starship/.config/starship/starship.toml"
+            local target_file
+            local label
+            if [[ -d "$DOTFILES_DIR/starship" ]]; then
+                target_file="$dotfiles_path"
+                label="managed"
+            else
+                target_file="$HOME/.config/starship.toml"
+                label="local"
+            fi
+            mkdir -p "$(dirname "$target_file")"
+            cp "$generated_file" "$target_file"
+            # Starship auto-reloads on config change; no explicit reload needed
+            log_success "Applied Starship theme ($label)"
+            ;;
         "clipse")
             local target_dir is_managed
             if get_tool_target "$tool"; then

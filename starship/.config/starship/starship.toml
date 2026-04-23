@@ -1,6 +1,7 @@
 # Starship prompt configuration
 # Generated from the centralized theme system — palette values come from colors.json
-# Style: pastel-powerline adapted to custom palette
+# Style: single dark-bar with muted accent text. Designed for a muted palette
+# where "purple" and "pink" are actually gray-blue — don't lean on them.
 
 add_newline = true
 palette = "custom"
@@ -18,31 +19,22 @@ yellow     = "#ff8a31"
 green      = "#97B5A6"
 cyan       = "#8A9AA6"
 blue       = "#CCD5E4"
-purple     = "#8A92A7"
-pink       = "#8A92A7"
+# purple and pink are #8A92A7 (muted gray-blue) — deliberately not used
+# for backgrounds since they don't read as distinct from cyan/blue.
 
-# Two-line powerline prompt:
-#   [directory][git][lang]    [duration][time]
-#   ❯
+# Single dark bar, rounded left, rounded right:
+#   (dir · git · langs              ·   duration  time)
+#                                                    ❯
 format = """
-[](purple)\
-$os\
-$username\
-[](bg:purple fg:purple)\
-[  ](bg:purple fg:bg)\
+[](fg:prompt)\
 $directory\
-[](fg:purple bg:prompt)\
 $git_branch\
 $git_status\
-[](fg:prompt bg:surface)\
 $nodejs\
 $golang\
 $rust\
-[](fg:surface)\
 $fill\
-[](fg:surface)\
 $cmd_duration\
-[](fg:surface bg:prompt)\
 $time\
 [](fg:prompt)\
 $line_break\
@@ -50,39 +42,27 @@ $character"""
 
 [fill]
 symbol = " "
-
-[os]
-disabled = false
-style = "bg:purple fg:bg"
-
-[os.symbols]
-Ubuntu = "󰕈"
-Debian = ""
-Alpine = ""
-Arch = "󰣇"
-NixOS = ""
-Macos = ""
-Linux = ""
+style = "bg:prompt"
 
 [directory]
-style = "bg:purple fg:bg bold"
-format = "[$path ]($style)"
+style = "bg:prompt fg:fg bold"
+format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 read_only = " "
-read_only_style = "bg:purple fg:bg"
+read_only_style = "bg:prompt fg:red"
 
 [directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music"     = "󰝚 "
-"Pictures"  = " "
-"work"      = " "
+"Documents" = "󰈙"
+"Downloads" = ""
+"Music"     = "󰝚"
+"Pictures"  = ""
+"work"      = ""
 
 [git_branch]
 symbol = ""
 style = "bg:prompt fg:green"
-format = "[ $symbol $branch ]($style)"
+format = "[$symbol $branch ]($style)"
 
 [git_status]
 style = "bg:prompt fg:red"
@@ -90,22 +70,22 @@ format = "[$all_status$ahead_behind ]($style)"
 
 [nodejs]
 symbol = ""
-style = "bg:surface fg:green"
-format = "[ $symbol ($version) ]($style)"
+style = "bg:prompt fg:green"
+format = "[$symbol $version ]($style)"
 
 [golang]
 symbol = ""
-style = "bg:surface fg:cyan"
-format = "[ $symbol ($version) ]($style)"
+style = "bg:prompt fg:cyan"
+format = "[$symbol $version ]($style)"
 
 [rust]
 symbol = ""
-style = "bg:surface fg:orange"
-format = "[ $symbol ($version) ]($style)"
+style = "bg:prompt fg:orange"
+format = "[$symbol $version ]($style)"
 
 [cmd_duration]
 min_time = 500
-style = "bg:surface fg:yellow"
+style = "bg:prompt fg:yellow"
 format = "[  $duration ]($style)"
 
 [time]
@@ -117,9 +97,9 @@ format = "[ 󰥔 $time ]($style)"
 [character]
 success_symbol = "[❯](bold green)"
 error_symbol = "[❯](bold red)"
-vimcmd_symbol = "[❮](bold blue)"
-vimcmd_replace_symbol = "[❮](bold purple)"
-vimcmd_visual_symbol = "[❮](bold yellow)"
+vimcmd_symbol = "[❮](bold cyan)"
+vimcmd_replace_symbol = "[❮](bold yellow)"
+vimcmd_visual_symbol = "[❮](bold orange)"
 
 # Disable auto-detected modules not in my format string
 [aws]
@@ -147,6 +127,8 @@ disabled = true
 [kubernetes]
 disabled = true
 [nix_shell]
+disabled = true
+[os]
 disabled = true
 [package]
 disabled = true

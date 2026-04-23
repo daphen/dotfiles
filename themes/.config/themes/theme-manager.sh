@@ -208,7 +208,18 @@ apply_tool_theme() {
             ;;
         "fish")
             if command -v fish &> /dev/null; then
-                log_success "Fish theme generated (will be applied by Fish shells)"
+                # Persist the generated fish colors to a conf.d file so every
+                # fish shell picks them up on startup — not just live shells.
+                # Name prefixed with `z_` so it loads alphabetically AFTER
+                # fish_frozen_theme.fish, overriding its named-color defaults
+                # with our custom-palette hex values.
+                local conf_d="$DOTFILES_DIR/fish/.config/fish/conf.d"
+                if [[ -d "$conf_d" ]]; then
+                    cp "$generated_file" "$conf_d/z_custom_theme_colors.fish"
+                    log_success "Fish theme generated + persisted to conf.d/z_custom_theme_colors.fish"
+                else
+                    log_success "Fish theme generated (dotfiles conf.d not found; live shells only)"
+                fi
             fi
             ;;
         "tmux")

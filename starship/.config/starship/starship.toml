@@ -1,52 +1,127 @@
 # Starship prompt configuration
 # Generated from the centralized theme system — palette values come from colors.json
-# Reference: https://starship.rs/config/
+# Style: pastel-powerline adapted to custom palette
 
 add_newline = true
 palette = "custom"
 
 [palettes.custom]
-bg       = "#181818"
-bg_alt   = "#1B1B1B"
-surface  = "#1B1B1B"
-prompt   = "#323A40"
-fg       = "#EDEDED"
-fg_muted = "#707B84"
-red      = "#FF7B72"
-orange   = "#FF570D"
-yellow   = "#ff8a31"
-green    = "#97B5A6"
-cyan     = "#8A9AA6"
-blue     = "#CCD5E4"
-purple   = "#8A92A7"
-pink     = "#8A92A7"
+bg         = "#181818"
+bg_alt     = "#1B1B1B"
+surface    = "#1B1B1B"
+prompt     = "#323A40"
+fg         = "#EDEDED"
+fg_muted   = "#707B84"
+red        = "#FF7B72"
+orange     = "#FF570D"
+yellow     = "#ff8a31"
+green      = "#97B5A6"
+cyan       = "#8A9AA6"
+blue       = "#CCD5E4"
+purple     = "#8A92A7"
+pink       = "#8A92A7"
 
-# Prompt: two-line, minimal — cwd + git on line 1, arrow on line 2
-format = "$directory$git_branch$git_status$line_break$character"
+# Two-line powerline prompt:
+#   [directory][git][lang]    [duration][time]
+#   ❯
+format = """
+[](purple)\
+$os\
+$username\
+[](bg:purple fg:purple)\
+[  ](bg:purple fg:bg)\
+$directory\
+[](fg:purple bg:prompt)\
+$git_branch\
+$git_status\
+[](fg:prompt bg:surface)\
+$nodejs\
+$golang\
+$rust\
+[](fg:surface)\
+$fill\
+[](fg:surface)\
+$cmd_duration\
+[](fg:surface bg:prompt)\
+$time\
+[](fg:prompt)\
+$line_break\
+$character"""
+
+[fill]
+symbol = " "
+
+[os]
+disabled = false
+style = "bg:purple fg:bg"
+
+[os.symbols]
+Ubuntu = "󰕈"
+Debian = ""
+Alpine = ""
+Arch = "󰣇"
+NixOS = ""
+Macos = ""
+Linux = ""
 
 [directory]
-style = "bold blue"
-format = "[$path]($style)[$read_only]($read_only_style) "
+style = "bg:purple fg:bg bold"
+format = "[$path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 read_only = " "
+read_only_style = "bg:purple fg:bg"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music"     = "󰝚 "
+"Pictures"  = " "
+"work"      = " "
 
 [git_branch]
 symbol = ""
-style = "green"
-format = "[$symbol $branch]($style) "
+style = "bg:prompt fg:green"
+format = "[ $symbol $branch ]($style)"
 
 [git_status]
-style = "red"
-format = "[$all_status$ahead_behind]($style) "
+style = "bg:prompt fg:red"
+format = "[$all_status$ahead_behind ]($style)"
+
+[nodejs]
+symbol = ""
+style = "bg:surface fg:green"
+format = "[ $symbol ($version) ]($style)"
+
+[golang]
+symbol = ""
+style = "bg:surface fg:cyan"
+format = "[ $symbol ($version) ]($style)"
+
+[rust]
+symbol = ""
+style = "bg:surface fg:orange"
+format = "[ $symbol ($version) ]($style)"
+
+[cmd_duration]
+min_time = 500
+style = "bg:surface fg:yellow"
+format = "[  $duration ]($style)"
+
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "bg:prompt fg:fg_muted"
+format = "[ 󰥔 $time ]($style)"
 
 [character]
 success_symbol = "[❯](bold green)"
 error_symbol = "[❯](bold red)"
 vimcmd_symbol = "[❮](bold blue)"
+vimcmd_replace_symbol = "[❮](bold purple)"
+vimcmd_visual_symbol = "[❮](bold yellow)"
 
-# Noisy defaults — explicitly disabled. Flip `disabled = false` on any
-# module you want to see again.
+# Disable auto-detected modules not in my format string
 [aws]
 disabled = true
 [azure]
@@ -55,13 +130,11 @@ disabled = true
 disabled = true
 [bun]
 disabled = true
-[cmd_duration]
-disabled = true
+[container]
+disabled = false
 [docker_context]
 disabled = true
 [gcloud]
-disabled = true
-[golang]
 disabled = true
 [helm]
 disabled = true
@@ -75,21 +148,15 @@ disabled = true
 disabled = true
 [nix_shell]
 disabled = true
-[nodejs]
-disabled = true
 [package]
 disabled = true
 [python]
-disabled = true
-[rust]
 disabled = true
 [shell]
 disabled = true
 [shlvl]
 disabled = true
 [status]
-disabled = true
-[time]
 disabled = true
 [username]
 disabled = true

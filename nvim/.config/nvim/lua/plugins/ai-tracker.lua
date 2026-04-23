@@ -44,16 +44,31 @@ return {
 			desc = "AI Prompts & Files",
 		},
 
-		-- Navigation through changes
+		-- Hunk navigation / diff preview (delegated to gitsigns since we use git diffs now)
 		{
 			"<C-g>j",
-			function() require("ai-tracker").next() end,
-			desc = "Next AI change",
+			function() require("gitsigns").next_hunk() end,
+			desc = "Next hunk",
 		},
 		{
 			"<C-g>k",
-			function() require("ai-tracker").prev() end,
-			desc = "Previous AI change",
+			function() require("gitsigns").prev_hunk() end,
+			desc = "Previous hunk",
+		},
+		{
+			"<C-g>d",
+			function() require("gitsigns").preview_hunk_inline() end,
+			desc = "Preview hunk (inline)",
+		},
+		{
+			"<C-g>u",
+			function() require("ai-tracker").jump_to_unread() end,
+			desc = "Jump to first unread AI edit",
+		},
+		{
+			"<C-f>",
+			function() require("ai-tracker").jump_to_latest() end,
+			desc = "Jump to latest AI edit",
 		},
 		{
 			"<C-g>r",
@@ -91,5 +106,7 @@ return {
 		"AIPrompt",
 		"AITrackerClear",
 		"AITrackerReload",
+		"AITrackerUnread",
+		"AITrackerJumpLatest",
 	},
 }

@@ -3,21 +3,38 @@ local M = {}
 
 local utils = require("ai-tracker.utils")
 local picker = require("ai-tracker.picker")
+local watcher = require("ai-tracker.watcher")
 
 -- Configuration
 M.config = {
   log_file = vim.fn.expand("~/.local/share/nvim/ai-changes.jsonl"),
-  max_entries = 1000, -- Maximum entries to keep in memory
-  auto_reload = true, -- Auto-reload changes when showing picker
+  max_entries = 1000,
+  auto_reload = true,
+  watch = {
+    enabled = true,
+    debounce_ms = 150,
+    poll_fallback_ms = 5000,
+  },
+  notify = {
+    -- "single" = one popup per flush, "silent" = no popup (autocmd still fires)
+    mode = "single",
+    flush_ms = 300,
+  },
+  auto_reload_buffers = true, -- checktime affected buffers when AI writes land
 }
 
 -- State
 M.state = {
   changes = {}, -- Cached changes
-  last_read = 0, -- Last time we read the log file
-  pending_prompt = nil, -- For manual annotation mode
-  pending_count = 0, -- How many writes to track for pending prompt
-  notified_files = {}, -- Files we've already notified about in this session
+  last_read = 0,
+  pending_prompt = nil,
+  pending_count = 0,
+  -- Per-file session state. Keyed by absolute path.
+  -- { first_opened_at, last_seen_at, unread_count, unread_lines, last_ai_write_at }
+  files = {},
+  -- Queue of background edits waiting to be notified.
+  notify_queue = {}, -- array of { path, count }
+  notify_timer = nil,
 }
 
 --- Setup the plugin
@@ -25,26 +42,30 @@ M.state = {
 function M.setup(opts)
   M.config = vim.tbl_deep_extend("force", M.config, opts or {})
 
-  -- Ensure log directory exists
   vim.fn.mkdir(vim.fn.fnamemodify(M.config.log_file, ":h"), "p")
 
-  -- Setup sign definitions for AI changes
   M.setup_signs()
-
-  -- Setup autocmds for manual tracking (fallback mode)
   M.setup_autocmds()
-
-  -- Setup user commands
   M.setup_commands()
-  
-  -- Setup buffer signs on enter
-  M.setup_buffer_signs()
-  
-  -- Apply highlights to the initial buffer
-  vim.defer_fn(function()
-    M.update_buffer_signs()
-    M.check_and_notify_changes()
-  end, 100)
+  M.setup_buffer_hooks()
+
+  if M.config.watch.enabled then
+    watcher.start({
+      path = M.config.log_file,
+      debounce_ms = M.config.watch.debounce_ms,
+      poll_fallback_ms = M.config.watch.poll_fallback_ms,
+      on_batch = function(entries) M.handle_batch(entries) end,
+    })
+  end
+
+  -- Auto-switch to the most recent AI edit on startup. Deferred so that
+  -- session-restoration plugins finish first.
+  vim.api.nvim_create_autocmd("VimEnter", {
+    once = true,
+    callback = function()
+      vim.defer_fn(function() M.on_vim_enter() end, 100)
+    end,
+  })
 end
 
 --- Setup highlight groups for line numbers
@@ -79,159 +100,309 @@ function M.setup_signs()
   })
 end
 
---- Setup buffer line number highlights on BufEnter
-function M.setup_buffer_signs()
-  local group = vim.api.nvim_create_augroup("AITrackerHighlights", { clear = true })
-  
-  vim.api.nvim_create_autocmd({ "BufEnter", "BufReadPost", "BufWritePost", "ColorScheme" }, {
+--- Setup BufEnter/ColorScheme hooks.
+--- BufEnter marks a file as "opened this session" and clears its unread state.
+function M.setup_buffer_hooks()
+  local group = vim.api.nvim_create_augroup("AITrackerHooks", { clear = true })
+
+  vim.api.nvim_create_autocmd({ "BufEnter", "BufReadPost" }, {
+    group = group,
+    callback = function(ev)
+      local path = vim.api.nvim_buf_get_name(ev.buf)
+      if path == "" then return end
+      path = vim.fn.fnamemodify(path, ":p")
+      M.mark_opened(path, ev.buf)
+    end,
+  })
+
+  vim.api.nvim_create_autocmd("ColorScheme", {
     group = group,
     callback = function()
-      -- Re-setup highlights on ColorScheme change
-      if vim.v.event and vim.v.event.event == "ColorScheme" then
-        M.setup_signs()
-      end
-      M.update_buffer_signs()
-      
-      -- Check for AI changes and notify/show picker if needed  
-      if vim.v.event and vim.v.event.event == "BufEnter" or vim.v.event.event == "BufReadPost" then
-        M.check_and_notify_changes()
-      end
+      M.setup_signs()
+      -- Re-render unread highlights on the current buffer with new colors.
+      M.update_buffer_signs(vim.api.nvim_get_current_buf())
     end,
   })
 end
 
---- Check for AI changes and notify user
-function M.check_and_notify_changes()
-  local current_file = vim.fn.expand("%:p")
-  if current_file == "" then
-    return
+--- Mark a file as opened in this session. Clears unread state and its highlights.
+---@param path string Absolute file path
+---@param bufnr integer Buffer number
+function M.mark_opened(path, bufnr)
+  local fstate = M.state.files[path]
+  if not fstate then
+    fstate = { first_opened_at = os.time() }
+    M.state.files[path] = fstate
   end
-  
-  -- Only check if we haven't notified about this file recently
-  M.state.notified_files = M.state.notified_files or {}
-  if M.state.notified_files[current_file] then
-    return
-  end
-  
-  -- Get changes for this file only
-  local changes = M.get_changes()
-  local file_changes = {}
-  local lines = {}
-  
-  for _, change in ipairs(changes) do
-    if change.file_path == current_file then
-      table.insert(file_changes, change)
-      lines[change.line_number or 1] = true
-    end
-  end
-  
-  -- Notify if there are AI changes in this file
-  if #file_changes > 0 then
-    local line_list = vim.tbl_keys(lines)
-    table.sort(line_list)
-    
-    -- Format line ranges for compact display
-    local ranges = {}
-    local i = 1
-    while i <= #line_list do
-      local start = line_list[i]
-      local finish = start
-      
-      -- Find consecutive lines
-      while i < #line_list and line_list[i + 1] == finish + 1 do
-        i = i + 1
-        finish = line_list[i]
-      end
-      
-      if start == finish then
-        table.insert(ranges, tostring(start))
-      else
-        table.insert(ranges, string.format("%d-%d", start, finish))
-      end
-      i = i + 1
-    end
-    
-    vim.notify(
-      string.format("AI modified lines: %s", table.concat(ranges, ", ")),
-      vim.log.levels.INFO,
-      { title = "AI Tracker" }
-    )
-    
-    -- Mark as notified for this session
-    M.state.notified_files[current_file] = true
+  fstate.last_seen_at = os.time()
+
+  if fstate.unread_count and fstate.unread_count > 0 then
+    fstate.unread_count = 0
+    fstate.unread_lines = nil
+    M.update_buffer_signs(bufnr)
   end
 end
 
---- Update line number highlights for current buffer
-function M.update_buffer_signs()
-  local bufnr = vim.api.nvim_get_current_buf()
-  local file_path = vim.fn.expand("%:p")
-  
-  if file_path == "" then
-    return
-  end
-  
-  -- Create namespace for our highlights
+--- Render unread-line highlights for a buffer.
+--- Only highlights lines that were edited by the AI after the user first opened
+--- this file and has not yet revisited. Clears on BufEnter (see mark_opened).
+---@param bufnr? integer
+function M.update_buffer_signs(bufnr)
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
+  if not vim.api.nvim_buf_is_valid(bufnr) then return end
+
+  local path = vim.api.nvim_buf_get_name(bufnr)
+  if path == "" then return end
+  path = vim.fn.fnamemodify(path, ":p")
+
   local ns_id = vim.api.nvim_create_namespace("ai_tracker_lines")
-  
-  -- Clear existing highlights
   vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
-  
-  -- Get changes for this file
-  local changes = M.get_changes()
-  local file_changes = {}
-  local seen_lines = {}
-  
-  for _, change in ipairs(changes) do
-    if change.file_path == file_path then
-      local line = change.line_number or 1
-      if not seen_lines[line] then
-        seen_lines[line] = true
-        table.insert(file_changes, change)
-      end
-    end
-  end
-  
-  -- Add line number highlights for AI changes
-  local now = os.time()
-  for _, change in ipairs(file_changes) do
-    local line = change.line_number or 1
 
-    -- Check if change is recent (within last 24 hours)
-    local is_recent = false
-    if change.timestamp then
-      -- Parse ISO timestamp properly
-      local year, month, day, hour, min, sec = change.timestamp:match(
-        "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)"
-      )
-      if year then
-        local change_time = os.time({
-          year = tonumber(year) or 2024,
-          month = tonumber(month) or 1,
-          day = tonumber(day) or 1,
-          hour = tonumber(hour) or 0,
-          min = tonumber(min) or 0,
-          sec = tonumber(sec) or 0,
-        })
-        is_recent = (now - change_time) < 86400 -- 24 hours
-      end
-    end
+  local fstate = M.state.files[path]
+  if not fstate or not fstate.unread_lines or #fstate.unread_lines == 0 then return end
 
-    local hl_group = is_recent and "AITrackerRecentLineNr" or "AITrackerLineNr"
-
-    -- Calculate the number of lines in this change block
-    local start_line = line - 1 -- 0-based for extmarks
-    local line_count = utils.count_lines(change.new_string or "") or 1
-    local end_line = start_line + line_count
-
-    -- Set extmarks to highlight line numbers for the entire block
-    for current_line = start_line, math.min(end_line - 1, vim.api.nvim_buf_line_count(bufnr) - 1) do
-      vim.api.nvim_buf_set_extmark(bufnr, ns_id, current_line, 0, {
-        number_hl_group = hl_group,
-        priority = 100, -- Lower than signs but visible
+  local line_count = vim.api.nvim_buf_line_count(bufnr)
+  local seen = {}
+  for _, line in ipairs(fstate.unread_lines) do
+    local row = (tonumber(line) or 1) - 1
+    if row >= 0 and row < line_count and not seen[row] then
+      seen[row] = true
+      pcall(vim.api.nvim_buf_set_extmark, bufnr, ns_id, row, 0, {
+        number_hl_group = "AITrackerRecentLineNr",
+        priority = 100,
       })
     end
   end
+end
+
+--- Reload in-memory cache and handle a batch of newly-appended log entries.
+--- This is the main dispatcher wired to the watcher.
+---@param entries table[]
+function M.handle_batch(entries)
+  -- Append to cache so pickers reflect live state.
+  for _, e in ipairs(entries) do
+    table.insert(M.state.changes, 1, e)
+  end
+
+  -- Group by file; one decision + one notification per file per batch.
+  local by_file = {}
+  for _, e in ipairs(entries) do
+    local path = e.file_path
+    if path and path ~= "" then
+      by_file[path] = by_file[path] or {}
+      table.insert(by_file[path], e)
+    end
+  end
+
+  local current_buf_path = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p")
+
+  for path, file_entries in pairs(by_file) do
+    local bufnr = vim.fn.bufnr(path)
+    local loaded = bufnr > 0 and vim.api.nvim_buf_is_loaded(bufnr)
+
+    -- Reload the buffer if it's loaded, so gitsigns + the rest of the world see fresh content.
+    if loaded and M.config.auto_reload_buffers then
+      M.safe_checktime(bufnr)
+    end
+
+    local fstate = M.state.files[path]
+    local is_background = fstate and fstate.first_opened_at and path ~= current_buf_path
+
+    if is_background then
+      fstate.unread_count = (fstate.unread_count or 0) + #file_entries
+      fstate.unread_lines = fstate.unread_lines or {}
+      fstate.last_ai_write_at = os.time()
+      for _, e in ipairs(file_entries) do
+        table.insert(fstate.unread_lines, e.line_number or 1)
+      end
+
+      -- If the affected buffer is loaded, draw the unread highlights.
+      if loaded then M.update_buffer_signs(bufnr) end
+
+      M.notify_enqueue(path, #file_entries)
+    end
+  end
+end
+
+--- Reload a buffer from disk, unless it has unsaved changes or is a special buftype.
+---@param bufnr integer
+function M.safe_checktime(bufnr)
+  if not vim.api.nvim_buf_is_valid(bufnr) then return end
+  if vim.bo[bufnr].modified then return end
+  if vim.bo[bufnr].buftype ~= "" then return end
+  pcall(vim.api.nvim_buf_call, bufnr, function() vim.cmd("checktime") end)
+end
+
+--- Queue a background-edit notification; flushed on a debounce.
+---@param path string
+---@param count integer
+function M.notify_enqueue(path, count)
+  table.insert(M.state.notify_queue, { path = path, count = count })
+
+  if M.state.notify_timer then
+    M.state.notify_timer:stop()
+  else
+    M.state.notify_timer = (vim.uv or vim.loop).new_timer()
+  end
+  M.state.notify_timer:start(
+    M.config.notify.flush_ms,
+    0,
+    vim.schedule_wrap(function() M.notify_flush() end)
+  )
+end
+
+--- Flush queued notifications into a single summary.
+function M.notify_flush()
+  local queue = M.state.notify_queue
+  M.state.notify_queue = {}
+  if #queue == 0 then return end
+
+  -- Coalesce per file.
+  local per_file = {}
+  local file_order = {}
+  for _, item in ipairs(queue) do
+    if not per_file[item.path] then
+      per_file[item.path] = 0
+      table.insert(file_order, item.path)
+    end
+    per_file[item.path] = per_file[item.path] + item.count
+  end
+
+  -- Emit a User autocmd so statuslines/lualine can react.
+  pcall(vim.api.nvim_exec_autocmds, "User", {
+    pattern = "AITrackerBackgroundEdit",
+    data = { files = per_file },
+  })
+
+  if M.config.notify.mode == "silent" then return end
+
+  local parts = {}
+  for _, path in ipairs(file_order) do
+    local _, rel = utils.format_path(path)
+    local name = rel ~= "" and rel or vim.fn.fnamemodify(path, ":t")
+    table.insert(parts, string.format("%s (%d)", name, per_file[path]))
+  end
+
+  local total_files = #file_order
+  local summary = string.format(
+    "AI Tracker: %d background edit%s — %s",
+    #queue,
+    #queue == 1 and "" or "s",
+    table.concat(parts, ", ")
+  )
+  if total_files > 3 then
+    -- Cap the list so it doesn't blow past the message area.
+    summary = string.format(
+      "AI Tracker: %d background edits across %d files",
+      #queue,
+      total_files
+    )
+  end
+
+  vim.notify(summary, vim.log.levels.INFO, { title = "AI Tracker" })
+end
+
+--- Find the most recent AI change whose file lives under the current project.
+---@return table? change entry or nil
+function M.get_latest_in_project()
+  local changes = M.get_changes()
+  if #changes == 0 then return nil end
+
+  local project_root = vim.fn.getcwd()
+  local utils_ok, main_utils = pcall(require, "utils")
+  if utils_ok and main_utils and main_utils.get_project_root_git_priority then
+    local maybe = main_utils.get_project_root_git_priority(project_root)
+    if maybe then project_root = maybe end
+  end
+
+  local latest
+  for _, change in ipairs(changes) do
+    local path = change.file_path
+    if path and vim.startswith(path, project_root) then
+      if not latest or (change.timestamp or "") > (latest.timestamp or "") then
+        latest = change
+      end
+    end
+  end
+
+  if latest and vim.fn.filereadable(latest.file_path) == 0 then return nil end
+  return latest
+end
+
+--- Jump to the most recently AI-edited file in the current project.
+function M.jump_to_latest()
+  local latest = M.get_latest_in_project()
+  if not latest then
+    vim.notify("AI Tracker: no recent AI edits in this project", vim.log.levels.INFO)
+    return
+  end
+
+  local current = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p")
+  if current ~= latest.file_path then
+    vim.cmd("edit " .. vim.fn.fnameescape(latest.file_path))
+  end
+  if latest.line_number then
+    vim.fn.cursor(latest.line_number, 1)
+    vim.cmd("normal! zz")
+  end
+end
+
+--- Does the current buffer's file appear in the AI change log?
+---@return boolean
+local function current_file_is_ai_changed()
+  local current = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p")
+  if current == "" then return false end
+  for _, c in ipairs(M.get_changes()) do
+    if c.file_path == current then return true end
+  end
+  return false
+end
+
+--- VimEnter handler — auto-switch to latest AI-edited file when it makes sense.
+--- Rules:
+---   - argc > 0 (explicit file args): notify only.
+---   - current buffer is any AI-touched file: notify only.
+---   - otherwise: switch.
+function M.on_vim_enter()
+  local latest = M.get_latest_in_project()
+  if not latest then return end
+
+  local current = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p")
+  local name = vim.fn.fnamemodify(latest.file_path, ":t")
+  local line = latest.line_number or 1
+
+  local notify_only = vim.fn.argc() > 0 or current_file_is_ai_changed()
+  if notify_only then
+    local msg
+    if current == latest.file_path then
+      msg = string.format("AI Tracker: latest edit is this file (line %d)", line)
+    else
+      msg = string.format("AI Tracker: latest edit — %s:%d (<C-f> to jump)", name, line)
+    end
+    vim.notify(msg, vim.log.levels.INFO, { title = "AI Tracker" })
+    return
+  end
+
+  vim.cmd("edit " .. vim.fn.fnameescape(latest.file_path))
+  vim.fn.cursor(line, 1)
+  vim.cmd("normal! zz")
+end
+
+--- Jump to the first unread AI-touched line in the current buffer.
+function M.jump_to_unread()
+  local path = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p")
+  local fstate = M.state.files[path]
+  if not fstate or not fstate.unread_lines or #fstate.unread_lines == 0 then
+    vim.notify("AI Tracker: no unread changes in this buffer", vim.log.levels.INFO)
+    return
+  end
+  local first = math.huge
+  for _, l in ipairs(fstate.unread_lines) do
+    if (tonumber(l) or math.huge) < first then first = tonumber(l) end
+  end
+  if first == math.huge then return end
+  vim.fn.cursor(first, 1)
+  vim.cmd("normal! zz")
 end
 
 --- Setup autocmds for manual file change tracking
@@ -351,6 +522,14 @@ function M.setup_commands()
     M.reload_changes()
     vim.notify("AI Tracker: Reloaded changes", vim.log.levels.INFO)
   end, { desc = "Reload AI changes from log file" })
+
+  vim.api.nvim_create_user_command("AITrackerUnread", function()
+    M.jump_to_unread()
+  end, { desc = "Jump to first unread AI edit in current buffer" })
+
+  vim.api.nvim_create_user_command("AITrackerJumpLatest", function()
+    M.jump_to_latest()
+  end, { desc = "Jump to the most recent AI-edited file in this project" })
 end
 
 --- Read changes from log file
@@ -493,112 +672,6 @@ function M.start_annotation(prompt)
     string.format("AI Tracker: Tracking changes for prompt: %s\nUse :AIPrompt again to stop.", utils.truncate(prompt, 50)),
     vim.log.levels.INFO
   )
-end
-
---- Find changes in current file
----@return table[] Array of changes for current file
-function M.get_file_changes()
-  local current_file = vim.fn.expand("%:p")
-  local changes = M.get_changes()
-  local file_changes = {}
-
-  for _, change in ipairs(changes) do
-    if change.file_path == current_file then
-      table.insert(file_changes, change)
-    end
-  end
-
-  -- Sort by line number
-  table.sort(file_changes, function(a, b)
-    return a.line_number < b.line_number
-  end)
-
-  return file_changes
-end
-
---- Jump to next AI change in current file
-function M.next()
-  local file_changes = M.get_file_changes()
-  if #file_changes == 0 then
-    vim.notify("No AI changes found in current file", vim.log.levels.INFO)
-    return
-  end
-
-  local current_line = vim.fn.line(".")
-
-  -- Find next change after current line
-  for _, change in ipairs(file_changes) do
-    if change.line_number > current_line then
-      vim.fn.cursor(change.line_number, 1)
-      vim.cmd("normal! zz")
-      -- Only show prompt in a subtle way as virtual text, not notification
-      M.highlight_change(change)
-      return
-    end
-  end
-
-  -- Wrap to first change
-  if #file_changes > 0 then
-    vim.fn.cursor(file_changes[1].line_number, 1)
-    vim.cmd("normal! zz")
-    M.highlight_change(file_changes[1])
-  end
-end
-
---- Jump to previous AI change in current file
-function M.prev()
-  local file_changes = M.get_file_changes()
-  if #file_changes == 0 then
-    vim.notify("No AI changes found in current file", vim.log.levels.INFO)
-    return
-  end
-
-  local current_line = vim.fn.line(".")
-
-  -- Find previous change before current line (iterate in reverse)
-  for i = #file_changes, 1, -1 do
-    local change = file_changes[i]
-    if change.line_number < current_line then
-      vim.fn.cursor(change.line_number, 1)
-      vim.cmd("normal! zz")
-      M.highlight_change(change)
-      return
-    end
-  end
-
-  -- Wrap to last change
-  if #file_changes > 0 then
-    local last_change = file_changes[#file_changes]
-    vim.fn.cursor(last_change.line_number, 1)
-    vim.cmd("normal! zz")
-    M.highlight_change(last_change)
-  end
-end
-
---- Highlight a change temporarily when navigating
----@param change table Change entry
-function M.highlight_change(change)
-  local ns_id = vim.api.nvim_create_namespace("ai_tracker_highlight")
-  local bufnr = vim.api.nvim_get_current_buf()
-
-  -- Clear previous highlights
-  vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
-
-  -- Calculate line range
-  local start_line = change.line_number - 1
-  local end_line = start_line + (utils.count_lines(change.new_string or "") or 1)
-
-  -- Briefly highlight the changed lines with a subtle background
-  for line = start_line, math.min(end_line, vim.api.nvim_buf_line_count(bufnr) - 1) do
-    vim.api.nvim_buf_add_highlight(bufnr, ns_id, "Visual", line, 0, -1)
-  end
-
-  -- Clear highlight after 2 seconds
-  vim.defer_fn(function()
-    if vim.api.nvim_buf_is_valid(bufnr) then
-      vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
-    end
-  end, 2000)
 end
 
 --- Clear the log file
@@ -760,7 +833,7 @@ function M.reset_tracking()
       if file then
         file:close()
         M.state.changes = {}
-        M.state.notified_files = {}
+        M.state.files = {}
         M.update_buffer_signs()
         vim.notify("AI Tracker: Reset for new feature", vim.log.levels.INFO)
       end

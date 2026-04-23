@@ -94,7 +94,6 @@ return {
 		{ "<leader>fh", function() Snacks.picker.help() end, desc = "Search Help" },
 		{ "<leader>fd", function() Snacks.picker.diagnostics() end, desc = "Search Diagnostics" },
 		{ "<leader>fb", function() Snacks.picker.buffers() end, desc = "Find Buffers" },
-		{ "<C-f>", function() Snacks.picker.recent({ filter = { cwd = true } }) end, desc = "Find Recent" },
 		{ "<leader>fp", function() Snacks.picker.projects() end, desc = "Projects" },
 		{ "<leader>fr", function() Snacks.picker.lsp_references() end, desc = "LSP References" },
 		{ "<leader>fj", function() Snacks.picker.jumps() end, desc = "Search Jumplist" },

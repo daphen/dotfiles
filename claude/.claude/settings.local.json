@@ -23,7 +23,8 @@
       "WebFetch(domain:www.januschka.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:forum.vivaldi.net)",
-      "WebFetch(domain:davidkarlsson.dev)"
+      "WebFetch(domain:davidkarlsson.dev)",
+      "WebFetch(domain:api.github.com)"
     ],
     "deny": [],
     "ask": []

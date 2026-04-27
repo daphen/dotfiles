@@ -4,10 +4,11 @@ return {
 		build = ":TSUpdate",
 		dependencies = {
 			"nvim-treesitter/nvim-treesitter-textobjects",
-			"nvim-treesitter/playground",
 		},
 		config = function()
-			-- First set up the basic TreeSitter configuration without the keymaps
+			-- Standard nvim-treesitter master-branch config — paired with nvim 0.11.x
+			-- (pinned in nixos config). When the plugin ecosystem fully migrates to
+			-- main branch + nvim 0.12, swap this for a vim.treesitter.start-based config.
 			require("nvim-treesitter.configs").setup({
 				ensure_installed = { "javascript", "typescript", "lua", "markdown", "markdown_inline" },
 				incremental_selection = {
@@ -22,9 +23,6 @@ return {
 				auto_install = true,
 				highlight = { enable = true },
 				indent = { enable = true },
-				playground = {
-					enable = true,
-				},
 				textobjects = {
 					move = {
 						enable = true,
@@ -39,8 +37,8 @@ return {
 				},
 			})
 
-		-- Add keymapping for TreeSitter playground
-		vim.keymap.set("n", "<leader>T", ":TSPlaygroundToggle<CR>", { desc = "Toggle TreeSitter playground" })
+			-- Built-in tree inspector (replaces the deprecated playground plugin)
+			vim.keymap.set("n", "<leader>T", ":InspectTree<CR>", { desc = "Inspect TreeSitter tree" })
 		end,
 	},
 }

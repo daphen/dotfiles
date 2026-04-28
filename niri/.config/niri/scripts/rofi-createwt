@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Prompt for a worktree name via rofi -dmenu, then run `createwt <name>` in
+# a kitty/fish so its output is visible while it sets up.
+set -euo pipefail
+
+name=$(rofi -dmenu -p "createwt name" -theme-str 'window {width: 30em;}' </dev/null || true)
+[ -z "$name" ] && exit 0
+
+# Sanitize: strip whitespace, allow [a-zA-Z0-9-]
+name=$(printf '%s' "$name" | tr -cd '[:alnum:]-' )
+[ -z "$name" ] && exit 0
+
+exec kitty --class lovable_picker fish -c "createwt $name 2>&1 | tee -a /tmp/wt-spawn.log"

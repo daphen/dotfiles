@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""
+wt-jump-devenv
+
+Cycle/focus among "active" devenv windows:
+  - the deps singleton (title == "process-compose: proart/lovable")
+  - the active worktree's devenv wt window (title matches
+    "^process-compose: proart/lovable\\..+", restricted to the active
+    stack on the lovable workspace)
+
+Active worktree = whichever worktree's windows have the most-recent
+focus_timestamp on the lovable workspace. Stack identity is read from
+the kitty `--class lovable_term_<name>` / `lovable_claude_<name>` and
+from the vivaldi window title.
+
+If neither candidate exists, spawn the deps singleton via wt-deps.
+"""
+from __future__ import annotations
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+
+DEPS_TITLE_RE = re.compile(r"^process-compose: proart/lovable$")
+WT_TITLE_RE = re.compile(r"^process-compose: proart/lovable\..+")
+
+TERM_CLASS_RE = re.compile(r"^lovable_term_(.+)$")
+CLAUDE_CLASS_RE = re.compile(r"^lovable_claude_(.+)$")
+VIVALDI_TITLE_RE = re.compile(r"daphen-(.+?)\.localhost")
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=2
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def ts_tuple(w: dict) -> tuple[int, int]:
+    ft = w.get("focus_timestamp") or {}
+    return (ft.get("secs") or 0, ft.get("nanos") or 0)
+
+
+def stack_name_of(w: dict) -> str | None:
+    app = w.get("app_id") or ""
+    m = TERM_CLASS_RE.match(app) or CLAUDE_CLASS_RE.match(app)
+    if m:
+        return m.group(1)
+    return None
+
+
+def lovable_workspace_id(workspaces: list[dict]) -> int | None:
+    for ws in workspaces:
+        if ws.get("name") == "lovable":
+            return ws["id"]
+    return None
+
+
+def active_worktree_name(windows: list[dict], lovable_id: int | None) -> str | None:
+    if lovable_id is None:
+        return None
+    best: tuple[tuple[int, int], str] | None = None
+    for w in windows:
+        if w.get("workspace_id") != lovable_id:
+            continue
+        name = stack_name_of(w)
+        if not name:
+            continue
+        ts = ts_tuple(w)
+        if best is None or ts > best[0]:
+            best = (ts, name)
+    return best[1] if best else None
+
+
+def main() -> int:
+    windows = niri_json("windows") or []
+    workspaces = niri_json("workspaces") or []
+    lovable_id = lovable_workspace_id(workspaces)
+    active = active_worktree_name(windows, lovable_id)
+
+    def allowed(w: dict) -> bool:
+        if w.get("workspace_id") != lovable_id:
+            return True
+        name = stack_name_of(w)
+        if name is None:
+            return True  # untagged on-lovable windows pass through
+        return name == active
+
+    deps = next(
+        (
+            w
+            for w in windows
+            if DEPS_TITLE_RE.match(w.get("title") or "") and allowed(w)
+        ),
+        None,
+    )
+
+    wt_pool = [
+        w
+        for w in windows
+        if WT_TITLE_RE.match(w.get("title") or "")
+        and w.get("focus_timestamp") is not None
+        and allowed(w)
+    ]
+    wt_best = max(wt_pool, key=ts_tuple) if wt_pool else None
+
+    candidates: list[dict] = []
+    if deps is not None:
+        candidates.append(deps)
+    if wt_best is not None:
+        candidates.append(wt_best)
+
+    if not candidates:
+        os.execv(
+            f"{HOME}/.config/niri/scripts/wt-deps",
+            [f"{HOME}/.config/niri/scripts/wt-deps"],
+        )
+        return 0  # unreachable
+
+    focused_id = next((w["id"] for w in windows if w.get("is_focused")), None)
+    target = candidates[0]
+    for i, w in enumerate(candidates):
+        if w["id"] == focused_id:
+            target = candidates[(i + 1) % len(candidates)]
+            break
+
+    subprocess.run(
+        ["niri", "msg", "action", "focus-window", "--id", str(target["id"])],
+        check=False,
+        timeout=2,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

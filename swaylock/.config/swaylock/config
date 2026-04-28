@@ -17,21 +17,21 @@ indicator-radius=120
 indicator-thickness=10
 
 # Color scheme - Background overlay (with alpha for transparency)
-color=#FDF6E3dd
+color=#181818dd
 
 # Ring colors (the circle around the indicator)
-ring-color=#4A7C59
-ring-clear-color=#286983
-ring-caps-lock-color=#69756C
-ring-ver-color=#5E7270
-ring-wrong-color=#ED333B
+ring-color=#8A9AA6
+ring-clear-color=#CCD5E4
+ring-caps-lock-color=#ff8a31
+ring-ver-color=#97B5A6
+ring-wrong-color=#FF7B72
 
 # Inside colors (the center of the indicator - with alpha)
-inside-color=#F9F2DFdd
-inside-clear-color=#F9F2DFdd
-inside-caps-lock-color=#F9F2DFdd
-inside-ver-color=#F9F2DFdd
-inside-wrong-color=#F9F2DFdd
+inside-color=#1B1B1Bdd
+inside-clear-color=#1B1B1Bdd
+inside-caps-lock-color=#1B1B1Bdd
+inside-ver-color=#1B1B1Bdd
+inside-wrong-color=#1B1B1Bdd
 
 # Line colors (between ring and inside - transparent)
 line-color=00000000
@@ -41,20 +41,20 @@ line-ver-color=00000000
 line-wrong-color=00000000
 
 # Text colors
-text-color=#2D4A3D
-text-clear-color=#2D4A3D
-text-caps-lock-color=#69756C
-text-ver-color=#5E7270
-text-wrong-color=#ED333B
+text-color=#EDEDED
+text-clear-color=#EDEDED
+text-caps-lock-color=#ff8a31
+text-ver-color=#97B5A6
+text-wrong-color=#FF7B72
 
 # Key highlight colors
-key-hl-color=#5E7270
-bs-hl-color=#ED333B
+key-hl-color=#97B5A6
+bs-hl-color=#FF7B72
 
 # Layout text colors (if showing keyboard layout - with alpha)
-layout-text-color=#2D4A3D
-layout-bg-color=#EBE4D680
-layout-border-color=#4A7C5980
+layout-text-color=#EDEDED
+layout-bg-color=#29282680
+layout-border-color=#8A9AA680
 
 # Show failed attempts
 show-failed-attempts

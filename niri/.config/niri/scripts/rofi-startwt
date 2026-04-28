@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Open kitty/fish and run `startwt` (which uses fzf to pick a worktree).
+# The kitty floats via the `lovable_picker` window-rule in niri config.
+set -euo pipefail
+exec kitty --class lovable_picker fish -c "startwt 2>&1 | tee -a /tmp/wt-spawn.log"

@@ -2,6 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(*)",
+      "Bash(curl * localhost:8020*)",
+      "Bash(curl * BypassId * localhost:8020*)",
       "Read",
       "Grep",
       "Write(/home/daphen/**)",

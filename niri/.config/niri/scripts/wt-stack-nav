@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# wt-stack-nav <up|down>
+#
+# Synchronized navigation across worktree stacks on the lovable workspace.
+# When the focused window belongs to one of our worktree stacks, advance
+# ALL THREE columns (term/browser/claude) to the next/previous worktree's
+# tabs simultaneously, keeping the cursor on the same column type.
+#
+# If the focused window isn't part of any tracked worktree, fall back to
+# niri's default focus-window-up / focus-window-down so the bind still
+# does the right thing in non-stack contexts.
+
+set -euo pipefail
+
+DIR="${1:-down}"
+STATE="$HOME/.local/state/wt-stacks/lovable.json"
+
+fallback() {
+    if [[ "$DIR" == "up" ]]; then
+        niri msg action focus-window-up
+    else
+        niri msg action focus-window-down
+    fi
+    exit 0
+}
+
+[ -f "$STATE" ] || fallback
+
+focused_id=$(niri msg --json focused-window 2>/dev/null | jq -r '.id // empty')
+[ -z "$focused_id" ] && fallback
+
+# Find which worktree and slot the focused window belongs to.
+match=$(jq -r --argjson id "$focused_id" '
+    .worktrees | to_entries[]
+    | select(.value.term_id == $id or .value.browser_id == $id or .value.claude_id == $id)
+    | { idx: .key,
+        slot: (if .value.term_id == $id then "term"
+              elif .value.browser_id == $id then "browser"
+              else "claude" end) }
+    | @json
+' "$STATE" | head -1)
+
+[ -z "$match" ] && fallback
+
+current_idx=$(echo "$match" | jq -r '.idx')
+slot=$(echo "$match" | jq -r '.slot')
+
+count=$(jq -r '.worktrees | length' "$STATE")
+[ "$count" -lt 2 ] && fallback
+
+case "$DIR" in
+    up)   target_idx=$(( (current_idx - 1 + count) % count )) ;;
+    down) target_idx=$(( (current_idx + 1) % count )) ;;
+    *)    fallback ;;
+esac
+
+target=$(jq -c --argjson i "$target_idx" '.worktrees[$i]' "$STATE")
+term_id=$(echo "$target" | jq -r '.term_id')
+browser_id=$(echo "$target" | jq -r '.browser_id')
+claude_id=$(echo "$target" | jq -r '.claude_id')
+
+focus_id() {
+    niri msg action focus-window --id "$1"
+}
+
+# Last focus determines cursor position — keep user on their current slot.
+case "$slot" in
+    term)
+        focus_id "$browser_id"
+        focus_id "$claude_id"
+        focus_id "$term_id"
+        ;;
+    browser)
+        focus_id "$term_id"
+        focus_id "$claude_id"
+        focus_id "$browser_id"
+        ;;
+    claude)
+        focus_id "$term_id"
+        focus_id "$browser_id"
+        focus_id "$claude_id"
+        ;;
+esac

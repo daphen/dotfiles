@@ -1,0 +1,227 @@
+#!/usr/bin/env python3
+"""
+wt-focus-app <term|browser|claude>
+
+Focus the most-recently-focused matching window, with cycle behaviour
+on repeat presses.
+
+Stack identity is encoded directly into windows:
+  - kitty term  : --class lovable_term_<worktree>
+  - kitty claude: --class lovable_claude_<worktree>
+  - vivaldi    : title contains "daphen-<worktree>.localhost"
+  - deps       : --class lovable_deps (no worktree)
+
+Allow rule:
+  - off the lovable workspace  → always allowed
+  - on the lovable workspace   → only the *active* worktree's stack is allowed
+                                  (active = whichever worktree's windows
+                                   have the highest focus_timestamp)
+
+Falls back to a sensible default if no matching window exists.
+"""
+from __future__ import annotations
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+
+TERM_CLASS_RE = re.compile(r"^lovable_term_(.+)$")
+CLAUDE_CLASS_RE = re.compile(r"^lovable_claude_(.+)$")
+WT_TITLE_RE = re.compile(r"^process-compose: proart/lovable\..+")
+CLAUDE_TITLE_HINT = "Claude Code"
+
+# vivaldi-personal script tracks its (single) window ID here. We exclude
+# it from Super+W's cycle since Chromium can't class-separate profiles.
+VIVALDI_PERSONAL_ID_FILE = Path("/tmp/vivaldi-personal-window-id")
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=2
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def fallback(slot: str) -> None:
+    if slot == "browser":
+        os.execv(
+            f"{HOME}/.config/niri/scripts/vivaldi-work",
+            [f"{HOME}/.config/niri/scripts/vivaldi-work"],
+        )
+    elif slot == "claude":
+        os.execv(
+            f"{HOME}/.config/niri/scripts/spawn-terminal-with-claude",
+            [f"{HOME}/.config/niri/scripts/spawn-terminal-with-claude"],
+        )
+    else:  # term
+        os.execvp("kitty", ["kitty", "--working-directory", f"{HOME}/work/lovable"])
+
+
+def ts_tuple(w: dict) -> tuple[int, int]:
+    ft = w.get("focus_timestamp") or {}
+    return (ft.get("secs") or 0, ft.get("nanos") or 0)
+
+
+def stack_name_of(w: dict) -> str | None:
+    """Extract the worktree name from a window, if it belongs to a stack.
+
+    Only kitty classes (lovable_term_<x>, lovable_claude_<x>) are treated
+    as stack identity — those are immutable per spawn. Vivaldi titles
+    change as the user navigates, so they're not a reliable stack tag.
+    Vivaldi windows on lovable are handled via "most-recent focus" in
+    the browser slot instead.
+    """
+    app = w.get("app_id") or ""
+    m = TERM_CLASS_RE.match(app) or CLAUDE_CLASS_RE.match(app)
+    if m:
+        return m.group(1)
+    return None
+
+
+def matches_slot(w: dict, slot: str) -> bool:
+    """Window matches the slot if it's a tagged stack window OR an
+    ad-hoc window running the same kind of process.
+      term  : lovable_term_<x> class  OR any window with devenv-wt title
+      claude: lovable_claude_<x> class OR a kitty whose title hints claude
+      browser: vivaldi-stable (covers both work and personal — Chromium
+               runs as a single daemon, so --class can't separate them.
+               The personal vivaldi is excluded later via the id file
+               written by the vivaldi-personal script.)
+    """
+    app = w.get("app_id") or ""
+    title = w.get("title") or ""
+    if slot == "term":
+        return bool(TERM_CLASS_RE.match(app)) or bool(WT_TITLE_RE.match(title))
+    if slot == "browser":
+        # Accept both class names: existing windows from a vivaldi daemon
+        # launched with --class=vivaldi-work still report that class.
+        return app in ("vivaldi-stable", "vivaldi-work")
+    if slot == "claude":
+        if CLAUDE_CLASS_RE.match(app):
+            return True
+        if app == "kitty" and CLAUDE_TITLE_HINT in title:
+            return True
+        return False
+    return False
+
+
+def lovable_workspace_id(workspaces: list[dict]) -> int | None:
+    for ws in workspaces:
+        if ws.get("name") == "lovable":
+            return ws["id"]
+    return None
+
+
+def active_worktree_name(windows: list[dict], lovable_id: int | None) -> str | None:
+    """Whichever worktree has the most-recently-focused window on lovable."""
+    if lovable_id is None:
+        return None
+    best: tuple[tuple[int, int], str] | None = None
+    for w in windows:
+        if w.get("workspace_id") != lovable_id:
+            continue
+        name = stack_name_of(w)
+        if not name:
+            continue
+        ts = ts_tuple(w)
+        if best is None or ts > best[0]:
+            best = (ts, name)
+    return best[1] if best else None
+
+
+def main() -> int:
+    if len(sys.argv) != 2 or sys.argv[1] not in {"term", "browser", "claude"}:
+        print(f"Usage: {Path(sys.argv[0]).name} <term|browser|claude>", file=sys.stderr)
+        return 1
+    slot = sys.argv[1]
+
+    windows = niri_json("windows") or []
+    workspaces = niri_json("workspaces") or []
+    lovable_id = lovable_workspace_id(workspaces)
+    active = active_worktree_name(windows, lovable_id)
+
+    # Compute the single "active" vivaldi on lovable (= most-recently-focused).
+    # Other lovable vivaldis (inactive stack tabs) are excluded from Super+W.
+    active_lovable_vivaldi_id: int | None = None
+    if slot == "browser" and lovable_id is not None:
+        on_lovable = [
+            w
+            for w in windows
+            if w.get("workspace_id") == lovable_id
+            and (w.get("app_id") or "") in ("vivaldi-stable", "vivaldi-work")
+            and w.get("focus_timestamp") is not None
+        ]
+        if on_lovable:
+            active_lovable_vivaldi_id = max(on_lovable, key=ts_tuple)["id"]
+
+    # Personal-profile vivaldi (Super+Q's window). Excluded from Super+W.
+    personal_vivaldi_id: int | None = None
+    if slot == "browser" and VIVALDI_PERSONAL_ID_FILE.exists():
+        try:
+            personal_vivaldi_id = int(VIVALDI_PERSONAL_ID_FILE.read_text().strip())
+        except Exception:
+            personal_vivaldi_id = None
+
+    def allowed(w: dict) -> bool:
+        ws = w.get("workspace_id")
+        if active is None:
+            return True  # nothing to disambiguate
+
+        if slot == "browser":
+            # Personal-profile vivaldi (Super+Q's window) is never a Super+W
+            # candidate. Chromium can't class-separate profiles, so we
+            # exclude by tracked ID instead.
+            if personal_vivaldi_id is not None and w["id"] == personal_vivaldi_id:
+                return False
+            # Off-lovable vivaldis (work-profile windows on other workspaces)
+            # are candidates. On lovable, only the most-recently-focused
+            # vivaldi counts — that's the active stack's tab; inactive
+            # stack tabs are excluded.
+            if ws != lovable_id:
+                return True
+            return w["id"] == active_lovable_vivaldi_id
+
+        # Term and claude: on lovable, only the active stack's window.
+        # Off lovable, ad-hoc instances are valid candidates.
+        if ws == lovable_id:
+            name = stack_name_of(w)
+            if name is None:
+                return True  # untagged on-lovable (e.g. random kitty)
+            return name == active
+        return True  # off-lovable allowed
+
+    candidates = [
+        w
+        for w in windows
+        if matches_slot(w, slot)
+        and w.get("focus_timestamp") is not None
+        and allowed(w)
+    ]
+
+    if not candidates:
+        fallback(slot)
+        return 0  # unreachable
+
+    candidates.sort(key=ts_tuple, reverse=True)
+
+    focused_id = next((w["id"] for w in windows if w.get("is_focused")), None)
+    target = candidates[0]
+    for i, w in enumerate(candidates):
+        if w["id"] == focused_id:
+            target = candidates[(i + 1) % len(candidates)]
+            break
+
+    subprocess.run(
+        ["niri", "msg", "action", "focus-window", "--id", str(target["id"])],
+        check=False,
+        timeout=2,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

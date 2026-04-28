@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import json, subprocess, sys, time, re
+import json, os, subprocess, sys, time, re
 from pathlib import Path
 
 STATE_DIR = Path("/tmp/niri-focus-tracker")
@@ -10,6 +10,132 @@ WINDOW_LIMIT = 15
 
 last_active = {}
 window_to_app = {}
+
+# ─── Synchronized worktree-stack navigation ─────────────────────────────
+# When focus moves to a window that's part of a worktree stack on the
+# "lovable" workspace, advance the other two columns to the same worktree's
+# tabs. Stack identity is derived from window properties (no state file):
+#   - kitty class lovable_term_<name>   → stack <name> (term slot)
+#   - kitty class lovable_claude_<name> → stack <name> (claude slot)
+#   - vivaldi-stable + title "daphen-<name>.localhost" → stack <name> (browser)
+TERM_CLASS_RE = re.compile(r"^lovable_term_(.+)$")
+CLAUDE_CLASS_RE = re.compile(r"^lovable_claude_(.+)$")
+VIVALDI_TITLE_RE = re.compile(r"daphen-(.+?)\.localhost")
+VIVALDI_MAP_FILE = Path.home() / ".local/state/wt-stacks/vivaldi-map.json"
+
+def _vivaldi_stack_from_map(wid):
+    """Look up a vivaldi window's stack name from the persisted map
+    (written by createwt/startwt). Used when the title no longer matches
+    daphen-<x>.localhost — i.e. the user navigated away."""
+    try:
+        m = json.loads(VIVALDI_MAP_FILE.read_text())
+        return m.get(str(wid))
+    except Exception:
+        return None
+
+_last_synced_worktree = None       # worktree name we last synced to
+_lovable_workspace_id = None       # cached id; refresh on miss
+_syncing = False                   # reentrancy guard
+
+def _refresh_lovable_workspace_id():
+    global _lovable_workspace_id
+    try:
+        out = subprocess.run(['niri', 'msg', '--json', 'workspaces'],
+                             capture_output=True, text=True, timeout=2)
+        for ws in json.loads(out.stdout):
+            if ws.get('name') == 'lovable':
+                _lovable_workspace_id = ws.get('id')
+                return
+        _lovable_workspace_id = None
+    except Exception:
+        _lovable_workspace_id = None
+
+def _focus_window_id(wid):
+    try:
+        subprocess.run(['niri', 'msg', 'action', 'focus-window', '--id', str(wid)],
+                       check=False, capture_output=True, timeout=2)
+    except Exception:
+        pass
+
+def _stack_info(w):
+    """Return (stack_name, slot) for a window, or (None, None) if not part
+    of any stack. Slot is 'term', 'claude', or 'browser'."""
+    app = w.get('app_id') or ''
+    title = w.get('title') or ''
+    m = TERM_CLASS_RE.match(app)
+    if m:
+        return m.group(1), 'term'
+    m = CLAUDE_CLASS_RE.match(app)
+    if m:
+        return m.group(1), 'claude'
+    if app == 'vivaldi-stable' or app == 'vivaldi-work':
+        m = VIVALDI_TITLE_RE.search(title)
+        if m:
+            return m.group(1), 'browser'
+        # Title was navigated away from the daphen URL — fall back to the
+        # persistent window_id → stack_name map.
+        name = _vivaldi_stack_from_map(w.get('id'))
+        if name:
+            return name, 'browser'
+    return None, None
+
+def sync_lovable_stacks(focused_wid):
+    """When focus moves to a stack window, bring the other two columns'
+    windows for the same worktree to the front (focus them, leaving the
+    user's slot focused last so the cursor stays in their column)."""
+    global _last_synced_worktree, _syncing, _lovable_workspace_id
+    if _syncing:
+        return
+
+    try:
+        wins_out = subprocess.run(['niri', 'msg', '--json', 'windows'],
+                                  capture_output=True, text=True, timeout=2)
+        windows = json.loads(wins_out.stdout) if wins_out.stdout.strip() else []
+    except Exception:
+        return
+
+    fw = next((w for w in windows if w.get('id') == focused_wid), None)
+    if fw is None:
+        return
+    fw_workspace = fw.get('workspace_id')
+
+    # Workspace gate (only react on lovable)
+    if _lovable_workspace_id is None or fw_workspace != _lovable_workspace_id:
+        _refresh_lovable_workspace_id()
+    if fw_workspace != _lovable_workspace_id:
+        return
+
+    name, slot = _stack_info(fw)
+    if not name:
+        return
+
+    if name == _last_synced_worktree:
+        return  # already in sync
+
+    # Find sibling windows in the same stack
+    siblings = {}  # slot -> window
+    for w in windows:
+        if w.get('workspace_id') != _lovable_workspace_id:
+            continue
+        n, s = _stack_info(w)
+        if n == name and s and s not in siblings:
+            siblings[s] = w
+
+    _last_synced_worktree = name
+    _syncing = True
+    try:
+        # Focus the two non-active siblings first, then the user's slot last
+        # so the cursor stays in the column they clicked.
+        for s in ('term', 'browser', 'claude'):
+            if s == slot:
+                continue
+            w = siblings.get(s)
+            if w is not None:
+                _focus_window_id(w['id'])
+        # Refocus the originally-focused window so cursor lands there
+        _focus_window_id(focused_wid)
+    finally:
+        _syncing = False
 
 def cleanup_old_windows():
     """Remove oldest windows when we exceed the limit"""
@@ -73,6 +199,8 @@ for line in process.stdout:
             get_initial_state()
             if wid in window_to_app:
                 update_focus(wid, window_to_app[wid])
+        # Synchronized worktree-stack tabs follow the focused window
+        sync_lovable_stacks(wid)
 
     # Handle window close events
     m = re.search(r'Window closed:\s*(\d+)', line)

@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# wt-spawn-stack <worktree-path> <workspace-name>
+#
+# Focuses (or creates) a niri workspace named after the worktree and spawns
+# the standard app stack in it. Designed to be called from worktrunk's
+# post-start hook so each new worktree gets its own pre-arranged stack.
+#
+# The default stack is intentionally minimal: a shell + editor in the worktree
+# directory. Edit the spawn calls below to extend (browser, slack, etc.).
+
+set -euo pipefail
+
+WORKTREE_PATH="${1:?worktree path required}"
+WORKSPACE="${2:?workspace name required}"
+
+log() { printf "[wt-spawn-stack] %s\n" "$*" >&2; }
+
+# Make sure the workspace exists & is focused. niri will create it on first
+# focus if it doesn't already.
+log "focusing workspace: $WORKSPACE"
+niri msg action focus-workspace "$WORKSPACE"
+
+# Spawn shell terminal in the worktree
+log "spawning kitty in $WORKTREE_PATH"
+kitty --working-directory "$WORKTREE_PATH" >/dev/null 2>&1 &
+sleep 0.6
+
+# Spawn editor (nvim inside kitty) in the worktree
+log "spawning kitty-nvim in $WORKTREE_PATH"
+kitty --working-directory "$WORKTREE_PATH" -e nvim >/dev/null 2>&1 &
+sleep 0.6
+
+# At this point both windows are open in two separate columns on the workspace.
+# With default-column-display = "tabbed" already in your layout, each column
+# is in tabbed mode but with one window each (indicator hidden). To stack them
+# into a single tabbed column, consume the second one into the first:
+log "consuming second window into first column for tab stack"
+niri msg action focus-column-first 2>/dev/null || true
+niri msg action focus-column-right
+niri msg action consume-or-expel-window-left
+
+log "stack ready on workspace $WORKSPACE"

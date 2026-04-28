@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+"""
+wt-close-stack
+
+Close every window in the focused window's stack.
+
+Stack identity is read directly from window properties:
+  - app_id  lovable_term_<name>     → stack <name>
+  - app_id  lovable_claude_<name>   → stack <name>
+  - app_id  vivaldi-stable + title containing "daphen-<name>.localhost"
+                                    → stack <name>
+
+If the focused window is part of a stack, every window on the lovable
+workspace tagged with that same <name> is closed. Otherwise just the
+focused window. Best-effort `devenv kill` runs in the background to
+release any ports still held by the worktree.
+"""
+from __future__ import annotations
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+
+TERM_CLASS_RE = re.compile(r"^lovable_term_(.+)$")
+CLAUDE_CLASS_RE = re.compile(r"^lovable_claude_(.+)$")
+VIVALDI_TITLE_RE = re.compile(r"daphen-(.+?)\.localhost")
+VIVALDI_MAP_FILE = Path.home() / ".local/state/wt-stacks/vivaldi-map.json"
+
+
+def _vivaldi_stack_from_map(wid):
+    try:
+        m = json.loads(VIVALDI_MAP_FILE.read_text())
+        return m.get(str(wid))
+    except Exception:
+        return None
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=2
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def stack_name_of(w: dict) -> str | None:
+    """Stack tag for any window in a stack.
+
+    Kitty classes (lovable_term_<x>, lovable_claude_<x>) are the
+    authoritative tag. Vivaldi has no class-level tag, but its title
+    typically still contains "daphen-<x>.localhost" — we use that
+    here only for close-stack cleanup. Other lookups intentionally
+    ignore vivaldi titles (they drift when the user navigates).
+    """
+    app = w.get("app_id") or ""
+    m = TERM_CLASS_RE.match(app) or CLAUDE_CLASS_RE.match(app)
+    if m:
+        return m.group(1)
+    if app in ("vivaldi-stable", "vivaldi-work"):
+        title = w.get("title") or ""
+        m = VIVALDI_TITLE_RE.search(title)
+        if m:
+            return m.group(1)
+        # Title navigated away from daphen URL — fall back to the
+        # persistent map (written by createwt/startwt at spawn time).
+        return _vivaldi_stack_from_map(w.get("id"))
+    return None
+
+
+def lovable_workspace_id(workspaces: list[dict]) -> int | None:
+    for ws in workspaces:
+        if ws.get("name") == "lovable":
+            return ws["id"]
+    return None
+
+
+def close_window(wid: int) -> None:
+    subprocess.run(
+        ["niri", "msg", "action", "close-window", "--id", str(wid)],
+        check=False,
+        timeout=2,
+    )
+
+
+def close_focused() -> None:
+    subprocess.run(
+        ["niri", "msg", "action", "close-window"], check=False, timeout=2
+    )
+
+
+def main() -> int:
+    focused = niri_json("focused-window")
+    if not focused:
+        close_focused()
+        return 0
+
+    name = stack_name_of(focused)
+    if not name:
+        close_focused()
+        return 0
+
+    workspaces = niri_json("workspaces") or []
+    lovable_id = lovable_workspace_id(workspaces)
+
+    windows = niri_json("windows") or []
+    targets = [
+        w
+        for w in windows
+        if w.get("workspace_id") == lovable_id and stack_name_of(w) == name
+    ]
+
+    print(
+        f"wt-close-stack: closing stack '{name}' "
+        f"({len(targets)} window(s))",
+        file=sys.stderr,
+    )
+    for w in targets:
+        close_window(w["id"])
+
+    # Best-effort: free any dev ports still held for this worktree.
+    wt_path = Path(HOME) / f"work/lovable.daphen-{name}"
+    if wt_path.is_dir():
+        subprocess.Popen(
+            ["nohup", "sh", "-c", f"cd '{wt_path}' && direnv exec . devenv kill"],
+            stdout=open("/tmp/wt-close-stack-kill.log", "ab"),
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

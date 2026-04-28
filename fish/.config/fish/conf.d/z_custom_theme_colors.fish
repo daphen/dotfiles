@@ -1,38 +1,38 @@
 # Fish shell theme colors
 # Generated from centralized theme system
 
-set -g fish_color_normal 2D4A3D
-set -g fish_color_command 286983
-set -g fish_color_keyword ED333B
-set -g fish_color_quote 4A7C59
-set -g fish_color_redirection B8713A
-set -g fish_color_end 4A7C59
-set -g fish_color_error ED333B
-set -g fish_color_param 2D4A3D
-set -g fish_color_comment 9893a5
-set -g fish_color_selection --background=E8EAED
-set -g fish_color_operator 4A7C59
-set -g fish_color_escape B8713A
-set -g fish_color_autosuggestion 9893a5
-set -g fish_color_cancel ED333B
-set -g fish_color_cwd 5E7270
-set -g fish_color_user 5E7270
-set -g fish_color_host 4A7C59
-set -g fish_color_host_remote ED333B
-set -g fish_color_status ED333B
+set -g fish_color_normal EDEDED
+set -g fish_color_command CCD5E4
+set -g fish_color_keyword 97B5A6
+set -g fish_color_quote CCD5E4
+set -g fish_color_redirection 8A92A7
+set -g fish_color_end ff8a31
+set -g fish_color_error FF7B72
+set -g fish_color_param EDEDED
+set -g fish_color_comment 707B84
+set -g fish_color_selection --background=323A40
+set -g fish_color_operator ff8a31
+set -g fish_color_escape 8A92A7
+set -g fish_color_autosuggestion 707B84
+set -g fish_color_cancel FF7B72
+set -g fish_color_cwd 97B5A6
+set -g fish_color_user 97B5A6
+set -g fish_color_host 8A9AA6
+set -g fish_color_host_remote FF7B72
+set -g fish_color_status FF7B72
 
 # Pager colors
-set -g fish_pager_color_progress 9893a5
-set -g fish_pager_color_prefix 4A7C59
-set -g fish_pager_color_completion 2D4A3D
-set -g fish_pager_color_description 9893a5
-set -g fish_pager_color_selected_background --background=E8EAED
-set -g fish_pager_color_selected_prefix 4A7C59
-set -g fish_pager_color_selected_completion 2D4A3D
-set -g fish_pager_color_selected_description 9893a5
+set -g fish_pager_color_progress 707B84
+set -g fish_pager_color_prefix ff8a31
+set -g fish_pager_color_completion EDEDED
+set -g fish_pager_color_description 707B84
+set -g fish_pager_color_selected_background --background=323A40
+set -g fish_pager_color_selected_prefix 8A9AA6
+set -g fish_pager_color_selected_completion EDEDED
+set -g fish_pager_color_selected_description 707B84
 
 # Search match highlighting
-set -g fish_color_search_match --background=E8EAED
+set -g fish_color_search_match --background=323A40
 
 # History search highlighting
-set -g fish_color_history_current 4A7C59
+set -g fish_color_history_current 8A9AA6

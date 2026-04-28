@@ -10,7 +10,7 @@ if [[ -f "$PERSONAL_ID_FILE" ]]; then
     exists=$(niri msg --json windows | python3 -c "
 import json, sys
 windows = json.load(sys.stdin)
-print('yes' if any(str(w['id']) == '$stored_id' and w.get('app_id') == 'vivaldi-stable' for w in windows) else 'no')
+print('yes' if any(str(w['id']) == '$stored_id' and w.get('app_id') in ('vivaldi-stable', 'vivaldi-work') for w in windows) else 'no')
 " 2>/dev/null)
     if [[ "$exists" == "yes" ]]; then
         niri msg action focus-window --id "$stored_id"
@@ -23,7 +23,7 @@ work_id=$(cat "$WORK_ID_FILE" 2>/dev/null || echo "")
 before=$(niri msg --json windows | python3 -c "
 import json, sys
 windows = json.load(sys.stdin)
-print(' '.join(str(w['id']) for w in windows if w.get('app_id') == 'vivaldi-stable'))
+print(' '.join(str(w['id']) for w in windows if w.get('app_id') in ('vivaldi-stable', 'vivaldi-work')))
 " 2>/dev/null)
 
 # Launch personal profile
@@ -38,7 +38,7 @@ windows = json.load(sys.stdin)
 before_ids = set('$before'.split())
 work_id = '$work_id'
 for w in windows:
-    if w.get('app_id') == 'vivaldi-stable' and str(w['id']) not in before_ids and str(w['id']) != work_id:
+    if w.get('app_id') in ('vivaldi-stable', 'vivaldi-work') and str(w['id']) not in before_ids and str(w['id']) != work_id:
         print(w['id'])
         break
 " 2>/dev/null)

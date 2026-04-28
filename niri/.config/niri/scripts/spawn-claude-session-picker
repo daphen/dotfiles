@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
-# Pick a recent Claude Code session with fzf and resume it in the correct directory
+# Pick a recent Claude Code session with fzf.
+#
+# Default: cd to the session's original cwd and exec `claude --resume <id>`.
+# --id-only: just print the session id (no claude exec, no cd) — used by
+#            createwt/startwt to pick a session ID for forking or resuming
+#            inside the new worktree path.
+
+ID_ONLY=0
+if [[ "${1:-}" == "--id-only" ]]; then
+    ID_ONLY=1
+fi
 
 SESSIONS_DIR="$HOME/.claude/projects"
 
@@ -125,6 +135,11 @@ line_num=$(echo "$selected" | cut -f1)
 meta_line=$(sed -n "${line_num}p" "$meta_file")
 session_id=$(echo "$meta_line" | cut -f1)
 cwd=$(echo "$meta_line" | cut -f2)
+
+if [ "$ID_ONLY" = "1" ]; then
+    printf '%s\n' "$session_id"
+    exit 0
+fi
 
 cd "$cwd" || exit 1
 exec claude --resume "$session_id"

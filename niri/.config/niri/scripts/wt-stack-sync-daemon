@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# wt-stack-sync-daemon
+#
+# Watches niri's event stream. Whenever focus moves to a window that belongs
+# to a tracked worktree stack, brings the other two columns' tabs to the
+# same worktree's windows. Cursor stays where the user put it.
+#
+# Started on demand by createwt/startwt — exits when no longer needed (state
+# file empty or absent).
+
+set -euo pipefail
+
+STATE="$HOME/.local/state/wt-stacks/lovable.json"
+LAST_SYNCED_FILE="/tmp/wt-stack-last-synced"
+PID_FILE="/tmp/wt-stack-sync-daemon.pid"
+
+# Single-instance enforcement
+if [ -f "$PID_FILE" ]; then
+    other_pid=$(cat "$PID_FILE" 2>/dev/null || true)
+    if [ -n "$other_pid" ] && kill -0 "$other_pid" 2>/dev/null; then
+        echo "wt-stack-sync-daemon already running (pid $other_pid)" >&2
+        exit 0
+    fi
+fi
+echo $$ > "$PID_FILE"
+trap 'rm -f "$PID_FILE" "$LAST_SYNCED_FILE"' EXIT
+
+log() { printf '[wt-stack-sync] %s\n' "$*" >&2; }
+log "started (pid $$)"
+
+# Find which worktree a window ID belongs to. Echos "<idx>:<name>:<slot>" or empty.
+find_worktree() {
+    local id="$1"
+    [ -f "$STATE" ] || return 0
+    jq -r --argjson id "$id" '
+        .worktrees | to_entries[]
+        | select(.value.term_id == $id or .value.browser_id == $id or .value.claude_id == $id)
+        | "\(.key):\(.value.name):" + (
+            if .value.term_id == $id then "term"
+            elif .value.browser_id == $id then "browser"
+            else "claude" end)
+    ' "$STATE" | head -1
+}
+
+# Sync the other two columns to the worktree of the focused window
+sync_stacks() {
+    local focused_id="$1"
+    local match worktree_idx worktree_name slot
+    match=$(find_worktree "$focused_id")
+    [ -z "$match" ] && return 0  # focused window not in any stack
+
+    worktree_idx="${match%%:*}"
+    rest="${match#*:}"
+    worktree_name="${rest%%:*}"
+    slot="${rest#*:}"
+
+    # Skip if we're already synced to this worktree
+    if [ -f "$LAST_SYNCED_FILE" ] && [ "$(cat "$LAST_SYNCED_FILE")" = "$worktree_name" ]; then
+        return 0
+    fi
+
+    log "sync → $worktree_name (focused slot: $slot)"
+    echo "$worktree_name" > "$LAST_SYNCED_FILE"
+
+    # Get target IDs
+    local target term_id browser_id claude_id
+    target=$(jq -c --argjson i "$worktree_idx" '.worktrees[$i]' "$STATE")
+    term_id=$(echo "$target" | jq -r '.term_id')
+    browser_id=$(echo "$target" | jq -r '.browser_id')
+    claude_id=$(echo "$target" | jq -r '.claude_id')
+
+    # Focus all three; the user's slot last so cursor stays in their column
+    case "$slot" in
+        term)
+            niri msg action focus-window --id "$browser_id" 2>/dev/null || true
+            niri msg action focus-window --id "$claude_id"  2>/dev/null || true
+            niri msg action focus-window --id "$term_id"    2>/dev/null || true
+            ;;
+        browser)
+            niri msg action focus-window --id "$term_id"    2>/dev/null || true
+            niri msg action focus-window --id "$claude_id"  2>/dev/null || true
+            niri msg action focus-window --id "$browser_id" 2>/dev/null || true
+            ;;
+        claude)
+            niri msg action focus-window --id "$term_id"    2>/dev/null || true
+            niri msg action focus-window --id "$browser_id" 2>/dev/null || true
+            niri msg action focus-window --id "$claude_id"  2>/dev/null || true
+            ;;
+    esac
+}
+
+# Listen to niri's event stream and react to WindowFocusChanged events
+niri msg event-stream | while IFS= read -r line; do
+    # Only care about focus-change events
+    fid=$(echo "$line" | jq -r '.WindowFocusChanged.id // empty' 2>/dev/null || true)
+    [ -z "$fid" ] && continue
+    sync_stacks "$fid"
+done

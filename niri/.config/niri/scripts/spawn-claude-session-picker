@@ -171,5 +171,8 @@ if [ "$ID_ONLY" = "1" ]; then
     exit 0
 fi
 
-setsid -f kitty --working-directory "$cwd" fish -c "claude --resume $session_id" >/dev/null 2>&1
+# Spawn the resumed claude in a fresh (non-floating) kitty so the
+# floating picker window can close cleanly.
+setsid -f kitty --working-directory "$cwd" -e claude --resume "$session_id" \
+    </dev/null >/dev/null 2>&1
 exit 0

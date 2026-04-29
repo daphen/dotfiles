@@ -114,5 +114,6 @@ return {
 		"AITrackerReload",
 		"AITrackerUnread",
 		"AITrackerJumpLatest",
+		"AITrackerPreviewInstall",
 	},
 }

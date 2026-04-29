@@ -25,6 +25,13 @@ M.config = {
   -- if the file is in this nvim's project). Skipped while in insert mode so
   -- it doesn't yank the buffer out from under live typing.
   live_follow = true,
+  preview = {
+    -- Live diff preview for Claude Code Edit/Write/MultiEdit. When enabled,
+    -- the PreToolUse hook (preview-hook.py) blocks until you accept/reject
+    -- the diff in nvim. Run :AITrackerPreviewInstall for the settings.json
+    -- snippet to wire up.
+    enabled = true,
+  },
 }
 
 --- Resolve a strict project root from a directory. Requires either a git repo
@@ -111,6 +118,10 @@ function M.setup(opts)
       poll_fallback_ms = M.config.watch.poll_fallback_ms,
       on_batch = function(entries) M.handle_batch(entries) end,
     })
+  end
+
+  if M.config.preview.enabled then
+    require("ai-tracker.preview").start()
   end
 
   -- Auto-switch to the most recent AI edit on startup. Deferred so that
@@ -607,6 +618,31 @@ function M.setup_commands()
   vim.api.nvim_create_user_command("AITrackerJumpLatest", function()
     M.jump_to_latest()
   end, { desc = "Jump to the most recent AI-edited file in this project" })
+
+  vim.api.nvim_create_user_command("AITrackerPreviewInstall", function()
+    local hook_path = require("ai-tracker.preview").hook_path()
+    local snippet = vim.json.encode({
+      hooks = {
+        PreToolUse = {
+          {
+            matcher = "Edit|Write|MultiEdit",
+            hooks = { { type = "command", command = hook_path } },
+          },
+        },
+      },
+    })
+    -- Pretty-print
+    local ok, decoded = pcall(vim.json.decode, snippet)
+    if ok then snippet = vim.fn.json_encode(decoded) end
+    local lines = {
+      "Hook script: " .. hook_path,
+      "",
+      "Add this to ~/.claude/settings.json (merge with existing 'hooks' if present):",
+      "",
+      vim.inspect(decoded or {}),
+    }
+    vim.notify(table.concat(lines, "\n"), vim.log.levels.INFO, { title = "AI Tracker — Preview Install" })
+  end, { desc = "Show the settings.json snippet to enable preview hook" })
 end
 
 --- Read changes from log file

@@ -567,7 +567,7 @@ binds {
     Super+Shift+f { spawn-sh "$HOME/.config/niri/scripts/fork-claude-session"; }
     Super+r { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-zoxide-picker"; }
     Super+g { spawn-sh "$HOME/.config/niri/scripts/wt-focus-app claude"; }
-    Super+d { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec kitty kitty"; }
+    Super+d { spawn-sh "$HOME/.config/niri/scripts/wt-jump-terminal"; }
     Super+Shift+d { spawn-sh "SHOW_FASTFETCH=1 kitty"; }
     Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack slack"; }
     Super+a { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'title:spotify_player' 'kitty --class spotify_player spotify_player'"; }

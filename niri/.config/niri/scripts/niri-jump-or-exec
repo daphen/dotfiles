@@ -14,12 +14,16 @@ if [ -z "$APP_ID" ] || [ -z "$COMMAND" ]; then
     exit 1
 fi
 
-# Check if matching by title
+# Check if matching by title or regex
 MATCH_BY_TITLE=false
+MATCH_BY_REGEX=false
 PATTERN="$APP_ID"
 if [[ "$APP_ID" == title:* ]]; then
     MATCH_BY_TITLE=true
     PATTERN="${APP_ID#title:}"
+elif [[ "$APP_ID" == regex:* ]]; then
+    MATCH_BY_REGEX=true
+    PATTERN="${APP_ID#regex:}"
 fi
 
 # Get currently focused window ID
@@ -39,19 +43,31 @@ import re
 try:
     windows = json.load(sys.stdin)
     match_by_title = '$MATCH_BY_TITLE' == 'true'
+    match_by_regex = '$MATCH_BY_REGEX' == 'true'
     pattern = '$PATTERN'
 
     if match_by_title:
         # Match by title using regex
         matching_windows = [w for w in windows if re.search(pattern, w.get('title', ''), re.IGNORECASE)]
+    elif match_by_regex:
+        # Match by app_id using regex
+        matching_windows = [w for w in windows if re.search(pattern, w.get('app_id', '') or '')]
     else:
-        # Match by app_id
+        # Match by app_id (exact)
         matching_windows = [w for w in windows if w.get('app_id') == pattern]
 
     if not matching_windows:
         # No windows found
         print('NONE')
         sys.exit(0)
+
+    # Sort matches by focus_timestamp descending — most recent first.
+    # That way the cycle order is predictable, and the fallback lands on
+    # a recently-used match instead of whatever niri happens to return.
+    def ts(w):
+        ft = w.get('focus_timestamp') or {}
+        return (ft.get('secs') or 0, ft.get('nanos') or 0)
+    matching_windows.sort(key=ts, reverse=True)
 
     # Check if we're currently on a window of this app
     current_focused_id = '$CURRENT_FOCUSED'

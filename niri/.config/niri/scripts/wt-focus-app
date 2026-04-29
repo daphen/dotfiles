@@ -39,6 +39,30 @@ CLAUDE_TITLE_HINT = "Claude Code"
 # it from Super+W's cycle since Chromium can't class-separate profiles.
 VIVALDI_PERSONAL_ID_FILE = Path("/tmp/vivaldi-personal-window-id")
 
+# createwt/startwt records spawned vivaldi window_id → stack name here, so
+# we can find a stack's vivaldi even after the user navigates the URL away
+# from daphen-<name>.localhost.
+VIVALDI_MAP_FILE = Path.home() / ".local/state/wt-stacks/vivaldi-map.json"
+VIVALDI_TITLE_RE = re.compile(r"daphen-(.+?)\.localhost")
+
+
+def _vivaldi_stack_map() -> dict[int, str]:
+    try:
+        m = json.loads(VIVALDI_MAP_FILE.read_text())
+        return {int(k): v for k, v in m.items()}
+    except Exception:
+        return {}
+
+
+def _vivaldi_stack_name(w: dict, vmap: dict[int, str]) -> str | None:
+    """For a vivaldi window, derive its stack name from the persistent
+    map first, falling back to a title match."""
+    name = vmap.get(w.get("id"))
+    if name:
+        return name
+    m = VIVALDI_TITLE_RE.search(w.get("title") or "")
+    return m.group(1) if m else None
+
 
 def niri_json(*args: str):
     out = subprocess.run(
@@ -177,19 +201,11 @@ def main() -> int:
     lovable_id = lovable_workspace_id(workspaces)
     active = active_worktree_name(windows, lovable_id)
 
-    # Compute the single "active" vivaldi on lovable (= most-recently-focused).
-    # Other lovable vivaldis (inactive stack tabs) are excluded from Super+W.
-    active_lovable_vivaldi_id: int | None = None
-    if slot == "browser" and lovable_id is not None:
-        on_lovable = [
-            w
-            for w in windows
-            if w.get("workspace_id") == lovable_id
-            and (w.get("app_id") or "") in ("vivaldi-stable", "vivaldi-work")
-            and w.get("focus_timestamp") is not None
-        ]
-        if on_lovable:
-            active_lovable_vivaldi_id = max(on_lovable, key=ts_tuple)["id"]
+    # vivaldi-map tells us which lovable vivaldis belong to which stack.
+    # Used in the allow rule below: tagged vivaldis from *other* stacks
+    # are filtered out, untagged ones (random work browsers on lovable)
+    # are kept reachable.
+    vmap = _vivaldi_stack_map() if slot == "browser" else {}
 
     # Personal-profile vivaldi (Super+Q's window). Excluded from Super+W.
     personal_vivaldi_id: int | None = None
@@ -211,12 +227,17 @@ def main() -> int:
             if personal_vivaldi_id is not None and w["id"] == personal_vivaldi_id:
                 return False
             # Off-lovable vivaldis (work-profile windows on other workspaces)
-            # are candidates. On lovable, only the most-recently-focused
-            # vivaldi counts — that's the active stack's tab; inactive
-            # stack tabs are excluded.
+            # are always candidates.
             if ws != lovable_id:
                 return True
-            return w["id"] == active_lovable_vivaldi_id
+            # On lovable: vivaldis tagged for a *different* stack
+            # (per vivaldi-map) are excluded — those are inactive-stack
+            # browser tabs. Untagged vivaldis are allowed (random work
+            # browsers on the lovable workspace).
+            tag = _vivaldi_stack_name(w, vmap)
+            if tag is None:
+                return True
+            return tag == active
 
         # Term and claude: on lovable, only the active stack's window.
         # Off lovable, ad-hoc instances are valid candidates.

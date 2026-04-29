@@ -580,10 +580,20 @@ apply_system_theme() {
         log_success "Kvantum Qt theme is configured"
     fi
 
-    # Update niri border colors (niri auto-reloads on file write)
-    local niri_config="$DOTFILES_DIR/niri/.config/niri/config.kdl"
+    # Update niri border colors (niri auto-reloads on file write).
+    # Guard: if ~/.config/niri/config.kdl ever became a regular file (e.g.
+    # via a tool that broke the symlink), re-establish the symlink so
+    # editing the dotfiles path propagates immediately.
+    local live_niri="$HOME/.config/niri/config.kdl"
+    local dot_niri="$DOTFILES_DIR/niri/.config/niri/config.kdl"
+    if [[ -f "$dot_niri" && -e "$live_niri" && ! -L "$live_niri" ]]; then
+        log_info "Restoring niri/config.kdl symlink (was a regular file)"
+        rm -f "$live_niri"
+        ln -s "$dot_niri" "$live_niri"
+    fi
+    local niri_config="$dot_niri"
     if [[ ! -f "$niri_config" ]]; then
-        niri_config="$HOME/.config/niri/config.kdl"
+        niri_config="$live_niri"
     fi
     if [[ -f "$niri_config" ]]; then
         if [[ "$theme_mode" == "dark" ]]; then

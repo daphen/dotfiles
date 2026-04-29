@@ -61,13 +61,17 @@ def stack_name_of(w: dict) -> str | None:
     if m:
         return m.group(1)
     if app in ("vivaldi-stable", "vivaldi-work"):
+        # Prefer the persistent map — title regex can capture a truncated
+        # form of the worktree name when the preview URL is shortened
+        # (e.g. "daphen-ds-hide-ds.localhost" for stack "ds-hide-ds-code"),
+        # which would not match the kitty class names.
+        name = _vivaldi_stack_from_map(w.get("id"))
+        if name:
+            return name
         title = w.get("title") or ""
         m = VIVALDI_TITLE_RE.search(title)
         if m:
             return m.group(1)
-        # Title navigated away from daphen URL — fall back to the
-        # persistent map (written by createwt/startwt at spawn time).
-        return _vivaldi_stack_from_map(w.get("id"))
     return None
 
 

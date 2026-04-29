@@ -73,14 +73,17 @@ def _stack_info(w):
     if m:
         return m.group(1), 'nvim'
     if app == 'vivaldi-stable' or app == 'vivaldi-work':
-        m = VIVALDI_TITLE_RE.search(title)
-        if m:
-            return m.group(1), 'browser'
-        # Title was navigated away from the daphen URL — fall back to the
-        # persistent window_id → stack_name map.
+        # Prefer the persistent map (written by createwt/startwt with the
+        # exact stack name). Title regex can capture a *truncated* form
+        # of the worktree name when the preview URL is shortened
+        # (e.g. "daphen-ds-hide-ds.localhost" for stack "ds-hide-ds-code"),
+        # which would mismatch the kitty class names and break sync.
         name = _vivaldi_stack_from_map(w.get('id'))
         if name:
             return name, 'browser'
+        m = VIVALDI_TITLE_RE.search(title)
+        if m:
+            return m.group(1), 'browser'
     return None, None
 
 def sync_lovable_stacks(focused_wid):

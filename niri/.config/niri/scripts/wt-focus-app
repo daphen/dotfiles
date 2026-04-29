@@ -243,14 +243,13 @@ def main() -> int:
             # are always candidates.
             if ws != lovable_id:
                 return True
-            # On lovable: prefer the active stack's vivaldi (per vivaldi-map)
-            # exclusively when one exists, so ad-hoc untagged vivaldis on
-            # lovable can't outscore it on focus_timestamp.
-            if active_lovable_vivaldi_id is not None:
-                return w["id"] == active_lovable_vivaldi_id
-            # No active-stack vivaldi resolvable — fall back to allowing
-            # untagged vivaldis (e.g. random work browsers).
-            return _vivaldi_stack_name(w, vmap) is None
+            # On lovable: include the active stack's tagged vivaldi and any
+            # untagged work vivaldis (e.g. random browsing). Reject vivaldis
+            # tagged for *other* stacks — those are inactive stack tabs.
+            tag = _vivaldi_stack_name(w, vmap)
+            if tag is None:
+                return True
+            return tag == active
 
         # Term and claude: on lovable, only the active stack's window.
         # Off lovable, ad-hoc instances are valid candidates.

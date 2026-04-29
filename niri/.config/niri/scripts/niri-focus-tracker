@@ -129,6 +129,15 @@ def sync_lovable_stacks(focused_wid):
             siblings[s] = w
 
     _last_synced_worktree = name
+    # Persist the active stack name so external scripts (Super+W/G/Shift+M)
+    # can prefer this over a focus_timestamp comparison — which can drift
+    # when individual windows get re-focused after sync.
+    try:
+        active_file = Path.home() / ".local/state/wt-stacks/lovable.active"
+        active_file.parent.mkdir(parents=True, exist_ok=True)
+        active_file.write_text(name + "\n")
+    except Exception:
+        pass
     _syncing = True
     try:
         # Focus the two non-active siblings first, then the user's slot last

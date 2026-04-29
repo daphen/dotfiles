@@ -173,6 +173,22 @@ def lovable_workspace_id(workspaces: list[dict]) -> int | None:
     return None
 
 
+ACTIVE_STACK_FILE = Path.home() / ".local/state/wt-stacks/lovable.active"
+
+
+def _active_stack_from_file() -> str | None:
+    """Read the active stack name written by niri-focus-tracker on every
+    sync. This is more reliable than scoring focus_timestamp because
+    individual stack windows can get re-touched after sync (e.g. claude
+    output, sync re-firing on later events) and shift the apparent
+    "most-recent" without the user actually changing stacks."""
+    try:
+        name = ACTIVE_STACK_FILE.read_text().strip()
+        return name or None
+    except Exception:
+        return None
+
+
 def active_worktree_name(windows: list[dict], lovable_id: int | None) -> str | None:
     """Whichever worktree has the most-recently-focused window on lovable."""
     if lovable_id is None:
@@ -199,7 +215,21 @@ def main() -> int:
     windows = niri_json("windows") or []
     workspaces = niri_json("workspaces") or []
     lovable_id = lovable_workspace_id(workspaces)
-    active = active_worktree_name(windows, lovable_id)
+    # Prefer the persisted active stack (written by niri-focus-tracker
+    # at sync time). Fall back to focus_timestamp scoring only if the
+    # file is missing or the named stack no longer has any window on
+    # lovable (stale).
+    active = _active_stack_from_file()
+    if active is not None and lovable_id is not None:
+        has_window = any(
+            w.get("workspace_id") == lovable_id
+            and stack_name_of(w) == active
+            for w in windows
+        )
+        if not has_window:
+            active = None
+    if active is None:
+        active = active_worktree_name(windows, lovable_id)
 
     # vivaldi-map tells us which lovable vivaldis belong to which stack.
     # Used in the allow rule below to single out the active stack's

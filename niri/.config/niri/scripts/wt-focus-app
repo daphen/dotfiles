@@ -202,10 +202,23 @@ def main() -> int:
     active = active_worktree_name(windows, lovable_id)
 
     # vivaldi-map tells us which lovable vivaldis belong to which stack.
-    # Used in the allow rule below: tagged vivaldis from *other* stacks
-    # are filtered out, untagged ones (random work browsers on lovable)
-    # are kept reachable.
+    # Used in the allow rule below to single out the active stack's
+    # vivaldi (and reject inactive-stack vivaldis + untagged stragglers).
     vmap = _vivaldi_stack_map() if slot == "browser" else {}
+
+    # Resolve the active stack's vivaldi on lovable (if any). When we have
+    # one, the allow rule restricts Super+W to it exclusively so a stray
+    # untagged vivaldi can't outscore it on focus_timestamp.
+    active_lovable_vivaldi_id: int | None = None
+    if slot == "browser" and active is not None and lovable_id is not None:
+        for w in windows:
+            if w.get("workspace_id") != lovable_id:
+                continue
+            if (w.get("app_id") or "") not in ("vivaldi-stable", "vivaldi-work"):
+                continue
+            if vmap.get(w["id"]) == active:
+                active_lovable_vivaldi_id = w["id"]
+                break
 
     # Personal-profile vivaldi (Super+Q's window). Excluded from Super+W.
     personal_vivaldi_id: int | None = None
@@ -230,14 +243,14 @@ def main() -> int:
             # are always candidates.
             if ws != lovable_id:
                 return True
-            # On lovable: vivaldis tagged for a *different* stack
-            # (per vivaldi-map) are excluded — those are inactive-stack
-            # browser tabs. Untagged vivaldis are allowed (random work
-            # browsers on the lovable workspace).
-            tag = _vivaldi_stack_name(w, vmap)
-            if tag is None:
-                return True
-            return tag == active
+            # On lovable: prefer the active stack's vivaldi (per vivaldi-map)
+            # exclusively when one exists, so ad-hoc untagged vivaldis on
+            # lovable can't outscore it on focus_timestamp.
+            if active_lovable_vivaldi_id is not None:
+                return w["id"] == active_lovable_vivaldi_id
+            # No active-stack vivaldi resolvable — fall back to allowing
+            # untagged vivaldis (e.g. random work browsers).
+            return _vivaldi_stack_name(w, vmap) is None
 
         # Term and claude: on lovable, only the active stack's window.
         # Off lovable, ad-hoc instances are valid candidates.

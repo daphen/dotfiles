@@ -5,6 +5,10 @@ fish/.config/fish/fish_history
 fish/.config/fish/secrets.fish
 fish/.config/fish/conf.d/fish_debug.log
 
+# Python bytecode caches (auto-generated, never committed)
+__pycache__/
+*.pyc
+
 # Tmux plugins (managed by TPM)
 tmux/.config/tmux/plugins/
 

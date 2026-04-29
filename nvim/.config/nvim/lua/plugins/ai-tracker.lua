@@ -81,6 +81,11 @@ return {
 			function() require("ai-tracker").reset_tracking() end,
 			desc = "Reset AI tracking (manual clear)",
 		},
+		{
+			"<C-g>t",
+			function() require("ai-tracker.preview").toggle() end,
+			desc = "Toggle AI Tracker preview gate",
+		},
 
 		-- Manual annotation
 		{
@@ -115,5 +120,6 @@ return {
 		"AITrackerUnread",
 		"AITrackerJumpLatest",
 		"AITrackerPreviewInstall",
+		"AITrackerPreviewToggle",
 	},
 }

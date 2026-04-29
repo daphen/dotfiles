@@ -81,6 +81,9 @@ local function path_in_current_project(path)
   return root ~= nil and path ~= nil and vim.startswith(path, root)
 end
 
+-- Exported so preview.lua can stamp the heartbeat with our project root.
+M.current_project_root = current_project_root
+
 local function in_insert_mode()
   return vim.api.nvim_get_mode().mode:sub(1, 1) == "i"
 end
@@ -618,6 +621,10 @@ function M.setup_commands()
   vim.api.nvim_create_user_command("AITrackerJumpLatest", function()
     M.jump_to_latest()
   end, { desc = "Jump to the most recent AI-edited file in this project" })
+
+  vim.api.nvim_create_user_command("AITrackerPreviewToggle", function()
+    require("ai-tracker.preview").toggle()
+  end, { desc = "Toggle the AI Tracker preview gate (passthrough when off)" })
 
   vim.api.nvim_create_user_command("AITrackerPreviewInstall", function()
     local hook_path = require("ai-tracker.preview").hook_path()

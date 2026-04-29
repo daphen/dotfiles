@@ -6,7 +6,7 @@
 
   "modules-left": ["clock#date", "custom/weather", "cpu", "memory"],
   "modules-center": ["custom/niri-minimap"],
-  "modules-right": ["network", "pulseaudio", "battery", "clock"],
+  "modules-right": ["custom/dnd", "network", "pulseaudio", "battery", "clock"],
 
   "clock#date": {
     "format": "󰃭 {:%a %b %d}",
@@ -50,9 +50,9 @@
   },
 
   "network": {
-    "format-wifi": "⚡ {essid}",
-    "format-ethernet": "⚡ {ifname}",
-    "format-disconnected": "⚡ Disconnected",
+    "format-wifi": "󱐋 {essid}",
+    "format-ethernet": "󱐋 {ifname}",
+    "format-disconnected": "󱐋 Disconnected",
     "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
     "tooltip-format-wifi": "󰖨 {essid} ({signalStrength}%)\n{ifname}: {ipaddr}/{cidr}",
     "tooltip-format-ethernet": "󰈀 {ifname}: {ipaddr}/{cidr}",
@@ -102,5 +102,14 @@
     "interval": 1,
     "format": "{}",
     "tooltip": true
+  },
+
+  "custom/dnd": {
+    "exec": "~/.config/waybar/scripts/dnd-status.sh",
+    "return-type": "json",
+    "interval": 2,
+    "format": "{}",
+    "tooltip": true,
+    "on-click": "makoctl mode -t do-not-disturb"
   }
 }

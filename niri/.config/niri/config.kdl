@@ -563,7 +563,10 @@ binds {
     // Jump-or-exec keybinds for quick app access
     Super+c { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec vesktop vesktop"; }
     Super+e { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-yazi"; }
-    Super+Shift+g { spawn-sh "kitty --class lovable_picker fish -c '$HOME/.config/niri/scripts/spawn-claude-session-picker'"; }
+    // Super+Ctrl+g: resume an existing claude session (fzf picker)
+    // Super+Shift+g: start a NEW claude session, picking a working dir via zoxide+fzf
+    Super+Ctrl+g { spawn-sh "kitty --class lovable_picker fish -c '$HOME/.config/niri/scripts/spawn-claude-session-picker'"; }
+    Super+Shift+g { spawn-sh "$HOME/.config/niri/scripts/spawn-new-claude-session"; }
     Super+Shift+f { spawn-sh "$HOME/.config/niri/scripts/fork-claude-session"; }
     Super+r { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-zoxide-picker"; }
     Super+g { spawn-sh "$HOME/.config/niri/scripts/wt-focus-app claude"; }
@@ -691,6 +694,9 @@ binds {
     // Color picker
     Super+Ctrl+c { spawn "/home/daphen/.config/niri/scripts/pick-color"; }  // Pick color from screen
     Super+Ctrl+Shift+c { spawn "/home/daphen/.config/niri/scripts/pick-color-format"; }  // Change color picker format
+
+    // Do-not-disturb toggle (mako). Waybar shows an indicator when active.
+    Super+Ctrl+Shift+d { spawn-sh "makoctl mode -t do-not-disturb"; }
 
     // Rofi keybinds
     Super+Ctrl+V { spawn "kitty" "--class" "clipse" "-o" "initial_window_width=1000" "-o" "initial_window_height=750" "clipse"; }  // Open clipboard history (clipse in floating terminal)

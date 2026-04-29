@@ -39,3 +39,9 @@ group-by=app-name
 
 # Appearance
 layer=overlay
+
+# Do-not-disturb mode — toggled with Super+Shift+Ctrl+D
+# (`makoctl mode -t do-not-disturb`). When active, all notifications
+# are suppressed.
+[mode=do-not-disturb]
+invisible=1

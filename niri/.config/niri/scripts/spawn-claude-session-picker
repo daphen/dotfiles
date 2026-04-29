@@ -74,12 +74,28 @@ for _, path in jsonls:
     try:
         first_user = None
         last_line = None
+        custom_title = None
+        ai_title = None
         with open(path, 'rb') as f:
             for raw in f:
                 if raw.strip():
                     last_line = raw
                 if first_user is None and b'"type":"user"' in raw:
                     first_user = raw
+                if b'"type":"custom-title"' in raw:
+                    try:
+                        ev = json.loads(raw)
+                        if ev.get('type') == 'custom-title':
+                            custom_title = ev.get('customTitle') or custom_title
+                    except Exception:
+                        pass
+                if b'"type":"ai-title"' in raw:
+                    try:
+                        ev = json.loads(raw)
+                        if ev.get('type') == 'ai-title':
+                            ai_title = ev.get('aiTitle') or ai_title
+                    except Exception:
+                        pass
         if first_user is None or last_line is None:
             continue
         try:
@@ -96,9 +112,21 @@ for _, path in jsonls:
         if not text:
             continue
         short_branch = branch.split('/', 1)[1] if '/' in branch else (branch or '-')
+        # Display label preference:
+        #   1. user-set custom-title (claude -n <name>)
+        #   2. claude's auto-generated ai-title (conversation topic)
+        #   3. short branch name
+        # ai-title beats branch because it's far more informative ("HEAD"
+        # / "main" tells you nothing).
+        label = (custom_title or ai_title or short_branch or '').strip()
+        if not label:
+            label = '-'
+        # Cap length so fzf columns stay tidy.
+        if len(label) > 40:
+            label = label[:37] + '...'
         session_id = path.stem
         meta_out.write(f'{session_id}\t{cwd}\t{path}\n')
-        display_out.write(f'{fmt_ago(ts):<8}  {short_branch:<30}  {text}\n')
+        display_out.write(f'{fmt_ago(ts):<8}  {label:<30}  {text}\n')
     except Exception:
         continue
 
@@ -127,7 +155,9 @@ selected=$(echo "$numbered" | fzf \
     --no-sort \
     --preview="$HOME/.config/niri/scripts/claude-session-preview {1} $meta_file" \
     --preview-window=down:60%:wrap:follow \
-    --bind='ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up')
+    --header='ctrl-r: rename session  •  ctrl-d/u: scroll preview' \
+    --bind='ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up' \
+    --bind="ctrl-r:execute(sid=\$(sed -n \"{1}p\" $meta_file | cut -f1); $HOME/.config/niri/scripts/claude-rename --id \"\$sid\")")
 
 [ -z "$selected" ] && exit 0
 

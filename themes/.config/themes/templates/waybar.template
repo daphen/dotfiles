@@ -31,7 +31,7 @@ window#waybar {
 }
 
 .modules-left #custom-weather {
-  color: {{accent.cyan}};
+  color: {{foreground.primary}};
 }
 
 /* Center module */
@@ -91,12 +91,24 @@ window#waybar {
 #clock,
 #battery,
 #network,
-#pulseaudio {
+#pulseaudio,
+#custom-dnd {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
   color: {{foreground.primary}};
   border-radius: 0;
+}
+
+/* Hide DND module entirely when not active so it doesn't reserve space */
+#custom-dnd.empty {
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+#custom-dnd.active {
+  font-size: 18px;
 }
 
 #battery.warning {
@@ -108,15 +120,15 @@ window#waybar {
 }
 
 #battery.charging {
-  color: {{accent.green}};
+  color: {{foreground.primary}};
 }
 
 #clock {
-  color: {{accent.blue}};
+  color: {{foreground.primary}};
 }
 
 #network {
-  color: {{accent.green}};
+  color: {{foreground.primary}};
 }
 
 #network.disconnected {
@@ -124,11 +136,11 @@ window#waybar {
 }
 
 #pulseaudio {
-  color: {{accent.blue}};
+  color: {{foreground.primary}};
 }
 
 #pulseaudio.muted {
-  color: {{accent.cyan}};
+  color: {{foreground.primary}};
 }
 
 tooltip {

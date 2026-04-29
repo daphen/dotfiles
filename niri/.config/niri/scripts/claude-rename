@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# claude-rename [--id <session-id>] [<name>]
+#
+# Set the custom title of a claude session by appending a
+# `type: "custom-title"` event to the session's JSONL. The picker
+# (Super+Shift+G) reads that field as the session label.
+#
+# Usage:
+#   claude-rename                      # rename focused window's session, prompt for name
+#   claude-rename my-name              # rename focused window's session with given name
+#   claude-rename --id <sid>           # rename specific session, prompt for name
+#   claude-rename --id <sid> my-name   # rename specific session with given name
+
+set -euo pipefail
+
+EXPLICIT_SID=""
+if [ "${1:-}" = "--id" ]; then
+    EXPLICIT_SID="${2:-}"
+    shift 2
+fi
+
+NAME="${1:-}"
+if [ -z "$NAME" ]; then
+    NAME=$(rofi -dmenu -p "session name" \
+        -theme-str 'window {width: 30em;}' </dev/null || true)
+fi
+NAME=$(printf '%s' "$NAME" | tr -cd '[:alnum:]_-')
+[ -z "$NAME" ] && exit 0
+
+# If we have an explicit session id, skip the focused-window detection.
+if [ -n "$EXPLICIT_SID" ]; then
+    sid="$EXPLICIT_SID"
+    jsonl=$(find "$HOME/.claude/projects" -name "${sid}.jsonl" 2>/dev/null | head -1)
+    [ -z "$jsonl" ] && { notify-send "claude-rename" "session jsonl not found: $sid"; exit 1; }
+    printf '{"type":"custom-title","customTitle":"%s","sessionId":"%s"}\n' \
+        "$NAME" "$sid" >> "$jsonl"
+    notify-send "claude-rename" "$sid → $NAME"
+    exit 0
+fi
+
+# Find the focused window's claude process and extract its --resume
+# session id, or read it from the cmdline.
+focused_pid=$(niri msg --json focused-window 2>/dev/null \
+    | jq -r '.pid // empty')
+[ -z "$focused_pid" ] && { notify-send "claude-rename" "no focused window"; exit 1; }
+
+find_claude_pid() {
+    local parent="$1"
+    for child in $(pgrep -P "$parent" 2>/dev/null); do
+        local comm
+        comm=$(cat "/proc/$child/comm" 2>/dev/null || true)
+        if [ "$comm" = "claude" ]; then
+            echo "$child"
+            return
+        fi
+    done
+    for child in $(pgrep -P "$parent" 2>/dev/null); do
+        local comm
+        comm=$(cat "/proc/$child/comm" 2>/dev/null || true)
+        if [[ "$comm" =~ ^(fish|bash|zsh)$ ]]; then
+            for grand in $(pgrep -P "$child" 2>/dev/null); do
+                local g_comm
+                g_comm=$(cat "/proc/$grand/comm" 2>/dev/null || true)
+                if [ "$g_comm" = "claude" ]; then
+                    echo "$grand"
+                    return
+                fi
+            done
+        fi
+    done
+}
+
+claude_pid=$(find_claude_pid "$focused_pid")
+[ -z "$claude_pid" ] && { notify-send "claude-rename" "no claude under focused window"; exit 1; }
+
+# claude's session id appears either in --resume <id> or as an env var.
+cmdline=$(tr '\0' ' ' < "/proc/$claude_pid/cmdline" 2>/dev/null)
+sid=$(printf '%s' "$cmdline" | grep -oE -- '--resume[= ]+[0-9a-f-]{36}' \
+    | head -1 | grep -oE '[0-9a-f-]{36}' || true)
+if [ -z "$sid" ]; then
+    # Fall back: most-recently-modified jsonl whose cwd matches the
+    # claude process's cwd (one session per (cwd, time) pair).
+    cwd=$(readlink -f "/proc/$claude_pid/cwd" 2>/dev/null || true)
+    encoded=$(printf '%s' "$cwd" | sed 's|/|-|g')
+    proj_dir="$HOME/.claude/projects/${encoded}"
+    if [ -d "$proj_dir" ]; then
+        sid=$(ls -t "$proj_dir"/*.jsonl 2>/dev/null | head -1 \
+            | xargs -I{} basename {} .jsonl)
+    fi
+fi
+[ -z "$sid" ] && { notify-send "claude-rename" "could not resolve session id"; exit 1; }
+
+jsonl=$(find "$HOME/.claude/projects" -name "${sid}.jsonl" 2>/dev/null | head -1)
+[ -z "$jsonl" ] && { notify-send "claude-rename" "session jsonl not found: $sid"; exit 1; }
+
+printf '{"type":"custom-title","customTitle":"%s","sessionId":"%s"}\n' \
+    "$NAME" "$sid" >> "$jsonl"
+
+notify-send "claude-rename" "$sid → $NAME"

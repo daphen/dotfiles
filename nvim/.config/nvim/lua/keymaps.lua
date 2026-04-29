@@ -2,7 +2,7 @@ vim.g.mapleader = " "
 
 local keymap = vim.keymap
 
--- center cursor after search
+-- Center cursor after search
 keymap.set("n", "n", "nzzzv")
 keymap.set("n", "N", "Nzzzv")
 

@@ -1,6 +1,6 @@
 local opt = vim.opt
 
--- line number
+-- Line numbers
 opt.relativenumber = true
 opt.number = true
 

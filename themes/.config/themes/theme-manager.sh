@@ -595,6 +595,12 @@ apply_system_theme() {
         fi
         sed -i "s/active-color \"#[0-9a-fA-F]*\"/active-color \"${active_color}\"/g" "$niri_config"
         sed -i "s/inactive-color \"#[0-9a-fA-F]*\"/inactive-color \"${inactive_color}\"/g" "$niri_config"
+        # Tab indicator stays cursor-orange + readable inactive across both
+        # themes — restore after the global sed has overwritten them.
+        sed -i '/tab-indicator {/,/^    }/ {
+            s/active-color "#[0-9a-fA-F]*"/active-color "#FF570D"/
+            s/inactive-color "#[0-9a-fA-F]*"/inactive-color "#999999"/
+        }' "$niri_config"
         log_success "Applied niri border colors for ${theme_mode} mode"
     fi
 }

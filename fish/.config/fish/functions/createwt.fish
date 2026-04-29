@@ -11,7 +11,7 @@ function createwt --description "Create or switch to a Lovable worktree + spawn 
     # at lovable.daphen-<short-name>.
     set -l branch "daphen/$name"
     set -l worktree_path "$HOME/work/lovable.daphen-$name"
-    set -l preview_url "https://daphen-$name.localhost:2015"
+    set -l preview_url "http://daphen-$name.localhost:2015"
 
     # 1. Create the worktree (or switch if it exists)
     pushd "$lovable_dir" >/dev/null
@@ -96,15 +96,17 @@ function createwt --description "Create or switch to a Lovable worktree + spawn 
         set offset 1
     end
 
-    # target_col=0 → first worktree, no merge (3 fresh columns spawn naturally)
-    # target_col=(1+offset)/(2+offset)/(3+offset) → merge into existing columns
+    # target_col=0 → first worktree, no merge (4 fresh columns spawn naturally)
+    # target_col=(1+offset)/(2+offset)/(3+offset)/(4+offset) → merge into existing columns
     set -l target_term 0
     set -l target_browser 0
     set -l target_claude 0
+    set -l target_nvim 0
     if test $is_first -eq 0
         set target_term (math 1 + $offset)
         set target_browser (math 2 + $offset)
         set target_claude (math 3 + $offset)
+        set target_nvim (math 4 + $offset)
     end
 
     echo "==> spawning devenv wt in $worktree_path"
@@ -124,6 +126,10 @@ function createwt --description "Create or switch to a Lovable worktree + spawn 
     echo "==> spawning claude session ($mode)"
     __wt_spawn_and_merge $target_claude "kitty --class lovable_claude_$name --working-directory '$worktree_path' -e $claude_inner"
     set -l claude_id $__WT_LAST_SPAWNED_ID
+
+    echo "==> spawning nvim in $worktree_path"
+    __wt_spawn_and_merge $target_nvim "kitty --class lovable_nvim_$name --working-directory '$worktree_path' -e bash -c 'nvim; exec fish'"
+    set -l nvim_id $__WT_LAST_SPAWNED_ID
 
     # Land focus on the new worktree's claude
     if test -n "$claude_id"

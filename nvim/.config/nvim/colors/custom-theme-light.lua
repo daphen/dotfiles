@@ -22,7 +22,7 @@ local c = {
   -- Foreground colors
   fg = "#2D4A3D",
   fg_secondary = "#575279",
-  fg_muted = "#9893a5",
+  fg_muted = "#6B6E7A",
   fg_subtle = "#8A92A7",
 
   -- Accent colors
@@ -43,7 +43,7 @@ local c = {
   keyword = "#ED333B",
   command = "#286983",
   operator = "#4A7C59",
-  comment = "#9893a5",
+  comment = "#6B6E7A",
   string = "#4A7C59",
   ["function"] = "#286983",
   type = "#4A7C59",
@@ -231,6 +231,9 @@ hl("@text.literal", { fg = c.fg })
 hl("@text.reference", { link = "String" })
 hl("@text.uri", { fg = c.blue, underline = true })
 hl("@type.builtin", { link = "@type" })
+hl("@variable", { fg = c.fg })
+hl("@variable.parameter", { link = "@variable" })
+hl("@variable.member", { fg = c.fg })
 
 -- JSX/TSX (Legacy treesitter)
 hl("@tag", { fg = c.tag })

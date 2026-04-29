@@ -21,7 +21,62 @@ M.config = {
     flush_ms = 300,
   },
   auto_reload_buffers = true, -- checktime affected buffers when AI writes land
+  -- When true, switch the current window to the file an AI just edited (only
+  -- if the file is in this nvim's project). Skipped while in insert mode so
+  -- it doesn't yank the buffer out from under live typing.
+  live_follow = true,
 }
+
+--- Resolve a strict project root from a directory. Requires either a git repo
+--- or a project marker — bare cwd is rejected so e.g. opening nvim in $HOME
+--- doesn't end up matching every AI edit on the machine.
+---@param dir string
+---@return string?
+local function resolve_strict_project_root(dir)
+  if not dir or dir == "" then return nil end
+
+  local git_root = vim.fn.system(
+    "git -C " .. vim.fn.shellescape(dir) .. " rev-parse --show-toplevel 2>/dev/null"
+  ):gsub("\n", "")
+  if vim.v.shell_error == 0 and git_root ~= "" then
+    return git_root
+  end
+
+  local markers = { "package.json", "tsconfig.json", "Cargo.toml", "pyproject.toml", "go.mod" }
+  local path = dir
+  while path and #path > 1 do
+    for _, marker in ipairs(markers) do
+      local candidate = path .. "/" .. marker
+      if vim.fn.filereadable(candidate) ~= 0 or vim.fn.isdirectory(candidate) ~= 0 then
+        return path
+      end
+    end
+    local parent = vim.fn.fnamemodify(path, ":h")
+    if parent == path or parent == "" then break end
+    path = parent
+  end
+  return nil
+end
+
+-- Memoize project root by cwd so we don't shell out to git for every edit.
+local _project_root_cache = { cwd = nil, root = nil }
+local function current_project_root()
+  local cwd = vim.fn.getcwd()
+  if _project_root_cache.cwd ~= cwd then
+    _project_root_cache.cwd = cwd
+    _project_root_cache.root = resolve_strict_project_root(cwd)
+  end
+  return _project_root_cache.root
+end
+
+local function path_in_current_project(path)
+  local root = current_project_root()
+  return root ~= nil and path ~= nil and vim.startswith(path, root)
+end
+
+local function in_insert_mode()
+  return vim.api.nvim_get_mode().mode:sub(1, 1) == "i"
+end
 
 -- State
 M.state = {
@@ -222,6 +277,30 @@ function M.handle_batch(entries)
       M.notify_enqueue(path, #file_entries)
     end
   end
+
+  -- Live-follow: switch the current window to the latest AI edit in this
+  -- project so the user can watch the AI work in real time. Insert mode is a
+  -- hard veto so we never clobber a buffer the user is actively typing in.
+  if M.config.live_follow and not in_insert_mode() then
+    local follow
+    for _, e in ipairs(entries) do
+      if e.file_path and path_in_current_project(e.file_path) then
+        if not follow or (e.timestamp or "") > (follow.timestamp or "") then
+          follow = e
+        end
+      end
+    end
+    if follow and vim.fn.filereadable(follow.file_path) ~= 0 then
+      local cur = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p")
+      if cur ~= follow.file_path then
+        pcall(vim.cmd, "edit " .. vim.fn.fnameescape(follow.file_path))
+      end
+      if follow.line_number then
+        pcall(vim.fn.cursor, follow.line_number, 1)
+        pcall(vim.cmd, "normal! zz")
+      end
+    end
+  end
 end
 
 --- Reload a buffer from disk, unless it has unsaved changes or is a special buftype.
@@ -303,17 +382,15 @@ function M.notify_flush()
 end
 
 --- Find the most recent AI change whose file lives under the current project.
+--- Returns nil if cwd is not inside an identifiable project — that's
+--- intentional, so unrelated nvim sessions don't auto-switch.
 ---@return table? change entry or nil
 function M.get_latest_in_project()
   local changes = M.get_changes()
   if #changes == 0 then return nil end
 
-  local project_root = vim.fn.getcwd()
-  local utils_ok, main_utils = pcall(require, "utils")
-  if utils_ok and main_utils and main_utils.get_project_root_git_priority then
-    local maybe = main_utils.get_project_root_git_priority(project_root)
-    if maybe then project_root = maybe end
-  end
+  local project_root = current_project_root()
+  if not project_root then return nil end
 
   local latest
   for _, change in ipairs(changes) do

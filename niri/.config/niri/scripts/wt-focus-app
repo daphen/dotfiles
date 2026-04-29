@@ -31,6 +31,7 @@ HOME = os.environ["HOME"]
 
 TERM_CLASS_RE = re.compile(r"^lovable_term_(.+)$")
 CLAUDE_CLASS_RE = re.compile(r"^lovable_claude_(.+)$")
+NVIM_CLASS_RE = re.compile(r"^lovable_nvim_(.+)$")
 WT_TITLE_RE = re.compile(r"^process-compose: proart/lovable\..+")
 CLAUDE_TITLE_HINT = "Claude Code"
 
@@ -76,21 +77,53 @@ def stack_name_of(w: dict) -> str | None:
     the browser slot instead.
     """
     app = w.get("app_id") or ""
-    m = TERM_CLASS_RE.match(app) or CLAUDE_CLASS_RE.match(app)
+    m = TERM_CLASS_RE.match(app) or CLAUDE_CLASS_RE.match(app) or NVIM_CLASS_RE.match(app)
     if m:
         return m.group(1)
     return None
+
+
+def _proc_children(pid: int) -> list[int]:
+    try:
+        with open(f"/proc/{pid}/task/{pid}/children") as f:
+            return [int(x) for x in f.read().split() if x.isdigit()]
+    except OSError:
+        return []
+
+
+def _kitty_runs_claude(pid: int | None) -> bool:
+    """Walk the process tree under `pid` looking for a `claude` child.
+    Reads /proc directly (no subprocess fork per check) so a Super+G
+    press over many windows stays fast.
+
+    More robust than title sniffing because claude renames its kitty
+    title to the conversation topic after a while."""
+    if not pid:
+        return False
+    seen: set[int] = set()
+    stack = [pid]
+    while stack:
+        p = stack.pop()
+        if p in seen:
+            continue
+        seen.add(p)
+        try:
+            with open(f"/proc/{p}/comm") as f:
+                if f.read().strip() == "claude":
+                    return True
+        except OSError:
+            continue
+        stack.extend(_proc_children(p))
+    return False
 
 
 def matches_slot(w: dict, slot: str) -> bool:
     """Window matches the slot if it's a tagged stack window OR an
     ad-hoc window running the same kind of process.
       term  : lovable_term_<x> class  OR any window with devenv-wt title
-      claude: lovable_claude_<x> class OR a kitty whose title hints claude
-      browser: vivaldi-stable (covers both work and personal — Chromium
-               runs as a single daemon, so --class can't separate them.
-               The personal vivaldi is excluded later via the id file
-               written by the vivaldi-personal script.)
+      claude: lovable_claude_<x> class OR a kitty with `claude` in its
+              process subtree (survives title rename to topic)
+      browser: vivaldi-stable / vivaldi-work
     """
     app = w.get("app_id") or ""
     title = w.get("title") or ""
@@ -103,8 +136,8 @@ def matches_slot(w: dict, slot: str) -> bool:
     if slot == "claude":
         if CLAUDE_CLASS_RE.match(app):
             return True
-        if app == "kitty" and CLAUDE_TITLE_HINT in title:
-            return True
+        if app == "kitty":
+            return _kitty_runs_claude(w.get("pid"))
         return False
     return False
 

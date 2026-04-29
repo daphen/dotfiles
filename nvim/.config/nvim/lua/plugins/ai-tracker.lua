@@ -7,6 +7,12 @@ return {
 		"folke/snacks.nvim", -- Required for picker functionality
 	},
 
+	-- Skip in kitty-scrollback nvim instances — those are pagers, not editors,
+	-- and shouldn't react to AI edits at all.
+	cond = function()
+		return vim.env.KITTY_SCROLLBACK_NVIM ~= "true"
+	end,
+
 	-- Load immediately at startup to show line highlights
 	lazy = false,
 	priority = 100, -- Load early but after theme

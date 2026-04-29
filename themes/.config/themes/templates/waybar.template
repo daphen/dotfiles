@@ -51,6 +51,18 @@ window#waybar {
   font-size: 16px;
 }
 
+/* On the lovable workspace, show the lovable logo + the worktree name
+ * currently running in the active stack's devenv wt. */
+#custom-niri-minimap.lovable {
+  background-image: url("/home/daphen/.local/share/icons/hicolor/512x512/apps/lovable.png");
+  background-repeat: no-repeat;
+  background-position: 6px center;
+  background-size: 18px 18px;
+  padding-left: 30px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
 #custom-discord-notifications,
 #custom-teams-notifications {
   padding: 6px 12px;

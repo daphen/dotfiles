@@ -29,6 +29,6 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "skipAutoPermissionPrompt": true,
-  "theme": "dark-ansi"
+  "theme": "light-ansi",
+  "skipAutoPermissionPrompt": true
 }

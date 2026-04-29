@@ -141,5 +141,5 @@ if [ "$ID_ONLY" = "1" ]; then
     exit 0
 fi
 
-cd "$cwd" || exit 1
-exec claude --resume "$session_id"
+setsid -f kitty --working-directory "$cwd" fish -c "claude --resume $session_id" >/dev/null 2>&1
+exit 0

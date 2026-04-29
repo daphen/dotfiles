@@ -20,6 +20,7 @@ window_to_app = {}
 #   - vivaldi-stable + title "daphen-<name>.localhost" → stack <name> (browser)
 TERM_CLASS_RE = re.compile(r"^lovable_term_(.+)$")
 CLAUDE_CLASS_RE = re.compile(r"^lovable_claude_(.+)$")
+NVIM_CLASS_RE = re.compile(r"^lovable_nvim_(.+)$")
 VIVALDI_TITLE_RE = re.compile(r"daphen-(.+?)\.localhost")
 VIVALDI_MAP_FILE = Path.home() / ".local/state/wt-stacks/vivaldi-map.json"
 
@@ -59,7 +60,7 @@ def _focus_window_id(wid):
 
 def _stack_info(w):
     """Return (stack_name, slot) for a window, or (None, None) if not part
-    of any stack. Slot is 'term', 'claude', or 'browser'."""
+    of any stack. Slot is 'term', 'claude', 'nvim', or 'browser'."""
     app = w.get('app_id') or ''
     title = w.get('title') or ''
     m = TERM_CLASS_RE.match(app)
@@ -68,6 +69,9 @@ def _stack_info(w):
     m = CLAUDE_CLASS_RE.match(app)
     if m:
         return m.group(1), 'claude'
+    m = NVIM_CLASS_RE.match(app)
+    if m:
+        return m.group(1), 'nvim'
     if app == 'vivaldi-stable' or app == 'vivaldi-work':
         m = VIVALDI_TITLE_RE.search(title)
         if m:
@@ -126,7 +130,7 @@ def sync_lovable_stacks(focused_wid):
     try:
         # Focus the two non-active siblings first, then the user's slot last
         # so the cursor stays in the column they clicked.
-        for s in ('term', 'browser', 'claude'):
+        for s in ('term', 'browser', 'claude', 'nvim'):
             if s == slot:
                 continue
             w = siblings.get(s)

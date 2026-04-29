@@ -27,6 +27,7 @@ HOME = os.environ["HOME"]
 
 TERM_CLASS_RE = re.compile(r"^lovable_term_(.+)$")
 CLAUDE_CLASS_RE = re.compile(r"^lovable_claude_(.+)$")
+NVIM_CLASS_RE = re.compile(r"^lovable_nvim_(.+)$")
 VIVALDI_TITLE_RE = re.compile(r"daphen-(.+?)\.localhost")
 VIVALDI_MAP_FILE = Path.home() / ".local/state/wt-stacks/vivaldi-map.json"
 
@@ -56,7 +57,7 @@ def stack_name_of(w: dict) -> str | None:
     ignore vivaldi titles (they drift when the user navigates).
     """
     app = w.get("app_id") or ""
-    m = TERM_CLASS_RE.match(app) or CLAUDE_CLASS_RE.match(app)
+    m = TERM_CLASS_RE.match(app) or CLAUDE_CLASS_RE.match(app) or NVIM_CLASS_RE.match(app)
     if m:
         return m.group(1)
     if app in ("vivaldi-stable", "vivaldi-work"):

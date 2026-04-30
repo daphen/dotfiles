@@ -11,11 +11,15 @@ window#waybar {
   background-color: rgba(0, 0, 0, 0);
 }
 
-/* Left side modules */
+/* Left side modules — visible cream pill is 32px tall, vertically
+ * centered within the 50px-tall bar (9px top/bottom margin on a
+ * ~32px content area). Larger top/bottom margin keeps the pill from
+ * stretching when the centre module's font_size pushes the bar
+ * height up. */
 .modules-left {
   background: alpha({{background.secondary}}, 0.85);
   border-radius: 8px;
-  margin: 4px 8px 4px 20px;
+  margin: 9px 8px 9px 20px;
   padding: 0px 8px;
 }
 
@@ -68,11 +72,11 @@ window#waybar {
   min-width: 0;
 }
 
-/* Right side container - all items grouped */
+/* Right side container — same vertical centering as left side. */
 .modules-right {
   background: alpha({{background.secondary}}, 0.85);
   border-radius: 8px;
-  margin: 4px 20px 4px 8px;
+  margin: 9px 20px 9px 8px;
   padding: 0px 8px;
 }
 

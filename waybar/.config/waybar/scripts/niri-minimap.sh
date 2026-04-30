@@ -110,9 +110,10 @@ def render(c_active: str, c_normal: str) -> str:
         # Units are 1024ths of a point; -3000 ≈ -3pt at 16pt.
         blocks.append(f"<span letter_spacing='-3000'>{''.join(parts)}</span>")
 
-    # Thin space (U+2009) between workspaces — slightly narrower than a
-    # regular space. (U+200A hair space was too tight; bars overlapped.)
-    text = " ".join(blocks) if blocks else "·"
+    # Single regular space between workspaces. Tighter values
+    # (U+200A hair, U+2009 thin) overlapped or ran characters into each
+    # other given the negative letter_spacing applied within blocks.
+    text = " ".join(blocks) if blocks else "·"
     tooltip = "\\n".join(tooltip_lines) or "no windows"
     return json.dumps({"text": text, "tooltip": tooltip, "markup": "pango"})
 

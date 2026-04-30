@@ -11,15 +11,12 @@ window#waybar {
   background-color: rgba(0, 0, 0, 0);
 }
 
-/* Left side modules — visible cream pill is 32px tall, vertically
- * centered within the 50px-tall bar (9px top/bottom margin on a
- * ~32px content area). Larger top/bottom margin keeps the pill from
- * stretching when the centre module's font_size pushes the bar
- * height up. */
+/* Left side modules — pill is vertically centered in the bar via
+ * margin; padding stays at 0/8 so inner items dictate the height. */
 .modules-left {
   background: alpha({{background.secondary}}, 0.85);
   border-radius: 8px;
-  margin: 14px 8px 14px 20px;
+  margin: 8px 8px 8px 20px;
   padding: 0px 8px;
 }
 
@@ -48,7 +45,9 @@ window#waybar {
 }
 
 #custom-niri-minimap {
-  padding: 6px 12px;
+  /* Almost no top padding so the bar tops sit close to the bar edge,
+   * leaving room below for the focused glyph to overshoot downward. */
+  padding: 2px 12px 0px 12px;
   margin: 0;
   background: transparent;
   border-radius: 0;
@@ -76,7 +75,7 @@ window#waybar {
 .modules-right {
   background: alpha({{background.secondary}}, 0.85);
   border-radius: 8px;
-  margin: 14px 20px 14px 8px;
+  margin: 8px 20px 8px 8px;
   padding: 0px 8px;
 }
 

@@ -97,14 +97,21 @@ def render(c_active: str, c_normal: str) -> str:
             continue
 
         parts: list[str] = []
+        ws_focused = ws.get("is_focused")
         for w in ws_windows:
-            # Two visual states only — same glyph for every non-focused
-            # window (active-of-unfocused workspace included) so the
-            # gaps between bars stay perfectly uniform. Block + pipe
-            # mixes cause uneven kerning that no amount of
-            # letter_spacing can fully equalize.
-            ch = "█" if w.get("is_focused") else "|"
-            color = c_active if w.get("is_focused") else c_normal
+            # Visual hierarchy as in niri-workspaces-rs:
+            #   █  the focused window (full block)
+            #   ▌  the active window of an unfocused workspace
+            #   |  any other window
+            # Note: mixed-width glyphs produce slightly uneven gaps
+            # adjacent to █/▌. Pango's letter_spacing tightens but
+            # can't fully equalize them.
+            if w.get("is_focused"):
+                ch, color = "█", c_active
+            elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
+                ch, color = "▌", c_normal
+            else:
+                ch, color = "|", c_normal
             parts.append(f"<span color='{color}'>{ch}</span>")
         # Tighten the gap between bars within a single workspace.
         # Units are 1024ths of a point; -3000 ≈ -3pt at 16pt.

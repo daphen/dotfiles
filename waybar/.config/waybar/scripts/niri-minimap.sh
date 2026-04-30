@@ -96,26 +96,23 @@ def render(c_active: str, c_normal: str) -> str:
                 blocks.append(f"<span color='{c_normal}'>·</span>")
             continue
 
+        # Each bar is a pango span with a colored *background* applied
+        # to N space characters. That decouples bar width from glyph
+        # bearings entirely: 1 space = thin bar, 2 = medium, 3 = wide.
+        # Inter-bar gaps are plain (no-bg) hair spaces for snug spacing.
         parts: list[str] = []
         ws_focused = ws.get("is_focused")
         for w in ws_windows:
-            # Visual hierarchy as in niri-workspaces-rs:
-            #   █  the focused window (full block)
-            #   ▌  the active window of an unfocused workspace
-            #   |  any other window
-            # Note: mixed-width glyphs produce slightly uneven gaps
-            # adjacent to █/▌. Pango's letter_spacing tightens but
-            # can't fully equalize them.
             if w.get("is_focused"):
-                ch, color = "█", c_active
+                width, color = 3, c_active
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                ch, color = "▌", c_normal
+                width, color = 2, c_normal
             else:
-                ch, color = "|", c_normal
-            parts.append(f"<span color='{color}'>{ch}</span>")
-        # Tighten the gap between bars within a single workspace.
-        # Units are 1024ths of a point; -3000 ≈ -3pt at 16pt.
-        blocks.append(f"<span letter_spacing='-3000'>{''.join(parts)}</span>")
+                width, color = 1, c_normal
+            parts.append(f"<span bgcolor='{color}'>{' ' * width}</span>")
+        # Hair-space between bars inside a workspace (no overlap because
+        # the bars are bg-painted spaces with no glyph bearings).
+        blocks.append(" ".join(parts))
 
     # Single regular space between workspaces. Tighter values
     # (U+200A hair, U+2009 thin) overlapped or ran characters into each

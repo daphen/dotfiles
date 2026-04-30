@@ -112,7 +112,7 @@ def render(c_active: str, c_normal: str) -> str:
             parts.append(
                 f"<span size='{size}' rise='{rise}' color='{color}'>|</span>"
             )
-        blocks.append(f"<span letter_spacing='-9000'>{''.join(parts)}</span>")
+        blocks.append("".join(parts))
 
     # Single regular space between workspaces. Tighter values
     # (U+200A hair, U+2009 thin) overlapped or ran characters into each

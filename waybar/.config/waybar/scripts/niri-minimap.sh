@@ -97,25 +97,26 @@ def render(c_active: str, c_normal: str) -> str:
             continue
 
         # Each bar is a pango span with a colored *background* on N
-        # hair spaces (\u200a). Hair space is much narrower than a
-        # regular space, so the painted rectangles stay thin.
+        # thin spaces (\u2009). Thin space ≈ 4px in a 16pt monospace
+        # font; 1/2/3 thin spaces give narrow / medium / wide bars
+        # that read clearly without being chunky.
         # Wrapped in <span size='Y'> for HEIGHT control: smaller
         # font_size = shorter bg fill.
-        HAIR = "\u200a"
-        BAR_SIZE = "12000"  # 1024ths of a pt; 12000 ≈ 12pt
+        BAR = "\u2009"
+        BAR_SIZE = "14000"  # 1024ths of a pt; 12000 ≈ 12pt
         parts: list[str] = []
         ws_focused = ws.get("is_focused")
         for w in ws_windows:
             if w.get("is_focused"):
-                hairs, color = 3, c_active
+                width, color = 3, c_active
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                hairs, color = 2, c_normal
+                width, color = 2, c_normal
             else:
-                hairs, color = 1, c_normal
+                width, color = 1, c_normal
             parts.append(
-                f"<span size='{BAR_SIZE}' bgcolor='{color}'>{HAIR * hairs}</span>"
+                f"<span size='{BAR_SIZE}' bgcolor='{color}'>{BAR * width}</span>"
             )
-        blocks.append("\u200a".join(parts))
+        blocks.append("\u2009".join(parts))
 
     # Single regular space between workspaces. Tighter values
     # (U+200A hair, U+2009 thin) overlapped or ran characters into each

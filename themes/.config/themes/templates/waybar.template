@@ -34,39 +34,23 @@ window#waybar {
   color: {{foreground.primary}};
 }
 
-/* Center module — sits directly on the wallpaper, no pill. The
- * minimap script colors its own bars (orange focused / light other /
- * muted dimmed) via inline pango spans. */
+/* Center module — sits directly on the wallpaper, no pill, no
+ * vertical margin/padding so the minimap bars get the full bar
+ * height to render in. */
 .modules-center {
   background: transparent;
-  margin: 4px 8px;
+  margin: 0;
   padding: 0;
 }
 
 #custom-niri-minimap {
-  padding: 2px 12px;
+  padding: 0 12px;
   margin: 0;
   background: transparent;
   border-radius: 0;
   font-size: 16px;
 }
 
-#custom-discord-notifications,
-#custom-teams-notifications {
-  padding: 2px 12px;
-  margin: 0;
-  background: transparent;
-  color: #5865F2;
-  border-radius: 0;
-  font-size: 16px;
-}
-
-#custom-discord-notifications.empty,
-#custom-teams-notifications.empty {
-  padding: 0;
-  margin: 0;
-  min-width: 0;
-}
 
 /* Right side container - all items grouped */
 .modules-right {

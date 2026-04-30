@@ -104,9 +104,9 @@ def render(c_active: str, c_normal: str) -> str:
         ws_focused = ws.get("is_focused")
         for w in ws_windows:
             if w.get("is_focused"):
-                size, rise, color = "22000", "-7000", c_active
+                size, rise, color = "28000", "-10000", c_active
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                size, rise, color = "18000", "-4000", c_normal
+                size, rise, color = "22000", "-7000", c_normal
             else:
                 size, rise, color = "12000", "0", c_normal
             parts.append(

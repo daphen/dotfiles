@@ -11,12 +11,11 @@ window#waybar {
   background-color: rgba(0, 0, 0, 0);
 }
 
-/* Left side modules — pill is vertically centered in the bar via
- * margin; padding stays at 0/8 so inner items dictate the height. */
+/* Left side modules */
 .modules-left {
   background: alpha({{background.secondary}}, 0.85);
   border-radius: 8px;
-  margin: 8px 8px 8px 20px;
+  margin: 4px 8px 4px 20px;
   padding: 0px 8px;
 }
 
@@ -45,22 +44,35 @@ window#waybar {
 }
 
 #custom-niri-minimap {
-  /* GTK vertically centres the module content within the bar, so we
-   * pad heavily on the BOTTOM only — that pushes the visual centre
-   * upward, anchoring the bar tops near the top edge of the bar. */
-  padding: 0 12px 24px 12px;
+  padding: 6px 12px;
   margin: 0;
   background: transparent;
   border-radius: 0;
   font-size: 16px;
 }
 
+#custom-discord-notifications,
+#custom-teams-notifications {
+  padding: 6px 12px;
+  margin: 0;
+  background: transparent;
+  color: #5865F2;
+  border-radius: 0;
+  font-size: 16px;
+}
 
-/* Right side container — same vertical centering as left side. */
+#custom-discord-notifications.empty,
+#custom-teams-notifications.empty {
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+/* Right side container - all items grouped */
 .modules-right {
   background: alpha({{background.secondary}}, 0.85);
   border-radius: 8px;
-  margin: 8px 20px 8px 8px;
+  margin: 4px 20px 4px 8px;
   padding: 0px 8px;
 }
 

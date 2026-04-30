@@ -96,24 +96,25 @@ def render(c_active: str, c_normal: str) -> str:
                 blocks.append(f"<span color='{c_normal}'>·</span>")
             continue
 
-        # Bars are top-anchored block characters: tops align,
-        # heights grow downward.
-        #   ▔  upper one-eighth block — short tick (inactive)
-        #   ▀  upper half block       — medium (active of unfocused ws)
-        #   █  full block             — tallest (focused window)
-        # Pango couldn't give us differential bg heights in a
-        # single waybar line (line-height collapses to the tallest
-        # span), so foreground glyphs are the route to varying
-        # heights without losing uniform gaps.
+        # Three-glyph hierarchy from niri-workspaces-rs:
+        #   █  the focused window (full block, orange)
+        #   ▌  the active window of an unfocused workspace
+        #   |  any other window
+        # All three render at full character height; visual
+        # hierarchy comes from glyph WIDTH, not height (pango on
+        # a single waybar line can't give us per-span heights).
+        # Adjacent █/▌ to | causes a slight gap variation that no
+        # amount of letter_spacing can fully equalize — that's a
+        # known trade-off for keeping the size hierarchy.
         parts: list[str] = []
         ws_focused = ws.get("is_focused")
         for w in ws_windows:
             if w.get("is_focused"):
                 ch, color = "\u2588", c_active   # █
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                ch, color = "\u2580", c_normal   # ▀
+                ch, color = "\u258c", c_normal   # ▌
             else:
-                ch, color = "\u2594", c_normal   # ▔
+                ch, color = "|", c_normal
             parts.append(f"<span color='{color}'>{ch}</span>")
         blocks.append("".join(parts))
 

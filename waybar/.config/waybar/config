@@ -5,7 +5,7 @@
   "spacing": 8,
 
   "modules-left": ["clock#date", "custom/weather", "cpu", "memory"],
-  "modules-center": ["custom/niri-minimap"],
+  "modules-center": ["custom/niri-minimap", "custom/lovable-worktree"],
   "modules-right": ["custom/dnd", "network", "pulseaudio", "battery", "clock"],
 
   "clock#date": {
@@ -98,6 +98,13 @@
 
   "custom/niri-minimap": {
     "exec": "~/.config/waybar/scripts/niri-minimap.sh",
+    "return-type": "json",
+    "format": "{}",
+    "tooltip": true
+  },
+
+  "custom/lovable-worktree": {
+    "exec": "~/.config/waybar/scripts/lovable-worktree.sh",
     "return-type": "json",
     "format": "{}",
     "tooltip": true

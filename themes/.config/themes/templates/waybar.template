@@ -51,6 +51,32 @@ window#waybar {
   font-size: 16px;
 }
 
+/* Lovable active-worktree label — own cream pill, same vertical
+ * dimensions as the left/right modules. Lovable logo as a left
+ * background image. Hidden entirely when no lovable-* workspace is
+ * focused (.empty class). */
+#custom-lovable-worktree {
+  background: alpha({{background.secondary}}, 0.85);
+  border-radius: 8px;
+  margin: 10px 0 10px 0;
+  padding: 2px 14px 2px 30px;
+  background-image: url("/home/daphen/.local/share/icons/hicolor/512x512/apps/lovable.png");
+  background-repeat: no-repeat;
+  background-position: 8px center;
+  background-size: 16px 16px;
+  color: {{foreground.primary}};
+  font-size: 13px;
+  font-weight: 500;
+}
+
+#custom-lovable-worktree.empty {
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  background: transparent;
+  background-image: none;
+}
+
 
 /* Right side container - all items grouped */
 .modules-right {

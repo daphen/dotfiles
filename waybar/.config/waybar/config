@@ -99,7 +99,6 @@
   "custom/niri-minimap": {
     "exec": "~/.config/waybar/scripts/niri-minimap.sh",
     "return-type": "json",
-    "interval": 1,
     "format": "{}",
     "tooltip": true
   },

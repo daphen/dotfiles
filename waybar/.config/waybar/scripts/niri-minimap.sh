@@ -96,27 +96,30 @@ def render(c_active: str, c_normal: str) -> str:
                 blocks.append(f"<span color='{c_normal}'>·</span>")
             continue
 
-        # Each bar is a pango span with a colored *background* on N
-        # thin spaces (\u2009). Thin space ≈ 4px in a 16pt monospace
-        # font; 1/2/3 thin spaces give narrow / medium / wide bars
-        # that read clearly without being chunky.
-        # Wrapped in <span size='Y'> for HEIGHT control: smaller
-        # font_size = shorter bg fill.
-        BAR = "\u2009"
-        BAR_SIZE = "14000"  # 1024ths of a pt; 12000 ≈ 12pt
+        # Each bar is a pango span with a colored *background*. We
+        # control three knobs per state:
+        #   width  — number of thin/hair spaces inside the span
+        #   size   — pango font_size (1024ths of pt) → bg height
+        #   rise   — pango baseline shift (negative = down)
+        # Active-of-unfocused and focused bars use a larger size +
+        # negative rise so they grow downwards only (top stays put,
+        # bottom extends past the normal bars).
+        THIN = "\u2009"  # ≈4px in a 16pt monospace font
+        HAIR = "\u200a"  # ≈2px — used for thinner inactive bars
         parts: list[str] = []
         ws_focused = ws.get("is_focused")
         for w in ws_windows:
             if w.get("is_focused"):
-                width, color = 3, c_active
+                glyph, size, rise, color = THIN * 2, "18000", "-3000", c_active
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                width, color = 2, c_normal
+                glyph, size, rise, color = THIN, "18000", "-3000", c_normal
             else:
-                width, color = 1, c_normal
+                glyph, size, rise, color = HAIR, "14000", "0", c_normal
             parts.append(
-                f"<span size='{BAR_SIZE}' bgcolor='{color}'>{BAR * width}</span>"
+                f"<span size='{size}' rise='{rise}' bgcolor='{color}'>{glyph}</span>"
             )
-        blocks.append("\u2009".join(parts))
+        # Slightly wider gap between bars within a workspace.
+        blocks.append((THIN * 2).join(parts))
 
     # Single regular space between workspaces. Tighter values
     # (U+200A hair, U+2009 thin) overlapped or ran characters into each

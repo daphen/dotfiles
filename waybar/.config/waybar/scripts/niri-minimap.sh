@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Waybar center-module:
-# - On the "lovable" workspace: emit class "lovable" + the worktree name
-#   currently running in the active stack's devenv wt (CSS shows the
-#   lovable logo as a background image).
+# - On a "lovable-<name>" stack workspace (new ws-* model): emit class
+#   "lovable" + the worktree name currently running in that workspace's
+#   devenv wt term.
+# - On the singular "lovable" workspace (old wt-* model, backup):
+#   emit class "lovable" + the worktree of whichever lovable_term_<x>
+#   on that workspace was most recently focused.
 # - Elsewhere: the original column-position minimap.
 
 set -euo pipefail
@@ -21,7 +24,50 @@ workspaces_json=$(niri msg --json workspaces 2>/dev/null || echo "[]")
 focused_ws_name=$(echo "$workspaces_json" \
     | jq -r --argjson id "$focused_ws_id" '.[] | select(.id == $id) | .name // ""')
 
-# ── Lovable workspace branch ─────────────────────────────────────────────
+# ── Lovable per-workspace stack branch (new ws-* model) ──────────────────
+# Workspace name is `lovable-<stack>`. Stack name == worktree short name.
+if [[ "$focused_ws_name" =~ ^lovable-(.+)$ ]] && [ "${BASH_REMATCH[1]}" != "deps" ]; then
+    stack_name="${BASH_REMATCH[1]}"
+    windows_json=$(niri msg --json windows 2>/dev/null || echo "[]")
+
+    # Find the devenv-running terminal on this workspace by title (any
+    # kitty class) — extract the worktree from the process-compose title.
+    running=$(echo "$windows_json" | jq -r --argjson ws "$focused_ws_id" '
+        [ .[]
+          | select(.workspace_id == $ws)
+          | select((.title // "") | test("^process-compose: proart/lovable\\.daphen-"))
+        ]
+        | .[0].title // ""
+        | capture("^process-compose: proart/lovable\\.daphen-(?<wt>.+)$") | .wt // empty
+    ')
+
+    # Pill minimap: one pill per lovable-<name> stack (excluding the
+    # legacy `lovable` and `lovable-deps`), ordered by their workspace
+    # idx so the row mirrors the visible workspace stack — the focused
+    # one is the rightmost filled pill.
+    pills=$(echo "$workspaces_json" | jq -r --argjson focused_id "$focused_ws_id" '
+        [ .[]
+          | select((.name // "") | test("^lovable-"))
+          | select((.name // "") != "lovable-deps")
+        ]
+        | sort_by(.idx)
+        | map(if .id == $focused_id then "PILL_ON" else "PILL_OFF" end)
+        | join(" ")
+    ')
+    pills=${pills//PILL_ON/●}
+    pills=${pills//PILL_OFF/○}
+
+    if [ -n "$running" ]; then
+        printf '{"text": "%s  %s", "class": "lovable", "tooltip": "devenv wt: %s\\nstack: %s"}\n' \
+            "$running" "$pills" "$running" "$stack_name"
+    else
+        printf '{"text": "%s  %s", "class": "lovable", "tooltip": "stack: %s (no devenv wt running)"}\n' \
+            "$stack_name" "$pills" "$stack_name"
+    fi
+    exit 0
+fi
+
+# ── Legacy lovable workspace branch (old wt-* model, kept as backup) ─────
 if [ "$focused_ws_name" = "lovable" ]; then
     windows_json=$(niri msg --json windows 2>/dev/null || echo "[]")
 

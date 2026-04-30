@@ -1,0 +1,212 @@
+#!/usr/bin/env python3
+"""
+ws-createwt <worktree-name> [--mode new|resume|fork] [--session-id <sid>]
+
+Each worktree lives on its own named niri workspace `lovable-<name>`.
+Spawns 4 windows in 4 columns: devenv terminal (kitty), vivaldi work
+profile, claude (kitty `--class claude`), nvim (kitty). Niri places
+each spawn naturally as a new column on the focused workspace.
+
+The "active" stack is whichever lovable-<name> workspace is currently
+focused — tracked by ws-tracker, which writes
+~/.local/state/wt-stacks/ws/active.
+"""
+from __future__ import annotations
+import argparse
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+LOVABLE_DIR = Path(HOME) / "work" / "lovable"
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=3
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def niri_action(*args: str) -> int:
+    return subprocess.run(
+        ["niri", "msg", "action", *args], capture_output=True, timeout=3
+    ).returncode
+
+
+def workspace_id_by_name(name: str) -> int | None:
+    for ws in (niri_json("workspaces") or []):
+        if ws.get("name") == name:
+            return ws["id"]
+    return None
+
+
+def trailing_empty_unnamed_idx(output: str) -> int | None:
+    """Highest-idx empty unnamed workspace on `output` — niri keeps a
+    trailing one alive at all times."""
+    cands = [
+        w for w in (niri_json("workspaces") or [])
+        if w.get("output") == output
+        and w.get("name") is None
+        and w.get("active_window_id") is None
+    ]
+    cands.sort(key=lambda w: -w["idx"])
+    return cands[0]["idx"] if cands else None
+
+
+def focused_output() -> str | None:
+    fw = niri_json("focused-window")
+    if fw is None:
+        return None
+    ws_id = fw.get("workspace_id")
+    for w in (niri_json("workspaces") or []):
+        if w["id"] == ws_id:
+            return w.get("output")
+    return None
+
+
+def ensure_workspace(name: str) -> int:
+    """Focus (or create-and-name) the workspace `name`. Returns its id.
+
+    Uses `set-workspace-name --workspace <idx>` to name the trailing
+    empty workspace on the current output without focus races.
+    """
+    wid = workspace_id_by_name(name)
+    if wid is not None:
+        niri_action("focus-workspace", name)
+        return wid
+
+    out = focused_output() or "DP-2"
+    idx = trailing_empty_unnamed_idx(out)
+    if idx is None:
+        # No trailing empty (rare) — fall back to focus-workspace-down to
+        # provoke niri into creating one, then look again.
+        niri_action("focus-workspace-down")
+        time.sleep(0.15)
+        idx = trailing_empty_unnamed_idx(out)
+    if idx is None:
+        return -1
+    niri_action("set-workspace-name", "--workspace", str(idx), name)
+    time.sleep(0.15)
+    niri_action("focus-workspace", name)
+    time.sleep(0.1)
+    return workspace_id_by_name(name) or -1
+
+
+def snapshot_window_ids() -> set[int]:
+    return {w["id"] for w in (niri_json("windows") or [])}
+
+
+def spawn_and_wait(cmd: list[str], timeout: float = 9.0) -> int | None:
+    """Spawn detached, wait for a new niri window to appear, return its id."""
+    before = snapshot_window_ids()
+    subprocess.Popen(
+        ["setsid", *cmd],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        time.sleep(0.15)
+        after = snapshot_window_ids()
+        new = after - before
+        if new:
+            return next(iter(new))
+    return None
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("name", help="worktree short name (creates branch daphen/<name>)")
+    ap.add_argument("--mode", choices=["new", "resume", "fork"], default="new")
+    ap.add_argument("--session-id", default=None,
+                    help="claude session id for resume/fork")
+    args = ap.parse_args()
+
+    name = args.name
+    branch = f"daphen/{name}"
+    worktree_path = Path(HOME) / f"work/lovable.daphen-{name}"
+    workspace = f"lovable-{name}"
+    preview_url = f"http://daphen-{name}.localhost:2015"
+
+    # 1. Create or switch to the worktree (using `wt`)
+    if not worktree_path.is_dir():
+        print(f"==> creating worktree {branch}")
+        rc = subprocess.run(
+            ["wt", "switch", "--create", branch],
+            cwd=str(LOVABLE_DIR),
+        ).returncode
+        if rc != 0:
+            print("wt switch --create failed", file=sys.stderr)
+            return rc
+
+    # 2. Focus / create the named workspace
+    print(f"==> focusing workspace {workspace}")
+    ensure_workspace(workspace)
+
+    # 3. Build the claude command
+    if args.mode == "new":
+        claude_cmd = ["claude"]
+    elif args.mode == "resume":
+        if not args.session_id:
+            print("--session-id required for resume", file=sys.stderr)
+            return 2
+        claude_cmd = ["claude", "--resume", args.session_id]
+    else:  # fork
+        if not args.session_id:
+            print("--session-id required for fork", file=sys.stderr)
+            return 2
+        claude_cmd = ["claude", "--resume", args.session_id, "--fork-session"]
+
+    # 4. Spawn the 4 stack windows. Each one lands as its own column on
+    #    the (now-focused) workspace — no merge logic needed.
+    print("==> spawning devenv wt")
+    spawn_and_wait([
+        "kitty",
+        "--working-directory", str(worktree_path),
+        "-e", "bash", "-c", "direnv exec . devenv wt; exec fish",
+    ])
+
+    print(f"==> spawning vivaldi (Work profile) → {preview_url}")
+    spawn_and_wait([
+        "/run/current-system/sw/bin/vivaldi",
+        "--profile-directory=Profile 2",
+        "--new-window", preview_url,
+    ])
+
+    print(f"==> spawning claude session ({args.mode})")
+    spawn_and_wait([
+        "kitty",
+        "--class", "claude",
+        "--working-directory", str(worktree_path),
+        "-e", *claude_cmd,
+    ])
+
+    print("==> spawning nvim")
+    nvim_id = spawn_and_wait([
+        "kitty",
+        "--working-directory", str(worktree_path),
+        "-e", "bash", "-c", "nvim; exec fish",
+    ])
+
+    # Land focus on the new claude (col 3), so the user is at the prompt
+    if nvim_id is not None:
+        # Land focus on the new claude window in this stack workspace.
+        target_ws_id = workspace_id_by_name(workspace)
+        for w in (niri_json("windows") or []):
+            if (w.get("app_id") == "claude"
+                    and w.get("workspace_id") == target_ws_id):
+                niri_action("focus-window", "--id", str(w["id"]))
+                break
+
+    print(f"==> stack '{name}' ready on workspace '{workspace}'")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

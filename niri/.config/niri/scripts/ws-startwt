@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""
+ws-startwt — fzf picker over existing worktrees, then ws-createwt.
+
+Workspace-stack version of startwt. Run inside a kitty so fzf has a
+TTY (rofi-ws-startwt wraps that). After picking a worktree, prompts
+for new/resume/fork claude mode and forwards to ws-createwt.
+"""
+from __future__ import annotations
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+LOVABLE_DIR = Path(HOME) / "work" / "lovable"
+
+
+def list_worktrees() -> list[tuple[str, str]]:
+    """Return [(branch, path)] for each worktree under ~/work/lovable,
+    excluding the primary tree."""
+    out = subprocess.run(
+        ["git", "-C", str(LOVABLE_DIR), "worktree", "list", "--porcelain"],
+        capture_output=True, text=True,
+    ).stdout
+    rows: list[tuple[str, str]] = []
+    cur_path = ""
+    for line in out.splitlines():
+        if line.startswith("worktree "):
+            cur_path = line.split(" ", 1)[1]
+        elif line.startswith("branch "):
+            branch = line.split(" ", 1)[1].removeprefix("refs/heads/")
+            if not cur_path.endswith("/lovable"):
+                rows.append((branch, cur_path))
+    return rows
+
+
+def fzf(lines: list[str], prompt: str) -> str | None:
+    if not lines:
+        return None
+    p = subprocess.run(
+        ["fzf", "--prompt", prompt, "--height=60%", "--reverse", "--no-sort"],
+        input="\n".join(lines), capture_output=True, text=True,
+    )
+    sel = p.stdout.strip()
+    return sel or None
+
+
+def main() -> int:
+    rows = list_worktrees()
+    if not rows:
+        print("no worktrees found in ~/work/lovable", file=sys.stderr)
+        return 1
+
+    display = [f"{branch}\t{path}" for branch, path in rows]
+    pick = fzf(display, "worktree> ")
+    if not pick:
+        return 0
+    branch = pick.split("\t", 1)[0]
+    name = branch.removeprefix("daphen/")
+
+    mode = fzf(["new", "resume", "fork"], "claude session> ") or "new"
+
+    cmd = [str(Path(__file__).parent / "ws-createwt"), name, "--mode", mode]
+    if mode in ("resume", "fork"):
+        sid = subprocess.run(
+            [str(Path(HOME) / ".config/niri/scripts/spawn-claude-session-picker"),
+             "--id-only"],
+            capture_output=True, text=True,
+        ).stdout.strip()
+        if sid:
+            cmd += ["--session-id", sid]
+        else:
+            return 0  # cancelled
+
+    return subprocess.run(cmd).returncode
+
+
+if __name__ == "__main__":
+    sys.exit(main())

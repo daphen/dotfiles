@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""
+ws-window-or-stack <next|prev>
+
+Dispatcher for Super+Left / Super+Right:
+  - On a lovable-<name> stack workspace: cycle to the next/prev stack
+    via ws-cycle (Super+Left/Right then walks across stacks).
+  - Otherwise: behave like the original focus-window-up / -down (walk
+    tabs within the focused tabbed column).
+
+`lovable` (legacy singleton) and `lovable-deps` are NOT treated as
+stacks — they fall through to the window walk.
+"""
+from __future__ import annotations
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+SCRIPTS = Path(os.environ["HOME"]) / ".config/niri/scripts"
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args],
+        capture_output=True, text=True, timeout=2,
+    ).stdout
+    return json.loads(out) if out.strip() else None
+
+
+def is_stack(name: str | None) -> bool:
+    if not name or not name.startswith("lovable-"):
+        return False
+    if name in ("lovable", "lovable-deps"):
+        return False
+    return True
+
+
+def main(direction: str) -> int:
+    fw = niri_json("focused-window")
+    ws_id = fw.get("workspace_id") if fw else None
+
+    name = None
+    if ws_id is not None:
+        for w in (niri_json("workspaces") or []):
+            if w.get("id") == ws_id:
+                name = w.get("name")
+                break
+
+    if is_stack(name):
+        os.execv(str(SCRIPTS / "ws-cycle"),
+                 [str(SCRIPTS / "ws-cycle"), direction])
+    else:
+        action = "focus-window-up" if direction == "prev" else "focus-window-down"
+        subprocess.run(["niri", "msg", "action", action], check=False, timeout=2)
+    return 0
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2 or sys.argv[1] not in ("next", "prev"):
+        print(f"Usage: {Path(sys.argv[0]).name} <next|prev>", file=sys.stderr)
+        sys.exit(2)
+    sys.exit(main(sys.argv[1]))

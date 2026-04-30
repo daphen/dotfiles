@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""
+ws-reorder
+
+Pin every `lovable-*` workspace to the top of its output's workspace
+stack, with the *active* stack workspace at the bottom of that pinned
+group (i.e. closest to the user's normal workspaces below it):
+
+    [lovable-stack-inactive]   <- top of output
+    [lovable-stack-inactive]
+    [lovable-ACTIVE]
+    [normal-workspace]
+    [normal-workspace]
+
+Idempotent: only issues `move-workspace-to-index` for workspaces that
+are not already at their target index. Cheap to invoke on every
+workspace-focus event.
+"""
+from __future__ import annotations
+import json
+import os
+import subprocess
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+ACTIVE_FILE = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws/active"
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args],
+        capture_output=True, text=True, timeout=2,
+    ).stdout
+    return json.loads(out) if out.strip() else None
+
+
+def niri_action(*args: str) -> int:
+    return subprocess.run(
+        ["niri", "msg", "action", *args],
+        capture_output=True, timeout=2,
+    ).returncode
+
+
+def read_active() -> str:
+    try:
+        return ACTIVE_FILE.read_text().strip()
+    except Exception:
+        return ""
+
+
+def is_lovable(name: str | None) -> bool:
+    return bool(name) and name.startswith("lovable")
+
+
+def main() -> int:
+    workspaces = niri_json("workspaces") or []
+    active = read_active()
+
+    # Group by output.
+    by_output: dict[str, list[dict]] = defaultdict(list)
+    for w in workspaces:
+        by_output[w.get("output") or ""].append(w)
+
+    for output, ws_list in by_output.items():
+        lovables = [w for w in ws_list if is_lovable(w.get("name"))]
+        if not lovables:
+            continue
+        lovables.sort(key=lambda w: w["idx"])
+
+        # Desired lovable order: inactives in current idx order, active last.
+        active_ws = next((w for w in lovables if w.get("name") == active), None)
+        desired = [w for w in lovables if w is not active_ws]
+        if active_ws is not None:
+            desired.append(active_ws)
+
+        # Walk in target_idx (1..N) order; only move when current idx
+        # differs. Re-read state after each move because move-to-index
+        # renumbers everyone at >= target_idx.
+        for target_idx, w in enumerate(desired, start=1):
+            current = niri_json("workspaces") or []
+            cur_w = next((c for c in current if c.get("id") == w["id"]), None)
+            if cur_w is None:
+                continue
+            if cur_w["idx"] == target_idx:
+                continue
+            niri_action(
+                "move-workspace-to-index",
+                "--reference", w["name"],
+                str(target_idx),
+            )
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

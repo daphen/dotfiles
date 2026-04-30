@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# wt-deps
+# ws-deps
 #
-# Spawn-or-jump for the lovable `devenv deps` singleton. Always runs from
-# the /lovable root (not a worktree). Tracked by app_id "lovable_deps" and
-# a stored window id at ~/.local/state/wt-stacks/deps.id.
+# Spawn-or-jump for the lovable `devenv deps` singleton. Always runs
+# from the /lovable root (not a worktree). One window for the whole
+# session — `ws-tracker` migrates it to whichever stack workspace is
+# active, so wherever it lands at spawn time is fine.
 
 set -euo pipefail
 
@@ -12,7 +13,7 @@ LOVABLE_DIR="$HOME/work/lovable"
 
 mkdir -p "$(dirname "$ID_FILE")"
 
-# Helper: does a window with this id exist (and is it our deps app)?
+# Helper: does a window with this id exist and is it our deps app?
 deps_window_alive() {
     local id="$1"
     [ -z "$id" ] && return 1
@@ -31,7 +32,7 @@ if [ -f "$ID_FILE" ]; then
     fi
 fi
 
-# 2. Fallback: any existing lovable_deps window in niri (e.g. tracker lost).
+# 2. Fallback: any existing lovable_deps window niri knows about.
 existing=$(niri msg --json windows 2>/dev/null \
     | jq -r '[.[] | select(.app_id == "lovable_deps")] | .[0].id // empty')
 if [ -n "$existing" ]; then
@@ -40,19 +41,11 @@ if [ -n "$existing" ]; then
     exit 0
 fi
 
-# 3. Spawn a fresh one. Make sure it lands on the lovable workspace.
-ws_exists=$(niri msg --json workspaces 2>/dev/null \
-    | jq -r '[.[] | select(.name == "lovable")] | length')
-if [ "$ws_exists" != "0" ]; then
-    niri msg action focus-workspace lovable 2>/dev/null || true
-    sleep 0.1
-fi
-
+# 3. Spawn a fresh one — ws-tracker will move it onto the active stack.
 setsid kitty --hold --class lovable_deps --working-directory "$LOVABLE_DIR" \
     -e direnv exec . devenv deps </dev/null >/dev/null 2>&1 &
 disown
 
-# Poll for the new window
 for _ in $(seq 1 60); do
     sleep 0.15
     new=$(niri msg --json windows 2>/dev/null \
@@ -60,12 +53,9 @@ for _ in $(seq 1 60); do
     if [ -n "$new" ]; then
         echo "$new" > "$ID_FILE"
         niri msg action focus-window --id "$new"
-        sleep 0.1
-        # Pin deps to the leftmost column so the worktree stack sits to its right.
-        niri msg action move-column-to-index 1 2>/dev/null || true
         exit 0
     fi
 done
 
-echo "wt-deps: failed to find spawned lovable_deps window" >&2
+echo "ws-deps: failed to find spawned lovable_deps window" >&2
 exit 1

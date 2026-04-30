@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+"""
+ws-close-stack
+
+Close every window on the focused lovable-* workspace and run
+`devenv kill` for the worktree in the background to free dev ports.
+The empty named workspace then disappears (or stays if niri keeps it).
+
+If the focused workspace isn't a stack workspace, just close the
+focused window.
+"""
+from __future__ import annotations
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=2
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def main() -> int:
+    fw = niri_json("focused-window")
+    if not fw:
+        subprocess.run(["niri", "msg", "action", "close-window"], check=False)
+        return 0
+
+    fw_ws = fw.get("workspace_id")
+    ws_list = niri_json("workspaces") or []
+    ws = next((w for w in ws_list if w["id"] == fw_ws), None)
+    name = (ws or {}).get("name") or ""
+
+    if not (name.startswith("lovable-") and name != "lovable"):
+        # Not a stack workspace — fall back to single-window close
+        subprocess.run(["niri", "msg", "action", "close-window"], check=False)
+        return 0
+
+    stack_name = name[len("lovable-"):]
+    print(f"ws-close-stack: closing stack '{stack_name}' on workspace '{name}'", file=sys.stderr)
+
+    windows = niri_json("windows") or []
+    for w in windows:
+        if w.get("workspace_id") == fw_ws:
+            subprocess.run(
+                ["niri", "msg", "action", "close-window", "--id", str(w["id"])],
+                check=False, timeout=2,
+            )
+
+    # Best-effort: free dev ports for this worktree.
+    wt_path = Path(HOME) / f"work/lovable.daphen-{stack_name}"
+    if wt_path.is_dir():
+        log = open("/tmp/ws-close-stack-kill.log", "ab")
+        subprocess.Popen(
+            ["nohup", "sh", "-c", f"cd '{wt_path}' && direnv exec . devenv kill"],
+            stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+
+    # Clear state file if it pointed here
+    active_file = Path(HOME) / ".local/state/wt-stacks/ws/active"
+    try:
+        if active_file.read_text().strip() == name:
+            active_file.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

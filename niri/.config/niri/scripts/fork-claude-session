@@ -48,7 +48,7 @@ if [ -z "$CWD" ]; then
 fi
 
 if [ -n "$SESSION_ID" ]; then
-    kitty --directory "$CWD" fish -c "claude --resume $SESSION_ID --fork-session"
+    kitty --class claude --directory "$CWD" fish -c "claude --resume $SESSION_ID --fork-session"
 else
-    kitty --directory "$CWD" fish -c "claude --continue --fork-session"
+    kitty --class claude --directory "$CWD" fish -c "claude --continue --fork-session"
 fi

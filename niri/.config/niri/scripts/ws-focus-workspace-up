@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+"""
+ws-focus-workspace-up
+
+Drop-in replacement for focus-workspace-up-or-monitor that treats the
+group of `lovable-*` named workspaces as a single navigable entry —
+only the *active* one (per ws/active state) participates in the
+workspace cycle. All other lovable-* are hidden from Super+J/K.
+
+If at the top of the filtered list, falls back to focus-monitor-up
+(same as the original script).
+"""
+from __future__ import annotations
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+ACTIVE_FILE = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws/active"
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=2
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def is_inactive_lovable(name: str | None, active: str) -> bool:
+    if not name or not name.startswith("lovable-") or name == "lovable":
+        return False
+    return name != active
+
+
+def main(direction: str) -> int:
+    workspaces = niri_json("workspaces") or []
+    cur = next((w for w in workspaces
+                if w.get("is_active") and w.get("is_focused")), None)
+    if cur is None:
+        return 0
+    cur_output = cur.get("output")
+
+    try:
+        active_stack = ACTIVE_FILE.read_text().strip()
+    except Exception:
+        active_stack = ""
+
+    # Filter to: same output, has windows, NOT an inactive lovable-*
+    candidates = [
+        w for w in workspaces
+        if w.get("output") == cur_output
+        and w.get("active_window_id") is not None
+        and not is_inactive_lovable(w.get("name"), active_stack)
+    ]
+    candidates.sort(key=lambda w: w.get("idx") or 0)
+
+    cur_idx = cur.get("idx") or 0
+    if direction == "up":
+        target = next(
+            (w for w in reversed(candidates) if (w.get("idx") or 0) < cur_idx),
+            None,
+        )
+        action = "focus-monitor-up"
+    else:  # down
+        target = next(
+            (w for w in candidates if (w.get("idx") or 0) > cur_idx),
+            None,
+        )
+        action = "focus-monitor-down"
+
+    if target is None:
+        # No further workspace in that direction; let niri try moving to
+        # the adjacent monitor. If there isn't one, niri silently no-ops.
+        subprocess.run(["niri", "msg", "action", action], check=False, timeout=2)
+        return 0
+
+    name = target.get("name")
+    ref = name if name else str(target["idx"])
+    subprocess.run(["niri", "msg", "action", "focus-workspace", ref],
+                   check=False, timeout=2)
+    return 0
+
+
+if __name__ == "__main__":
+    direction = "up" if Path(sys.argv[0]).name.endswith("-up") else "down"
+    sys.exit(main(direction))

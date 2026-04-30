@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Prompt for a worktree name via rofi, then run ws-createwt in a kitty.
+# Inside the kitty, an fzf picker resolves claude mode (new/resume/fork)
+# before invoking ws-createwt.
+set -euo pipefail
+
+name=$(rofi -dmenu -p "ws-createwt name" -theme-str 'window {width: 30em;}' </dev/null || true)
+[ -z "$name" ] && exit 0
+
+# Sanitize: strip whitespace, allow [a-zA-Z0-9-]
+name=$(printf '%s' "$name" | tr -cd '[:alnum:]-' )
+[ -z "$name" ] && exit 0
+
+exec kitty --class lovable_picker bash -c "
+set -e
+mode=\$(printf '%s\n' new resume fork | fzf --prompt='claude session> ' --height=8 --reverse --no-sort)
+[ -z \"\${mode:-}\" ] && mode=new
+
+args=( '$name' --mode \"\$mode\" )
+if [ \"\$mode\" != 'new' ]; then
+  sid=\$(\"\$HOME/.config/niri/scripts/spawn-claude-session-picker\" --id-only)
+  [ -z \"\${sid:-}\" ] && exit 0
+  args+=( --session-id \"\$sid\" )
+fi
+
+\"\$HOME/.config/niri/scripts/ws-createwt\" \"\${args[@]}\" 2>&1 | tee -a /tmp/ws-spawn.log
+"

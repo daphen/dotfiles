@@ -1,0 +1,224 @@
+#!/usr/bin/env python3
+"""
+ws-focus <role>
+
+Focus the most recently focused window matching <role> that is NOT in
+the global exclusion set (~/.local/state/wt-stacks/ws/excluded — kept
+up to date by ws-tracker, lists window IDs on inactive lovable-<name>
+workspaces).
+
+Behavior:
+  - If the currently focused window matches the role, advance to the
+    NEXT candidate in stable creation order (window id), wrapping at
+    the end. This gives a deterministic cycle through *all* matches —
+    sorting by focus_timestamp would just bounce between the two
+    most-recently-used windows.
+  - If the focused window isn't a candidate, jump to the most-recently
+    focused candidate.
+  - If no candidates match, run the role's fallback launcher.
+
+Roles (mutually exclusive — every window is owned by at most one bind):
+  browser   vivaldi-{work,stable}, excluding the personal window id
+            tracked at /tmp/vivaldi-personal-window-id.
+  claude    app_id == "claude" (set by every claude-spawn script) OR
+            a plain kitty whose process tree contains `claude`
+            (catches an ad-hoc Claude Code session in a regular kitty).
+  devenv    title matches `^process-compose: proart/lovable` (any
+            kitty running `devenv wt` or the deps singleton).
+  term      app_id == "kitty" MINUS the claude/devenv classifications
+            above and minus a kitty whose process tree contains
+            `yazi`. So this is a "general terminal" cycle: shells,
+            nvim sessions, ad-hoc kittys.
+"""
+from __future__ import annotations
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+EXCLUDED_FILE = Path(HOME) / ".local/state/wt-stacks/ws/excluded"
+PERSONAL_VIVALDI_FILE = Path("/tmp/vivaldi-personal-window-id")
+# Authoritative recency overlay maintained by niri-focus-tracker. Niri's
+# own `focus_timestamp` doesn't reliably update on programmatic focus-window
+# calls, so we lean on the tracker which observes every focus event.
+FOCUS_TIMES_FILE = Path("/tmp/niri-focus-tracker/focus-times.json")
+
+DEVENV_TITLE_RE = re.compile(r"^process-compose: proart/lovable")
+VIVALDI_CLASSES = {"vivaldi-work", "vivaldi-stable"}
+
+ROLES = ("browser", "claude", "devenv", "term")
+
+
+def proc_children(pid: int) -> list[int]:
+    try:
+        with open(f"/proc/{pid}/task/{pid}/children") as f:
+            return [int(x) for x in f.read().split() if x.isdigit()]
+    except OSError:
+        return []
+
+
+def runs_proc(pid: int | None, name: str) -> bool:
+    """Walk the process tree under `pid` looking for a process named
+    `name`. Used to detect ad-hoc kittys running claude or yazi when
+    the window class doesn't tell us."""
+    if not pid:
+        return False
+    seen: set[int] = set()
+    stack = [pid]
+    while stack:
+        p = stack.pop()
+        if p in seen:
+            continue
+        seen.add(p)
+        try:
+            with open(f"/proc/{p}/comm") as f:
+                if f.read().strip() == name:
+                    return True
+        except OSError:
+            continue
+        stack.extend(proc_children(p))
+    return False
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=2
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def read_focus_times() -> dict[str, float]:
+    try:
+        return json.loads(FOCUS_TIMES_FILE.read_text())
+    except Exception:
+        return {}
+
+
+def recency(w: dict, overlay: dict[str, float]) -> float:
+    """Return a "most recently focused" score for `w`. Prefer the
+    overlay (which captures programmatic focuses); fall back to niri's
+    focus_timestamp for windows the tracker hasn't seen yet."""
+    ov = overlay.get(str(w["id"]))
+    if ov is not None:
+        return float(ov)
+    ft = w.get("focus_timestamp") or {}
+    return (ft.get("secs") or 0) + (ft.get("nanos") or 0) / 1e9
+
+
+def read_excluded() -> set[int]:
+    try:
+        return set(json.loads(EXCLUDED_FILE.read_text()))
+    except Exception:
+        return set()
+
+
+def read_personal_vivaldi_id() -> int | None:
+    try:
+        return int(PERSONAL_VIVALDI_FILE.read_text().strip())
+    except Exception:
+        return None
+
+
+def is_claude(w: dict) -> bool:
+    app = w.get("app_id") or ""
+    if app == "claude":
+        return True
+    if app == "kitty" and runs_proc(w.get("pid"), "claude"):
+        return True
+    return False
+
+
+def is_devenv(w: dict) -> bool:
+    return bool(DEVENV_TITLE_RE.match(w.get("title") or ""))
+
+
+def matches(w: dict, role: str, personal_vivaldi_id: int | None) -> bool:
+    app = w.get("app_id") or ""
+    if role == "browser":
+        if app not in VIVALDI_CLASSES:
+            return False
+        if personal_vivaldi_id is not None and w.get("id") == personal_vivaldi_id:
+            return False
+        return True
+    if role == "claude":
+        return is_claude(w)
+    if role == "devenv":
+        return is_devenv(w)
+    if role == "term":
+        # A "general terminal" — plain kitty that isn't already owned by
+        # claude (Super+G), devenv (Super+M), or yazi (Super+E).
+        if app != "kitty":
+            return False
+        if is_claude(w) or is_devenv(w):
+            return False
+        if runs_proc(w.get("pid"), "yazi"):
+            return False
+        return True
+    return False
+
+
+def fallback(role: str) -> None:
+    scripts = Path(HOME) / ".config/niri/scripts"
+    if role == "browser":
+        os.execv(str(scripts / "vivaldi-work"), [str(scripts / "vivaldi-work")])
+    elif role == "claude":
+        os.execv(
+            str(scripts / "spawn-terminal-with-claude"),
+            [str(scripts / "spawn-terminal-with-claude")],
+        )
+    elif role == "devenv":
+        os.execv(str(scripts / "ws-deps"), [str(scripts / "ws-deps")])
+    elif role == "term":
+        subprocess.Popen(
+            ["setsid", "kitty"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+
+
+def main() -> int:
+    if len(sys.argv) != 2 or sys.argv[1] not in ROLES:
+        print(f"Usage: {Path(sys.argv[0]).name} <{'|'.join(ROLES)}>", file=sys.stderr)
+        return 2
+    role = sys.argv[1]
+
+    windows = niri_json("windows") or []
+    excluded = read_excluded()
+    overlay = read_focus_times()
+    personal_vivaldi = read_personal_vivaldi_id() if role == "browser" else None
+
+    candidates = [
+        w for w in windows
+        if matches(w, role, personal_vivaldi)
+        and w.get("id") not in excluded
+    ]
+
+    if not candidates:
+        fallback(role)
+        return 0
+
+    focused_id = next((w["id"] for w in windows if w.get("is_focused")), None)
+    in_cycle = sorted(candidates, key=lambda w: w["id"])
+    focused_idx = next(
+        (i for i, w in enumerate(in_cycle) if w["id"] == focused_id), None
+    )
+    if focused_idx is None:
+        # Not on any candidate — jump to the most recently focused one.
+        target = max(candidates, key=lambda w: recency(w, overlay))
+    else:
+        target = in_cycle[(focused_idx + 1) % len(in_cycle)]
+
+    subprocess.run(
+        ["niri", "msg", "action", "focus-window", "--id", str(target["id"])],
+        check=False, timeout=2,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

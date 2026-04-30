@@ -1,225 +1,128 @@
 #!/usr/bin/env python3
-import json, os, subprocess, sys, time, re
+"""
+niri-focus-tracker
+
+Per-app last-focused window tracker. Watches niri's event stream and
+maintains, for each `app_id`, the id of the most recently focused
+window with that class:
+
+    /tmp/niri-focus-tracker/app-<class>   →   <window-id>
+
+Used by:
+  - niri-jump-or-exec (Super+C/S/A — single-instance app jumping)
+  - browser-dispatch  (default-browser routing)
+
+That's the entire job. Workspace-stack tracking, the active-stack
+state file, and all the lovable tab-stack sync logic moved to
+ws-tracker when we switched to per-workspace stacks.
+"""
+from __future__ import annotations
+import json
+import re
+import subprocess
+import time
 from pathlib import Path
 
 STATE_DIR = Path("/tmp/niri-focus-tracker")
 STATE_DIR.mkdir(exist_ok=True)
 
-# Limit the number of windows we track to prevent memory leaks
-WINDOW_LIMIT = 15
+# Cap on tracked windows so a long-running session can't grow unbounded.
+WINDOW_LIMIT = 50
 
-last_active = {}
-window_to_app = {}
+last_active: dict[int, float] = {}     # window_id -> last-focused epoch
+window_to_app: dict[int, str] = {}     # window_id -> app_id
 
-# ─── Synchronized worktree-stack navigation ─────────────────────────────
-# When focus moves to a window that's part of a worktree stack on the
-# "lovable" workspace, advance the other two columns to the same worktree's
-# tabs. Stack identity is derived from window properties (no state file):
-#   - kitty class lovable_term_<name>   → stack <name> (term slot)
-#   - kitty class lovable_claude_<name> → stack <name> (claude slot)
-#   - vivaldi-stable + title "daphen-<name>.localhost" → stack <name> (browser)
-TERM_CLASS_RE = re.compile(r"^lovable_term_(.+)$")
-CLAUDE_CLASS_RE = re.compile(r"^lovable_claude_(.+)$")
-NVIM_CLASS_RE = re.compile(r"^lovable_nvim_(.+)$")
-VIVALDI_TITLE_RE = re.compile(r"daphen-(.+?)\.localhost")
-VIVALDI_MAP_FILE = Path.home() / ".local/state/wt-stacks/vivaldi-map.json"
 
-def _vivaldi_stack_from_map(wid):
-    """Look up a vivaldi window's stack name from the persisted map
-    (written by createwt/startwt). Used when the title no longer matches
-    daphen-<x>.localhost — i.e. the user navigated away."""
-    try:
-        m = json.loads(VIVALDI_MAP_FILE.read_text())
-        return m.get(str(wid))
-    except Exception:
-        return None
-
-_last_synced_worktree = None       # worktree name we last synced to
-_lovable_workspace_id = None       # cached id; refresh on miss
-_syncing = False                   # reentrancy guard
-
-def _refresh_lovable_workspace_id():
-    global _lovable_workspace_id
-    try:
-        out = subprocess.run(['niri', 'msg', '--json', 'workspaces'],
-                             capture_output=True, text=True, timeout=2)
-        for ws in json.loads(out.stdout):
-            if ws.get('name') == 'lovable':
-                _lovable_workspace_id = ws.get('id')
-                return
-        _lovable_workspace_id = None
-    except Exception:
-        _lovable_workspace_id = None
-
-def _focus_window_id(wid):
-    try:
-        subprocess.run(['niri', 'msg', 'action', 'focus-window', '--id', str(wid)],
-                       check=False, capture_output=True, timeout=2)
-    except Exception:
-        pass
-
-def _stack_info(w):
-    """Return (stack_name, slot) for a window, or (None, None) if not part
-    of any stack. Slot is 'term', 'claude', 'nvim', or 'browser'."""
-    app = w.get('app_id') or ''
-    title = w.get('title') or ''
-    m = TERM_CLASS_RE.match(app)
-    if m:
-        return m.group(1), 'term'
-    m = CLAUDE_CLASS_RE.match(app)
-    if m:
-        return m.group(1), 'claude'
-    m = NVIM_CLASS_RE.match(app)
-    if m:
-        return m.group(1), 'nvim'
-    if app == 'vivaldi-stable' or app == 'vivaldi-work':
-        # Prefer the persistent map (written by createwt/startwt with the
-        # exact stack name). Title regex can capture a *truncated* form
-        # of the worktree name when the preview URL is shortened
-        # (e.g. "daphen-ds-hide-ds.localhost" for stack "ds-hide-ds-code"),
-        # which would mismatch the kitty class names and break sync.
-        name = _vivaldi_stack_from_map(w.get('id'))
-        if name:
-            return name, 'browser'
-        m = VIVALDI_TITLE_RE.search(title)
-        if m:
-            return m.group(1), 'browser'
-    return None, None
-
-def sync_lovable_stacks(focused_wid):
-    """When focus moves to a stack window, bring the other two columns'
-    windows for the same worktree to the front (focus them, leaving the
-    user's slot focused last so the cursor stays in their column)."""
-    global _last_synced_worktree, _syncing, _lovable_workspace_id
-    if _syncing:
-        return
-
-    try:
-        wins_out = subprocess.run(['niri', 'msg', '--json', 'windows'],
-                                  capture_output=True, text=True, timeout=2)
-        windows = json.loads(wins_out.stdout) if wins_out.stdout.strip() else []
-    except Exception:
-        return
-
-    fw = next((w for w in windows if w.get('id') == focused_wid), None)
-    if fw is None:
-        return
-    fw_workspace = fw.get('workspace_id')
-
-    # Workspace gate (only react on lovable)
-    if _lovable_workspace_id is None or fw_workspace != _lovable_workspace_id:
-        _refresh_lovable_workspace_id()
-    if fw_workspace != _lovable_workspace_id:
-        return
-
-    name, slot = _stack_info(fw)
-    if not name:
-        return
-
-    if name == _last_synced_worktree:
-        return  # already in sync
-
-    # Find sibling windows in the same stack
-    siblings = {}  # slot -> window
-    for w in windows:
-        if w.get('workspace_id') != _lovable_workspace_id:
-            continue
-        n, s = _stack_info(w)
-        if n == name and s and s not in siblings:
-            siblings[s] = w
-
-    _last_synced_worktree = name
-    # Persist the active stack name so external scripts (Super+W/G/Shift+M)
-    # can prefer this over a focus_timestamp comparison — which can drift
-    # when individual windows get re-focused after sync.
-    try:
-        active_file = Path.home() / ".local/state/wt-stacks/lovable.active"
-        active_file.parent.mkdir(parents=True, exist_ok=True)
-        active_file.write_text(name + "\n")
-    except Exception:
-        pass
-    _syncing = True
-    try:
-        # Focus the two non-active siblings first, then the user's slot last
-        # so the cursor stays in the column they clicked.
-        for s in ('term', 'browser', 'claude', 'nvim'):
-            if s == slot:
-                continue
-            w = siblings.get(s)
-            if w is not None:
-                _focus_window_id(w['id'])
-        # Refocus the originally-focused window so cursor lands there
-        _focus_window_id(focused_wid)
-    finally:
-        _syncing = False
-
-def cleanup_old_windows():
-    """Remove oldest windows when we exceed the limit"""
-    if len(last_active) > WINDOW_LIMIT:
-        # Sort by last active time and remove oldest
-        sorted_windows = sorted(last_active.items(), key=lambda x: x[1])
-        num_to_remove = len(last_active) - WINDOW_LIMIT
-
-        for window_id, _ in sorted_windows[:num_to_remove]:
-            if window_id in last_active:
-                del last_active[window_id]
-            if window_id in window_to_app:
-                del window_to_app[window_id]
-
-def remove_window(window_id):
-    """Remove a window from tracking when it's closed"""
-    if window_id in last_active:
-        del last_active[window_id]
-    if window_id in window_to_app:
-        app_id = window_to_app[window_id]
-        del window_to_app[window_id]
-        # Update the state file if this was the last active window for the app
-        state_file = STATE_DIR / f"app-{app_id}"
-        if state_file.exists() and state_file.read_text().strip() == str(window_id):
-            # Find another window for this app if one exists
-            for wid, aid in window_to_app.items():
-                if aid == app_id:
-                    state_file.write_text(str(wid))
-                    break
-            else:
-                # No other windows for this app, remove the state file
-                state_file.unlink(missing_ok=True)
-
-def update_focus(window_id, app_id):
+def update_focus(window_id: int, app_id: str) -> None:
     last_active[window_id] = time.time()
     window_to_app[window_id] = app_id
     (STATE_DIR / f"app-{app_id}").write_text(str(window_id))
     cleanup_old_windows()
+    flush_focus_times()
 
-def get_initial_state():
-    result = subprocess.run(['niri', 'msg', '--json', 'windows'], capture_output=True, text=True)
+
+def flush_focus_times() -> None:
+    """Write the last_active dict to disk so ws-focus can use it as the
+    authoritative recency source. Niri's `focus_timestamp` doesn't
+    reliably update on programmatic focus-window calls — but the
+    `Window focus changed` event always fires, so this overlay always
+    reflects what actually got focused."""
+    try:
+        path = STATE_DIR / "focus-times.json"
+        tmp = path.with_suffix(".tmp")
+        # JSON object keys must be strings.
+        tmp.write_text(json.dumps({str(k): v for k, v in last_active.items()}))
+        tmp.replace(path)
+    except OSError:
+        pass
+
+
+def cleanup_old_windows() -> None:
+    if len(last_active) <= WINDOW_LIMIT:
+        return
+    sorted_windows = sorted(last_active.items(), key=lambda x: x[1])
+    for window_id, _ in sorted_windows[: len(last_active) - WINDOW_LIMIT]:
+        last_active.pop(window_id, None)
+        window_to_app.pop(window_id, None)
+
+
+def remove_window(window_id: int) -> None:
+    last_active.pop(window_id, None)
+    app_id = window_to_app.pop(window_id, None)
+    flush_focus_times()
+    if not app_id:
+        return
+    state_file = STATE_DIR / f"app-{app_id}"
+    if state_file.exists() and state_file.read_text().strip() == str(window_id):
+        # Promote any other live window of the same app, else drop the file.
+        for wid, aid in window_to_app.items():
+            if aid == app_id:
+                state_file.write_text(str(wid))
+                return
+        state_file.unlink(missing_ok=True)
+
+
+def get_initial_state() -> None:
+    result = subprocess.run(
+        ["niri", "msg", "--json", "windows"], capture_output=True, text=True
+    )
     for w in json.loads(result.stdout):
-        if w.get('id') and w.get('app_id'):
-            window_to_app[w['id']] = w['app_id']
-            last_active[w['id']] = time.time()
-            if w.get('is_focused'):
-                update_focus(w['id'], w['app_id'])
+        wid, app = w.get("id"), w.get("app_id")
+        if not (wid and app):
+            continue
+        window_to_app[wid] = app
+        last_active[wid] = time.time()
+        if w.get("is_focused"):
+            update_focus(wid, app)
 
-get_initial_state()
-process = subprocess.Popen(['niri', 'msg', 'event-stream'], stdout=subprocess.PIPE, text=True, bufsize=1)
 
-for line in process.stdout:
-    # Handle window focus events
-    m = re.search(r'Window focus changed:\s*Some\((\d+)\)', line)
-    if m:
-        wid = int(m.group(1))
-        app_id = window_to_app.get(wid)
-        if app_id:
-            update_focus(wid, app_id)
-        else:
-            get_initial_state()
-            if wid in window_to_app:
-                update_focus(wid, window_to_app[wid])
-        # Synchronized worktree-stack tabs follow the focused window
-        sync_lovable_stacks(wid)
+def main() -> None:
+    get_initial_state()
+    proc = subprocess.Popen(
+        ["niri", "msg", "event-stream"],
+        stdout=subprocess.PIPE, text=True, bufsize=1,
+    )
+    assert proc.stdout is not None
 
-    # Handle window close events
-    m = re.search(r'Window closed:\s*(\d+)', line)
-    if m:
-        wid = int(m.group(1))
-        remove_window(wid)
+    focus_re = re.compile(r"Window focus changed:\s*Some\((\d+)\)")
+    close_re = re.compile(r"Window closed:\s*(\d+)")
+
+    for line in proc.stdout:
+        m = focus_re.search(line)
+        if m:
+            wid = int(m.group(1))
+            app_id = window_to_app.get(wid)
+            if not app_id:
+                # New window we don't know yet — re-snapshot.
+                get_initial_state()
+                app_id = window_to_app.get(wid)
+            if app_id:
+                update_focus(wid, app_id)
+            continue
+        m = close_re.search(line)
+        if m:
+            remove_window(int(m.group(1)))
+
+
+if __name__ == "__main__":
+    main()

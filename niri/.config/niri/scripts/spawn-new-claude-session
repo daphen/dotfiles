@@ -15,6 +15,7 @@ exec kitty --class lovable_picker fish -c '
     if test -z "$selected_dir"
         exit 0
     end
-    cd "$selected_dir"
-    exec claude
+    # Spawn the claude session as its own kitty so it gets the `claude`
+    # class (Super+G reaches it). The picker kitty exits when fish does.
+    setsid -f kitty --class claude --directory "$selected_dir" -e claude
 '

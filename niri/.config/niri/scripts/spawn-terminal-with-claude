@@ -33,4 +33,4 @@ fi
 CWD="${CWD:-$HOME}"
 
 # Spawn kitty at the determined directory and run claude
-kitty --directory "$CWD" fish -c "claude"
+kitty --class claude --directory "$CWD" fish -c "claude"

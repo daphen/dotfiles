@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Open a kitty and run ws-startwt (fzf picker over existing worktrees +
+# claude mode picker). The kitty floats via the `lovable_picker`
+# window-rule in niri config.
+set -euo pipefail
+exec kitty --class lovable_picker "$HOME/.config/niri/scripts/ws-startwt"

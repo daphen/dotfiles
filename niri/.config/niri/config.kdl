@@ -325,7 +325,7 @@ layout {
 // higher = smoother/heavier; lower = subtler/cheaper.
 blur {
     passes 4
-    offset 4.0
+    offset 4.5
     noise 0.02
     saturation 1.1
 }
@@ -346,6 +346,9 @@ spawn-at-startup "bash" "-c" "/home/daphen/.config/kanata/start-kanata.sh"
 
 // Start focus tracker for window history
 spawn-sh-at-startup "/home/daphen/.config/niri/scripts/niri-focus-tracker >> /tmp/niri-focus-tracker.log 2>&1"
+
+// Start workspace-stack tracker (records the active lovable-* workspace)
+spawn-sh-at-startup "/home/daphen/.config/niri/scripts/ws-tracker >> /tmp/ws-tracker.log 2>&1"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
@@ -425,7 +428,7 @@ window-rule {
 window-rule {
     geometry-corner-radius 10
     clip-to-geometry true
-    opacity 0.85
+    opacity 0.9
     draw-border-with-background false
 }
 
@@ -451,18 +454,13 @@ layer-rule {
     place-within-backdrop true
 }
 
-// Kitty terminal - fixed size
+// Terminal-shaped windows - uniform fixed width so Super+H/L navigation
+// doesn't trigger center-focused-column "on-overflow" jumps when columns
+// differ in size. Covers plain kitty (shells, nvim, yazi, devenv,
+// ad-hoc claude), the tagged `claude` class (managed claude sessions),
+// and the lovable_deps singleton.
 window-rule {
-    match app-id=r#"^kitty$"#
-    default-column-width { fixed 1500; }
-    default-window-height { proportion 1.0; }
-}
-
-// Lovable stack columns - uniform width so Super+H/L navigation doesn't
-// trigger center-focused-column "on-overflow" jumps when columns differ
-// in size.
-window-rule {
-    match app-id=r#"^lovable_(term|claude|nvim|deps)"#
+    match app-id=r#"^(kitty|claude|lovable_deps)$"#
     default-column-width { fixed 1500; }
     default-window-height { proportion 1.0; }
 }
@@ -569,17 +567,16 @@ binds {
     Super+Shift+g { spawn-sh "$HOME/.config/niri/scripts/spawn-new-claude-session"; }
     Super+Shift+f { spawn-sh "$HOME/.config/niri/scripts/fork-claude-session"; }
     Super+r { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-zoxide-picker"; }
-    Super+g { spawn-sh "$HOME/.config/niri/scripts/wt-focus-app claude"; }
-    Super+d { spawn-sh "$HOME/.config/niri/scripts/wt-jump-terminal"; }
+    Super+g { spawn-sh "$HOME/.config/niri/scripts/ws-focus claude"; }
+    Super+d { spawn-sh "$HOME/.config/niri/scripts/ws-focus term"; }
     Super+Shift+d { spawn-sh "SHOW_FASTFETCH=1 kitty"; }
     Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack slack"; }
     Super+a { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'title:spotify_player' 'kitty --class spotify_player spotify_player'"; }
     Super+q { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-personal"; }
     Super+Shift+q { spawn-sh "/home/daphen/.config/niri/scripts/chromium-launch"; }
-    Super+w { spawn-sh "$HOME/.config/niri/scripts/wt-focus-app browser"; }
+    Super+w { spawn-sh "$HOME/.config/niri/scripts/ws-focus browser"; }
     Super+Shift+w { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-work"; }
-    Super+m { spawn-sh "$HOME/.config/niri/scripts/wt-jump-devenv"; }
-    Super+Shift+m { spawn-sh "$HOME/.config/niri/scripts/wt-focus-app term"; }
+    Super+m { spawn-sh "$HOME/.config/niri/scripts/ws-focus devenv"; }
 
     // Notes - tiled window like spotify/claude
     Super+n { spawn "/home/daphen/.config/niri/scripts/spawn-notes"; }
@@ -631,9 +628,11 @@ binds {
     Super+Shift+k { move-window-to-workspace-up; }
 
     // Switch workspaces with Super+jk
-    // These scripts will focus adjacent monitor if at edge workspace
-    Super+j { spawn "/home/daphen/.config/niri/scripts/focus-workspace-down-or-monitor"; }
-    Super+k { spawn "/home/daphen/.config/niri/scripts/focus-workspace-up-or-monitor"; }
+    // These scripts focus the adjacent monitor at edge workspaces and treat
+    // the lovable-* workspace group as a *single* navigable entry — only the
+    // currently-active stack participates; inactive lovable-* are hidden.
+    Super+j { spawn "/home/daphen/.config/niri/scripts/ws-focus-workspace-down"; }
+    Super+k { spawn "/home/daphen/.config/niri/scripts/ws-focus-workspace-up"; }
 
     // Move windows to different monitors with Super+Ctrl+Shift+hjkl
     Super+Ctrl+Shift+h { move-window-to-monitor-left; }
@@ -674,8 +673,11 @@ binds {
     // - Shift+Left/Right consumes-or-expels the focused window into the
     //   neighboring column (use for stacking/unstacking)
     // - Ctrl+Tab toggles the current column between normal & tabbed display
-    Super+Left        { focus-window-up; }
-    Super+Right       { focus-window-down; }
+    // On a lovable-<name> stack workspace, Super+Left/Right cycles to
+    // the prev/next stack. Anywhere else, falls back to walking
+    // tabs/windows within the focused tabbed column.
+    Super+Left        { spawn-sh "$HOME/.config/niri/scripts/ws-window-or-stack prev"; }
+    Super+Right       { spawn-sh "$HOME/.config/niri/scripts/ws-window-or-stack next"; }
     Super+Shift+Left  { consume-or-expel-window-left; }
     Super+Shift+Right { consume-or-expel-window-right; }
     Super+Ctrl+Tab    { toggle-column-tabbed-display; }
@@ -683,7 +685,7 @@ binds {
     // Close focused window with Super+Ctrl+w
     // If the window belongs to a tracked worktree stack, the whole stack is
     // closed and removed from state; otherwise just the focused window.
-    Super+Ctrl+w { spawn-sh "$HOME/.config/niri/scripts/wt-close-stack"; }
+    Super+Ctrl+w { close-window; }
 
     // Screenshot keybinds
     Print { screenshot; }                    // Interactive screenshot UI (select area)

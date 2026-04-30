@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""
+ws-tracker
+
+Watches niri's event stream and maintains the workspace-stack state:
+
+    ~/.local/state/wt-stacks/ws/active
+        Most recently focused `lovable-<name>` workspace name. Single
+        source of truth for "which stack is active".
+
+    ~/.local/state/wt-stacks/ws/excluded
+        JSON list of window IDs currently sitting on inactive
+        `lovable-<name>` workspaces. Read by `ws-focus` to skip those
+        windows. Rebuilt on every workspace/window event.
+
+Side effects on each `lovable-<name>` focus event:
+  - Moves the lovable_deps singleton to the active workspace.
+  - Runs ws-reorder to keep lovable-* pinned with active at the bottom.
+"""
+from __future__ import annotations
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+STATE_DIR = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws"
+ACTIVE_FILE = STATE_DIR / "active"
+EXCLUDED_FILE = STATE_DIR / "excluded"
+REORDER_SCRIPT = Path(os.environ["HOME"]) / ".config/niri/scripts/ws-reorder"
+
+WS_FOCUSED_RE = re.compile(r"^Workspace focused:\s+(\d+)")
+# Trigger an exclusion-list refresh on any of these.
+RELEVANT_EVENT_RE = re.compile(
+    r"^("
+    r"Workspace focused"
+    r"|Window opened"
+    r"|Window closed"
+    r"|Window changed"
+    r"|Workspace activated"
+    r"|Workspaces changed"
+    r")\b"
+)
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=2
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def lovable_stack_name_by_id(ws_id: int) -> str | None:
+    """Return the workspace's name iff it's a `lovable-<x>` stack
+    (excludes the legacy `lovable` and `lovable-deps`)."""
+    for w in (niri_json("workspaces") or []):
+        if w.get("id") == ws_id:
+            name = w.get("name") or ""
+            if name.startswith("lovable-") and name not in ("lovable", "lovable-deps"):
+                return name
+    return None
+
+
+def read_active() -> str | None:
+    try:
+        return ACTIVE_FILE.read_text().strip() or None
+    except Exception:
+        return None
+
+
+def write_active(name: str) -> None:
+    try:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        ACTIVE_FILE.write_text(name + "\n")
+    except Exception:
+        pass
+
+
+def update_excluded() -> None:
+    """Recompute the set of window IDs that live on inactive
+    `lovable-<name>` workspaces and atomically write to EXCLUDED_FILE.
+
+    The legacy `lovable` and `lovable-deps` workspaces are NOT inactive
+    stacks — windows on them pass through the filter."""
+    active = read_active()
+    workspaces = niri_json("workspaces") or []
+    inactive_ws_ids: set[int] = set()
+    for ws in workspaces:
+        name = ws.get("name") or ""
+        if not name.startswith("lovable-"):
+            continue
+        if name in ("lovable", "lovable-deps"):
+            continue
+        if name == active:
+            continue
+        inactive_ws_ids.add(ws["id"])
+
+    excluded: list[int] = [
+        w["id"] for w in (niri_json("windows") or [])
+        if w.get("workspace_id") in inactive_ws_ids
+    ]
+
+    try:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = EXCLUDED_FILE.with_suffix(".tmp")
+        tmp.write_text(json.dumps(sorted(excluded)))
+        tmp.replace(EXCLUDED_FILE)
+    except Exception:
+        pass
+
+
+def reorder() -> None:
+    try:
+        subprocess.run([str(REORDER_SCRIPT)], check=False, timeout=2)
+    except Exception:
+        pass
+
+
+def move_deps_to_active() -> None:
+    """If the lovable_deps singleton is alive and not already on the
+    active stack workspace, move it there so deps travels with the
+    user as they switch stacks."""
+    active = read_active()
+    if not active:
+        return
+    workspaces = niri_json("workspaces") or []
+    target_ws = next((w for w in workspaces if w.get("name") == active), None)
+    if target_ws is None:
+        return
+
+    deps = next(
+        (w for w in (niri_json("windows") or [])
+         if (w.get("app_id") or "") == "lovable_deps"),
+        None,
+    )
+    if deps is None or deps.get("workspace_id") == target_ws["id"]:
+        return
+
+    subprocess.run(
+        ["niri", "msg", "action", "move-window-to-workspace",
+         "--window-id", str(deps["id"]),
+         "--focus", "false",
+         active],
+        capture_output=True, timeout=2,
+    )
+
+
+def main() -> int:
+    # Startup: pick up currently focused stack workspace if any.
+    fw = niri_json("focused-window")
+    if fw and (ws_id := fw.get("workspace_id")) is not None:
+        if (name := lovable_stack_name_by_id(ws_id)) is not None:
+            write_active(name)
+
+    update_excluded()
+    reorder()
+
+    proc = subprocess.Popen(
+        ["niri", "msg", "event-stream"],
+        stdout=subprocess.PIPE, text=True, bufsize=1,
+    )
+    assert proc.stdout is not None
+
+    for line in proc.stdout:
+        if not RELEVANT_EVENT_RE.match(line):
+            continue
+
+        m = WS_FOCUSED_RE.search(line)
+        if m:
+            ws_id = int(m.group(1))
+            name = lovable_stack_name_by_id(ws_id)
+            if name is not None:
+                write_active(name)
+                move_deps_to_active()
+                reorder()
+            # Whether stack or not, refresh exclusion (active may have
+            # changed; window membership may have shifted).
+            update_excluded()
+            continue
+
+        # Window/workspace life-cycle events: just refresh the exclusion
+        # set. Cheap (one niri msg per event), no animation triggers.
+        update_excluded()
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

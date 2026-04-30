@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""
+ws-cycle <next|prev>
+
+Cycle focus through `lovable-*` named workspaces in order. Wraps at
+ends. Bound to Super+Alt+Right (next) and Super+Alt+Left (prev) in
+the new workspace-stack workflow.
+
+If the current workspace isn't `lovable-*`, jump to the most recently
+focused lovable-* workspace (recorded by ws-tracker). If no such
+workspace exists at all, do nothing.
+"""
+from __future__ import annotations
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+ACTIVE_FILE = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws/active"
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=2
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def niri_action(*args: str) -> int:
+    return subprocess.run(
+        ["niri", "msg", "action", *args], capture_output=True, timeout=2
+    ).returncode
+
+
+def lovable_stack_workspaces() -> list[dict]:
+    """All `lovable-*` workspaces sorted by their idx within their output."""
+    workspaces = niri_json("workspaces") or []
+    stacks = [w for w in workspaces
+              if (w.get("name") or "").startswith("lovable-")
+              and w.get("name") != "lovable"]
+    stacks.sort(key=lambda w: (w.get("output") or "", w.get("idx") or 0))
+    return stacks
+
+
+def focused_workspace_id() -> int | None:
+    fw = niri_json("focused-window")
+    return fw.get("workspace_id") if fw else None
+
+
+def main() -> int:
+    if len(sys.argv) != 2 or sys.argv[1] not in ("next", "prev"):
+        print(f"Usage: {Path(sys.argv[0]).name} <next|prev>", file=sys.stderr)
+        return 2
+    direction = sys.argv[1]
+
+    stacks = lovable_stack_workspaces()
+    if not stacks:
+        return 0  # nothing to cycle
+
+    cur_id = focused_workspace_id()
+    cur_idx = next((i for i, w in enumerate(stacks) if w["id"] == cur_id), None)
+
+    if cur_idx is None:
+        # Currently outside the stack zone — jump to last-active lovable
+        # stack (or the first one if no record).
+        target_name: str | None = None
+        try:
+            target_name = ACTIVE_FILE.read_text().strip() or None
+        except Exception:
+            pass
+        if target_name and any(w.get("name") == target_name for w in stacks):
+            niri_action("focus-workspace", target_name)
+        else:
+            niri_action("focus-workspace", stacks[0]["name"])
+        return 0
+
+    n = len(stacks)
+    target_idx = (cur_idx + 1) % n if direction == "next" else (cur_idx - 1) % n
+    niri_action("focus-workspace", stacks[target_idx]["name"])
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

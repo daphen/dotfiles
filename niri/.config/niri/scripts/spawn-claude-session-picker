@@ -173,6 +173,6 @@ fi
 
 # Spawn the resumed claude in a fresh (non-floating) kitty so the
 # floating picker window can close cleanly.
-setsid -f kitty --working-directory "$cwd" -e claude --resume "$session_id" \
+setsid -f kitty --class claude --working-directory "$cwd" -e claude --resume "$session_id" \
     </dev/null >/dev/null 2>&1
 exit 0

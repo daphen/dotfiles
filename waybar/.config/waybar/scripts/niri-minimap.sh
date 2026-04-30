@@ -15,9 +15,9 @@ Color palette: bars sit directly on the (dark) wallpaper, so colors
 are always pulled from the *dark* theme block of colors.json,
 regardless of which theme mode is active. Falls back to hardcoded
 defaults if the file is missing.
-  semantic.cursor       → focused window
-  foreground.primary    → windows on the focused workspace
-  foreground.muted      → windows on unfocused workspaces
+  semantic.cursor       → focused window (orange)
+  foreground.primary    → every other window (light, same on focused
+                          and unfocused workspaces alike)
 """
 from __future__ import annotations
 import json
@@ -45,18 +45,14 @@ RELEVANT_EVENT_RE = re.compile(
 )
 
 
-def read_theme_colors() -> tuple[str, str, str]:
+def read_theme_colors() -> tuple[str, str]:
     """Always returns the dark-mode palette so bars stay readable on
     the wallpaper regardless of active theme."""
     try:
         c = json.loads(COLORS_FILE.read_text())["themes"]["dark"]
-        return (
-            c["semantic"]["cursor"],
-            c["foreground"]["primary"],
-            c["foreground"]["muted"],
-        )
+        return (c["semantic"]["cursor"], c["foreground"]["primary"])
     except (OSError, KeyError, json.JSONDecodeError):
-        return ("#FF570D", "#EDEDED", "#707B84")
+        return ("#FF570D", "#EDEDED")
 
 
 def niri_json(*args: str):
@@ -74,7 +70,7 @@ def window_sort_key(w: dict) -> tuple[int, int, int, int]:
     return (1, 0, 0, w["id"])
 
 
-def render(c_active: str, c_normal: str, c_dim: str) -> str:
+def render(c_active: str, c_normal: str) -> str:
     workspaces = niri_json("workspaces") or []
     windows = niri_json("windows") or []
     workspaces_sorted = sorted(
@@ -97,7 +93,7 @@ def render(c_active: str, c_normal: str, c_dim: str) -> str:
 
         if count == 0:
             if ws.get("is_focused"):
-                blocks.append(f"<span color='{c_dim}'>·</span>")
+                blocks.append(f"<span color='{c_normal}'>·</span>")
             continue
 
         parts: list[str] = []
@@ -106,10 +102,9 @@ def render(c_active: str, c_normal: str, c_dim: str) -> str:
             if w.get("is_focused"):
                 ch, color = "█", c_active
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                ch, color = "▌", c_normal  # readable even on unfocused ws
+                ch, color = "▌", c_normal
             else:
-                ch = "|"
-                color = c_normal if ws_focused else c_dim
+                ch, color = "|", c_normal
             parts.append(f"<span color='{color}'>{ch}</span>")
         blocks.append("".join(parts))
 

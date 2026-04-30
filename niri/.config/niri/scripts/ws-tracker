@@ -118,9 +118,13 @@ def reorder() -> None:
 
 
 def move_deps_to_active() -> None:
-    """If the lovable_deps singleton is alive and not already on the
-    active stack workspace, move it there so deps travels with the
-    user as they switch stacks."""
+    """Keep the lovable_deps singleton on the active stack workspace,
+    pinned to the leftmost column. niri's `move-window-to-workspace`
+    appends to the right end, so after moving we briefly focus deps to
+    run `move-column-to-first`, then restore the original focus.
+
+    No-op if deps is already on the active workspace AND already at
+    column 1, so this is cheap to call on every focus event."""
     active = read_active()
     if not active:
         return
@@ -134,16 +138,41 @@ def move_deps_to_active() -> None:
          if (w.get("app_id") or "") == "lovable_deps"),
         None,
     )
-    if deps is None or deps.get("workspace_id") == target_ws["id"]:
+    if deps is None:
         return
 
+    needs_move = deps.get("workspace_id") != target_ws["id"]
+    pos = (deps.get("layout") or {}).get("pos_in_scrolling_layout") or [0, 0]
+    needs_pin = pos[0] != 1
+    if not needs_move and not needs_pin:
+        return
+
+    if needs_move:
+        subprocess.run(
+            ["niri", "msg", "action", "move-window-to-workspace",
+             "--window-id", str(deps["id"]),
+             "--focus", "false",
+             active],
+            capture_output=True, timeout=2,
+        )
+
+    # Re-pin to column 1. Save & restore focus around the focus dance
+    # since move-column-to-first only operates on the focused column.
+    fw = niri_json("focused-window")
+    original_id = fw.get("id") if fw else None
     subprocess.run(
-        ["niri", "msg", "action", "move-window-to-workspace",
-         "--window-id", str(deps["id"]),
-         "--focus", "false",
-         active],
+        ["niri", "msg", "action", "focus-window", "--id", str(deps["id"])],
         capture_output=True, timeout=2,
     )
+    subprocess.run(
+        ["niri", "msg", "action", "move-column-to-first"],
+        capture_output=True, timeout=2,
+    )
+    if original_id is not None and original_id != deps["id"]:
+        subprocess.run(
+            ["niri", "msg", "action", "focus-window", "--id", str(original_id)],
+            capture_output=True, timeout=2,
+        )
 
 
 def main() -> int:

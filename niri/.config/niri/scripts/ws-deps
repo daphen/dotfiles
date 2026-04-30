@@ -53,6 +53,10 @@ for _ in $(seq 1 60); do
     if [ -n "$new" ]; then
         echo "$new" > "$ID_FILE"
         niri msg action focus-window --id "$new"
+        sleep 0.1
+        # Pin deps to the leftmost column so the rest of the stack sits
+        # to its right.
+        niri msg action move-column-to-first 2>/dev/null || true
         exit 0
     fi
 done

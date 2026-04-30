@@ -1,37 +1,49 @@
 #!/usr/bin/env bash
 # Waybar center-module:
-# - On a "lovable-<name>" stack workspace (new ws-* model): emit class
-#   "lovable" + the worktree name currently running in that workspace's
-#   devenv wt term.
-# - On the singular "lovable" workspace (old wt-* model, backup):
-#   emit class "lovable" + the worktree of whichever lovable_term_<x>
-#   on that workspace was most recently focused.
-# - Elsewhere: the original column-position minimap.
+# - On a "lovable-<stack>" workspace: emit class "lovable" + the
+#   worktree currently running in that workspace's devenv terminal,
+#   plus a row of pills (one per stack, filled = focused).
+# - Elsewhere: a column-position minimap (◆ for the focused column,
+#   ◇ for siblings) — "◆" alone when there are 0/1 columns.
+#
+# Always emits non-empty text so the waybar center container never
+# collapses to an empty box (overlays like screenshot UI or floating
+# pickers like rofi can leave focused-window null but the focused
+# workspace is always knowable).
 
 set -euo pipefail
 
-focused_json=$(niri msg --json focused-window 2>/dev/null || echo "null")
-focused_ws_id=$(echo "$focused_json" | jq -r '.workspace_id // empty')
-focused_id=$(echo "$focused_json" | jq -r '.id // empty')
-focused_col=$(echo "$focused_json" | jq -r '.layout.pos_in_scrolling_layout[0] // empty')
-
-if [ -z "$focused_ws_id" ]; then
-    echo '{"text": "", "tooltip": "No active window"}'
-    exit 0
-fi
-
 workspaces_json=$(niri msg --json workspaces 2>/dev/null || echo "[]")
-focused_ws_name=$(echo "$workspaces_json" \
-    | jq -r --argjson id "$focused_ws_id" '.[] | select(.id == $id) | .name // ""')
+windows_json=$(niri msg --json windows 2>/dev/null || echo "[]")
 
-# ── Lovable per-workspace stack branch (new ws-* model) ──────────────────
-# Workspace name is `lovable-<stack>`. Stack name == worktree short name.
+# Focused workspace — works whether or not there's a focused window.
+# (Niri picks one workspace per output as focused; one of those is the
+# one currently focused overall.)
+read -r focused_ws_id focused_ws_name < <(echo "$workspaces_json" \
+    | jq -r '[.[] | select(.is_focused == true)] | .[0]
+             | "\(.id // 0) \(.name // "")"')
+
+# Pills row: one per lovable-<name> stack (excluding lovable / lovable-deps),
+# ordered by idx. Filled = focused workspace. Emits empty string when
+# there are no stacks.
+pills=$(echo "$workspaces_json" | jq -r --argjson focused_id "${focused_ws_id:-0}" '
+    [ .[]
+      | select((.name // "") | test("^lovable-"))
+      | select((.name // "") != "lovable-deps")
+    ]
+    | sort_by(.idx)
+    | map(if .id == $focused_id then "PILL_ON" else "PILL_OFF" end)
+    | join(" ")
+')
+pills=${pills//PILL_ON/●}
+pills=${pills//PILL_OFF/○}
+
+# ── Lovable per-workspace stack branch ───────────────────────────────────
 if [[ "$focused_ws_name" =~ ^lovable-(.+)$ ]] && [ "${BASH_REMATCH[1]}" != "deps" ]; then
     stack_name="${BASH_REMATCH[1]}"
-    windows_json=$(niri msg --json windows 2>/dev/null || echo "[]")
 
-    # Find the devenv-running terminal on this workspace by title (any
-    # kitty class) — extract the worktree from the process-compose title.
+    # Devenv-running terminal on this workspace (any kitty class) — pull
+    # the worktree out of the process-compose title.
     running=$(echo "$windows_json" | jq -r --argjson ws "$focused_ws_id" '
         [ .[]
           | select(.workspace_id == $ws)
@@ -41,94 +53,51 @@ if [[ "$focused_ws_name" =~ ^lovable-(.+)$ ]] && [ "${BASH_REMATCH[1]}" != "deps
         | capture("^process-compose: proart/lovable\\.daphen-(?<wt>.+)$") | .wt // empty
     ')
 
-    # Pill minimap: one pill per lovable-<name> stack (excluding the
-    # legacy `lovable` and `lovable-deps`), ordered by their workspace
-    # idx so the row mirrors the visible workspace stack — the focused
-    # one is the rightmost filled pill.
-    pills=$(echo "$workspaces_json" | jq -r --argjson focused_id "$focused_ws_id" '
-        [ .[]
-          | select((.name // "") | test("^lovable-"))
-          | select((.name // "") != "lovable-deps")
-        ]
-        | sort_by(.idx)
-        | map(if .id == $focused_id then "PILL_ON" else "PILL_OFF" end)
-        | join(" ")
-    ')
-    pills=${pills//PILL_ON/●}
-    pills=${pills//PILL_OFF/○}
-
-    if [ -n "$running" ]; then
-        printf '{"text": "%s  %s", "class": "lovable", "tooltip": "devenv wt: %s\\nstack: %s"}\n' \
-            "$running" "$pills" "$running" "$stack_name"
+    label=${running:-$stack_name}
+    if [ -n "$pills" ]; then
+        text="$label  $pills"
     else
-        printf '{"text": "%s  %s", "class": "lovable", "tooltip": "stack: %s (no devenv wt running)"}\n' \
-            "$stack_name" "$pills" "$stack_name"
-    fi
-    exit 0
-fi
-
-# ── Legacy lovable workspace branch (old wt-* model, kept as backup) ─────
-if [ "$focused_ws_name" = "lovable" ]; then
-    windows_json=$(niri msg --json windows 2>/dev/null || echo "[]")
-
-    # Active stack name = whichever lovable_term_<x>/lovable_claude_<x> has
-    # the most-recent focus_timestamp on the lovable workspace.
-    active_name=$(echo "$windows_json" | jq -r --argjson ws "$focused_ws_id" '
-        [ .[]
-          | select(.workspace_id == $ws)
-          | select((.app_id // "") | test("^lovable_(term|claude)_.+"))
-          | select(.focus_timestamp != null)
-        ]
-        | sort_by(.focus_timestamp.secs, .focus_timestamp.nanos)
-        | reverse
-        | .[0].app_id // ""
-        | sub("^lovable_(term|claude)_"; "")
-    ')
-
-    running=""
-    if [ -n "$active_name" ]; then
-        # Extract the worktree currently running in that stack's term column,
-        # from the process-compose title set by `devenv wt`.
-        running=$(echo "$windows_json" | jq -r --argjson ws "$focused_ws_id" --arg name "$active_name" '
-            [ .[]
-              | select(.workspace_id == $ws and .app_id == ("lovable_term_" + $name))
-            ]
-            | .[0].title // ""
-            | capture("^process-compose: proart/lovable\\.daphen-(?<wt>.+)$") | .wt // empty
-        ')
+        text="$label"
     fi
 
     if [ -n "$running" ]; then
-        printf '{"text": "%s", "class": "lovable", "tooltip": "devenv wt: %s\\nstack: %s"}\n' \
-            "$running" "$running" "$active_name"
-    elif [ -n "$active_name" ]; then
-        printf '{"text": "", "class": "lovable", "tooltip": "stack: %s (no devenv wt running)"}\n' \
-            "$active_name"
+        tooltip="devenv wt: $running\\nstack: $stack_name"
     else
-        printf '{"text": "", "class": "lovable", "tooltip": "lovable workspace"}\n'
+        tooltip="stack: $stack_name (no devenv wt running)"
     fi
+    printf '{"text": "%s", "class": "lovable", "tooltip": "%s"}\n' "$text" "$tooltip"
     exit 0
 fi
 
-# ── Default minimap (non-lovable workspaces) ─────────────────────────────
-if [ -z "$focused_col" ]; then
-    echo '{"text": "◆", "tooltip": "No active window"}'
-    exit 0
-fi
+# ── Default: column-position minimap ─────────────────────────────────────
+# Distinct column indices of TILED windows on the focused workspace.
+mapfile -t cols < <(echo "$windows_json" | jq -r --argjson ws "${focused_ws_id:-0}" '
+    [ .[]
+      | select(.workspace_id == $ws)
+      | select(.is_floating != true)
+      | .layout.pos_in_scrolling_layout[0]
+      | select(. != null)
+    ]
+    | unique
+    | .[]
+')
 
-# Distinct column indices of windows on this workspace
-mapfile -t cols < <(niri msg --json windows 2>/dev/null \
-    | jq -r --argjson ws "$focused_ws_id" '
-        [ .[]
-          | select(.workspace_id == $ws)
-          | .layout.pos_in_scrolling_layout[0]
-        ]
-        | unique
-        | .[]
-    ')
+# Focused column — only meaningful when the focused window itself is
+# tiled (not a float/overlay/picker). Falls back to 0 (no highlight).
+focused_col=$(echo "$windows_json" | jq -r --argjson ws "${focused_ws_id:-0}" '
+    [ .[]
+      | select(.workspace_id == $ws and .is_focused == true and .is_floating != true)
+    ]
+    | .[0].layout.pos_in_scrolling_layout[0] // 0
+')
 
 if [ "${#cols[@]}" -le 1 ]; then
-    echo '{"text": "◆", "tooltip": "Single column"}'
+    if [ "${#cols[@]}" -eq 0 ]; then
+        tooltip="Empty workspace"
+    else
+        tooltip="Single column"
+    fi
+    printf '{"text": "◆", "tooltip": "%s"}\n' "$tooltip"
     exit 0
 fi
 

@@ -1,7 +1,7 @@
 {
   "layer": "top",
   "position": "top",
-  "height": 50,
+  "height": 60,
   "spacing": 8,
 
   "modules-left": ["clock#date", "custom/weather", "cpu", "memory"],

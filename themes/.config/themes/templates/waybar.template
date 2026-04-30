@@ -19,7 +19,7 @@ window#waybar {
 .modules-left {
   background: alpha({{background.secondary}}, 0.85);
   border-radius: 8px;
-  margin: 9px 8px 9px 20px;
+  margin: 14px 8px 14px 20px;
   padding: 0px 8px;
 }
 
@@ -76,7 +76,7 @@ window#waybar {
 .modules-right {
   background: alpha({{background.secondary}}, 0.85);
   border-radius: 8px;
-  margin: 9px 20px 9px 8px;
+  margin: 14px 20px 14px 8px;
   padding: 0px 8px;
 }
 

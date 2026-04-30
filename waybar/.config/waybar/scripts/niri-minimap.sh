@@ -102,7 +102,11 @@ def render(c_active: str, c_normal: str) -> str:
             if w.get("is_focused"):
                 ch, color = "█", c_active
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                ch, color = "▌", c_normal
+                # U+258E LEFT ONE QUARTER BLOCK — narrower than ▌ so it
+                # doesn't crowd surrounding |-bars, but still wider than
+                # | so the "would-get-focus-if-I-switch-here" marker is
+                # recognisable.
+                ch, color = "▎", c_normal
             else:
                 ch, color = "|", c_normal
             parts.append(f"<span color='{color}'>{ch}</span>")

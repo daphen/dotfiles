@@ -106,10 +106,14 @@ def render(c_active: str, c_normal: str) -> str:
             else:
                 ch, color = "|", c_normal
             parts.append(f"<span color='{color}'>{ch}</span>")
-        blocks.append("".join(parts))
+        # Tighten the gap between bars within a single workspace.
+        # Units are 1024ths of a point; -3000 ≈ -3pt at 16pt.
+        blocks.append(f"<span letter_spacing='-3000'>{''.join(parts)}</span>")
 
-    # Single thin space between workspaces for a tighter row.
-    text = " ".join(blocks) if blocks else "·"
+    # Hair space (U+200A) between workspaces — a touch tighter than a
+    # regular space so adjacent stacks read as distinct without a wide
+    # gap.
+    text = " ".join(blocks) if blocks else "·"
     tooltip = "\\n".join(tooltip_lines) or "no windows"
     return json.dumps({"text": text, "tooltip": tooltip, "markup": "pango"})
 

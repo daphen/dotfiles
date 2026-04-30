@@ -45,31 +45,16 @@ window#waybar {
 }
 
 #custom-niri-minimap {
-  /* Almost no top padding so the bar tops sit close to the bar edge,
-   * leaving room below for the focused glyph to overshoot downward. */
-  padding: 2px 12px 0px 12px;
+  /* GTK vertically centres the module content within the bar, so we
+   * pad heavily on the BOTTOM only — that pushes the visual centre
+   * upward, anchoring the bar tops near the top edge of the bar. */
+  padding: 0 12px 24px 12px;
   margin: 0;
   background: transparent;
   border-radius: 0;
   font-size: 16px;
 }
 
-#custom-discord-notifications,
-#custom-teams-notifications {
-  padding: 6px 12px;
-  margin: 0;
-  background: transparent;
-  color: #5865F2;
-  border-radius: 0;
-  font-size: 16px;
-}
-
-#custom-discord-notifications.empty,
-#custom-teams-notifications.empty {
-  padding: 0;
-  margin: 0;
-  min-width: 0;
-}
 
 /* Right side container — same vertical centering as left side. */
 .modules-right {

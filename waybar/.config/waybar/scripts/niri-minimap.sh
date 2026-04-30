@@ -96,30 +96,26 @@ def render(c_active: str, c_normal: str) -> str:
                 blocks.append(f"<span color='{c_normal}'>·</span>")
             continue
 
-        # Each bar is a pango span with a colored *background*. We
-        # control three knobs per state:
-        #   width  — number of thin/hair spaces inside the span
-        #   size   — pango font_size (1024ths of pt) → bg height
-        #   rise   — pango baseline shift (negative = down)
-        # Active-of-unfocused and focused bars use a larger size +
-        # negative rise so they grow downwards only (top stays put,
-        # bottom extends past the normal bars).
-        THIN = "\u2009"  # ≈4px in a 16pt monospace font
-        HAIR = "\u200a"  # ≈2px — used for thinner inactive bars
+        # Bars are top-anchored block characters: tops align,
+        # heights grow downward.
+        #   ▔  upper one-eighth block — short tick (inactive)
+        #   ▀  upper half block       — medium (active of unfocused ws)
+        #   █  full block             — tallest (focused window)
+        # Pango couldn't give us differential bg heights in a
+        # single waybar line (line-height collapses to the tallest
+        # span), so foreground glyphs are the route to varying
+        # heights without losing uniform gaps.
         parts: list[str] = []
         ws_focused = ws.get("is_focused")
         for w in ws_windows:
             if w.get("is_focused"):
-                glyph, size, rise, color = THIN * 2, "18000", "-3000", c_active
+                ch, color = "\u2588", c_active   # █
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                glyph, size, rise, color = THIN, "18000", "-3000", c_normal
+                ch, color = "\u2580", c_normal   # ▀
             else:
-                glyph, size, rise, color = HAIR, "14000", "0", c_normal
-            parts.append(
-                f"<span size='{size}' rise='{rise}' bgcolor='{color}'>{glyph}</span>"
-            )
-        # Slightly wider gap between bars within a workspace.
-        blocks.append((THIN * 2).join(parts))
+                ch, color = "\u2594", c_normal   # ▔
+            parts.append(f"<span color='{color}'>{ch}</span>")
+        blocks.append("".join(parts))
 
     # Single regular space between workspaces. Tighter values
     # (U+200A hair, U+2009 thin) overlapped or ran characters into each

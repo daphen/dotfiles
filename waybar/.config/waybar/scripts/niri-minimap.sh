@@ -96,26 +96,20 @@ def render(c_active: str, c_normal: str) -> str:
                 blocks.append(f"<span color='{c_normal}'>·</span>")
             continue
 
-        # Three-glyph hierarchy from niri-workspaces-rs:
-        #   █  the focused window (full block, orange)
-        #   ▌  the active window of an unfocused workspace
-        #   |  any other window
-        # All three render at full character height; visual
-        # hierarchy comes from glyph WIDTH, not height (pango on
-        # a single waybar line can't give us per-span heights).
-        # Adjacent █/▌ to | causes a slight gap variation that no
-        # amount of letter_spacing can fully equalize — that's a
-        # known trade-off for keeping the size hierarchy.
+        # All bars use the same | glyph, but font_size varies per
+        # state so heights differ. Pango baselines align by default,
+        # so taller bars naturally extend further DOWN past the
+        # shorter ones (which is what was asked).
         parts: list[str] = []
         ws_focused = ws.get("is_focused")
         for w in ws_windows:
             if w.get("is_focused"):
-                ch, color = "\u2588", c_active   # █
+                size, color = "22000", c_active   # ~22pt focused
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                ch, color = "\u258c", c_normal   # ▌
+                size, color = "18000", c_normal   # ~18pt active-of-unfocused
             else:
-                ch, color = "|", c_normal
-            parts.append(f"<span color='{color}'>{ch}</span>")
+                size, color = "12000", c_normal   # ~12pt inactive
+            parts.append(f"<span size='{size}' color='{color}'>|</span>")
         blocks.append("".join(parts))
 
     # Single regular space between workspaces. Tighter values

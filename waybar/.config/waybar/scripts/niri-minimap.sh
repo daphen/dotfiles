@@ -96,20 +96,22 @@ def render(c_active: str, c_normal: str) -> str:
                 blocks.append(f"<span color='{c_normal}'>·</span>")
             continue
 
-        # All bars use the same | glyph, but font_size varies per
-        # state so heights differ. Pango baselines align by default,
-        # so taller bars naturally extend further DOWN past the
-        # shorter ones (which is what was asked).
+        # All bars use the same | glyph; font_size varies per state
+        # so heights differ. A negative `rise` lowers the larger
+        # glyphs so their TOPS align with the inactive bars and the
+        # extra height extends DOWNWARD past them.
         parts: list[str] = []
         ws_focused = ws.get("is_focused")
         for w in ws_windows:
             if w.get("is_focused"):
-                size, color = "22000", c_active   # ~22pt focused
+                size, rise, color = "22000", "-7000", c_active
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                size, color = "18000", c_normal   # ~18pt active-of-unfocused
+                size, rise, color = "18000", "-4000", c_normal
             else:
-                size, color = "12000", c_normal   # ~12pt inactive
-            parts.append(f"<span size='{size}' color='{color}'>|</span>")
+                size, rise, color = "12000", "0", c_normal
+            parts.append(
+                f"<span size='{size}' rise='{rise}' color='{color}'>|</span>"
+            )
         blocks.append("".join(parts))
 
     # Single regular space between workspaces. Tighter values

@@ -104,11 +104,11 @@ def render(c_active: str, c_normal: str) -> str:
         ws_focused = ws.get("is_focused")
         for w in ws_windows:
             if w.get("is_focused"):
-                size, rise, color = "22000", "-7000", c_active
+                size, rise, color = "16000", "-4000", c_active
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                size, rise, color = "18000", "-4000", c_normal
+                size, rise, color = "13000", "-2000", c_normal
             else:
-                size, rise, color = "12000", "0", c_normal
+                size, rise, color = "9000", "0", c_normal
             parts.append(
                 f"<span size='{size}' rise='{rise}' color='{color}'>|</span>"
             )
@@ -117,7 +117,18 @@ def render(c_active: str, c_normal: str) -> str:
     # Single regular space between workspaces. Tighter values
     # (U+200A hair, U+2009 thin) overlapped or ran characters into each
     # other given the negative letter_spacing applied within blocks.
-    text = " ".join(blocks) if blocks else "·"
+    # When focused on a lovable-<name> workspace, prefix the bar
+    # row with the worktree name in light text. Otherwise the
+    # minimap is just bars.
+    focused = next((w for w in workspaces_sorted if w.get("is_focused")), None)
+    label_prefix = ""
+    if focused:
+        n = focused.get("name") or ""
+        if n.startswith("lovable-") and n not in ("lovable", "lovable-deps"):
+            stack = n.removeprefix("lovable-")
+            label_prefix = f"<span color='{c_normal}'>{stack}</span>  "
+
+    text = label_prefix + (" ".join(blocks) if blocks else "·")
     tooltip = "\\n".join(tooltip_lines) or "no windows"
     return json.dumps({"text": text, "tooltip": tooltip, "markup": "pango"})
 

@@ -34,33 +34,21 @@ window#waybar {
   color: {{foreground.primary}};
 }
 
-/* Center module */
+/* Center module — sits directly on the wallpaper, no pill. The
+ * minimap script colors its own bars (orange focused / light other /
+ * muted dimmed) via inline pango spans. */
 .modules-center {
-  background: alpha({{background.secondary}}, 0.85);
-  border-radius: 8px;
+  background: transparent;
   margin: 4px 8px;
-  padding: 0px 8px;
+  padding: 0;
 }
 
 #custom-niri-minimap {
   padding: 6px 12px;
   margin: 0;
   background: transparent;
-  color: {{foreground.primary}};
   border-radius: 0;
   font-size: 16px;
-}
-
-/* On the lovable workspace, show the lovable logo + the worktree name
- * currently running in the active stack's devenv wt. */
-#custom-niri-minimap.lovable {
-  background-image: url("/home/daphen/.local/share/icons/hicolor/512x512/apps/lovable.png");
-  background-repeat: no-repeat;
-  background-position: 6px center;
-  background-size: 18px 18px;
-  padding-left: 30px;
-  font-size: 13px;
-  font-weight: 500;
 }
 
 #custom-discord-notifications,

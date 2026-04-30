@@ -11,9 +11,12 @@ Visualization: per-window bar minimap across every niri workspace.
   ·  placeholder for an empty *focused* workspace
 Empty unfocused workspaces are hidden.
 
-Two-tone palette pulled from ~/.config/themes/colors.json:
-  semantic.cursor       → focused window (always orange)
-  foreground.primary    → other windows on the focused workspace
+Color palette: bars sit directly on the (dark) wallpaper, so colors
+are always pulled from the *dark* theme block of colors.json,
+regardless of which theme mode is active. Falls back to hardcoded
+defaults if the file is missing.
+  semantic.cursor       → focused window
+  foreground.primary    → windows on the focused workspace
   foreground.muted      → windows on unfocused workspaces
 """
 from __future__ import annotations
@@ -26,7 +29,6 @@ import time
 from pathlib import Path
 
 HOME = Path(os.environ["HOME"])
-THEME_MODE_FILE = HOME / ".config/theme_mode"
 COLORS_FILE = HOME / ".config/themes/colors.json"
 
 RELEVANT_EVENT_RE = re.compile(
@@ -44,17 +46,14 @@ RELEVANT_EVENT_RE = re.compile(
 
 
 def read_theme_colors() -> tuple[str, str, str]:
+    """Always returns the dark-mode palette so bars stay readable on
+    the wallpaper regardless of active theme."""
     try:
-        mode = THEME_MODE_FILE.read_text().strip() or "dark"
-    except OSError:
-        mode = "dark"
-    try:
-        c = json.loads(COLORS_FILE.read_text())
-        t = c["themes"].get(mode) or c["themes"]["dark"]
+        c = json.loads(COLORS_FILE.read_text())["themes"]["dark"]
         return (
-            t["semantic"]["cursor"],
-            t["foreground"]["primary"],
-            t["foreground"]["muted"],
+            c["semantic"]["cursor"],
+            c["foreground"]["primary"],
+            c["foreground"]["muted"],
         )
     except (OSError, KeyError, json.JSONDecodeError):
         return ("#FF570D", "#EDEDED", "#707B84")
@@ -114,7 +113,8 @@ def render(c_active: str, c_normal: str, c_dim: str) -> str:
             parts.append(f"<span color='{color}'>{ch}</span>")
         blocks.append("".join(parts))
 
-    text = "  ".join(blocks) if blocks else "·"
+    # Single thin space between workspaces for a tighter row.
+    text = " ".join(blocks) if blocks else "·"
     tooltip = "\\n".join(tooltip_lines) or "no windows"
     return json.dumps({"text": text, "tooltip": tooltip, "markup": "pango"})
 
@@ -124,8 +124,11 @@ def emit(line: str) -> None:
 
 
 def daemon() -> int:
+    # Bar colors are locked to dark-mode and don't follow theme switches,
+    # so we read them once at startup.
     colors = read_theme_colors()
-    emit(render(*colors))
+    last_render = render(*colors)
+    emit(last_render)
 
     proc = subprocess.Popen(
         ["niri", "msg", "event-stream"],
@@ -133,17 +136,9 @@ def daemon() -> int:
     )
     assert proc.stdout is not None
 
-    last_render = ""
-    last_color_check = 0.0
     for line in proc.stdout:
         if not RELEVANT_EVENT_RE.match(line):
             continue
-        # Re-read theme colors at most once per second so a /toggle theme
-        # change is reflected without re-stat'ing on every event.
-        now = time.time()
-        if now - last_color_check > 1.0:
-            colors = read_theme_colors()
-            last_color_check = now
         out = render(*colors)
         if out != last_render:
             emit(out)

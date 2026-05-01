@@ -233,7 +233,7 @@ layout {
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#999999"
+        inactive-color "#3A3A3A"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -258,7 +258,7 @@ layout {
 
         width 4
         active-color "#FF570D"
-        inactive-color "#999999"
+        inactive-color "#3A3A3A"
 
         // Color of the border around windows that request your attention.
         urgent-color "#9b0000"
@@ -619,9 +619,11 @@ binds {
     Super+h { focus-column-or-monitor-left; }
     Super+l { focus-column-or-monitor-right; }
 
-    // Move windows with Super+Shift+hl
-    Super+Shift+h { move-column-left; }
-    Super+Shift+l { move-column-right; }
+    // Move windows with Super+Shift+hl. Also pokes the niri-minimap
+    // daemon (SIGUSR1) because niri's event-stream doesn't emit any
+    // event for column reorders — without this the minimap stays stale.
+    Super+Shift+h { spawn-sh "niri msg action move-column-left  && pkill -USR1 -f 'niri-minimap.sh'"; }
+    Super+Shift+l { spawn-sh "niri msg action move-column-right && pkill -USR1 -f 'niri-minimap.sh'"; }
 
     // Move windows to workspace up/down with Super+Shift+jk
     Super+Shift+j { move-window-to-workspace-down; }

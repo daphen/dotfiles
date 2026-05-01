@@ -25,6 +25,8 @@ import os
 import re
 import subprocess
 import sys
+import select
+import signal
 import time
 from pathlib import Path
 
@@ -133,20 +135,43 @@ def daemon() -> int:
     last_render = render(*colors)
     emit(last_render)
 
+    # SIGUSR1 → write a byte to a pipe → wakes select() so we re-render.
+    # Used by niri keybinds for layout actions that don't emit events
+    # (move-column-left/right, move-window-up/down, etc.).
+    sig_r, sig_w = os.pipe()
+    os.set_blocking(sig_r, False)
+    os.set_blocking(sig_w, False)
+    def _on_sigusr1(signum, frame):
+        try: os.write(sig_w, b".")
+        except OSError: pass
+    signal.signal(signal.SIGUSR1, _on_sigusr1)
+
     proc = subprocess.Popen(
         ["niri", "msg", "event-stream"],
         stdout=subprocess.PIPE, text=True, bufsize=1,
     )
     assert proc.stdout is not None
+    nstdout = proc.stdout
 
-    for line in proc.stdout:
-        if not RELEVANT_EVENT_RE.match(line):
-            continue
+    def maybe_emit():
+        nonlocal last_render
         out = render(*colors)
         if out != last_render:
             emit(out)
             last_render = out
-    return 0
+
+    while True:
+        ready, _, _ = select.select([nstdout, sig_r], [], [])
+        if sig_r in ready:
+            try: os.read(sig_r, 4096)
+            except BlockingIOError: pass
+            maybe_emit()
+        if nstdout in ready:
+            line = nstdout.readline()
+            if not line:
+                return 0  # niri closed, let supervisor reconnect
+            if RELEVANT_EVENT_RE.match(line):
+                maybe_emit()
 
 
 def main() -> int:

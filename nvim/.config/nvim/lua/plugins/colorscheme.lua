@@ -76,6 +76,24 @@ return {
 				vim.api.nvim_set_hl(0, "NoiceCmdlinePopupBorder", { link = "FloatBorder" })
 				vim.api.nvim_set_hl(0, "NoiceConfirmBorder", { link = "FloatBorder" })
 				vim.api.nvim_set_hl(0, "NoicePopupmenuBorder", { link = "FloatBorder" })
+
+				-- nvim-notify ships with hardcoded default colors that
+				-- ignore the theme entirely (the lime-green INFO is its
+				-- baked-in #A9FF68, not c.info). Link the Notify* groups
+				-- to the matching Diagnostic* highlights so they follow
+				-- the theme's palette and stay readable on either bg.
+				local diag_for = {
+					ERROR = "Error",
+					WARN  = "Warn",
+					INFO  = "Info",
+					DEBUG = "Hint",
+					TRACE = "Hint",
+				}
+				for lvl, diag in pairs(diag_for) do
+					vim.api.nvim_set_hl(0, "Notify" .. lvl .. "Title",  { link = "Diagnostic" .. diag })
+					vim.api.nvim_set_hl(0, "Notify" .. lvl .. "Icon",   { link = "Diagnostic" .. diag })
+					vim.api.nvim_set_hl(0, "Notify" .. lvl .. "Border", { link = "Diagnostic" .. diag })
+				end
 				end,
 			})
 		end,

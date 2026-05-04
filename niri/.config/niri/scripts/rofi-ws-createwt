@@ -17,7 +17,7 @@ entry { placeholder: "name (a-z, 0-9, hyphens)"; }
 '
 
 name=$(rofi -dmenu \
-    -p "create new wt" \
+    -p "new wt" \
     -theme-str 'window { width: 30em; }' \
     -theme-str "$ICON_THEME" \
     </dev/null || true)

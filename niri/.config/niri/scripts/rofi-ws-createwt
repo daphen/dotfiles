@@ -4,7 +4,22 @@
 # before invoking ws-createwt.
 set -euo pipefail
 
-name=$(rofi -dmenu -p "ws-createwt name" -theme-str 'window {width: 30em;}' </dev/null || true)
+LOVABLE_ICON="$HOME/.local/share/icons/hicolor/512x512/apps/lovable.png"
+ICON_THEME='
+inputbar { children: [ icon-prompt, prompt, entry ]; }
+icon-prompt {
+    expand: false;
+    background-image: url("'"$LOVABLE_ICON"'", both);
+    size: 1.4em;
+    margin: 0 0.5em 0 0;
+}
+'
+
+name=$(rofi -dmenu \
+    -p "create new wt" \
+    -theme-str 'window { width: 30em; }' \
+    -theme-str "$ICON_THEME" \
+    </dev/null || true)
 [ -z "$name" ] && exit 0
 
 # Sanitize: strip whitespace, allow [a-zA-Z0-9-]

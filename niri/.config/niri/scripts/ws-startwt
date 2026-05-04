@@ -35,11 +35,14 @@ def list_worktrees() -> list[tuple[str, str]]:
     return rows
 
 
-def fzf(lines: list[str], prompt: str) -> str | None:
+def fzf(lines: list[str], prompt: str, header: str = "") -> str | None:
     if not lines:
         return None
+    args = ["fzf", "--prompt", prompt, "--height=60%", "--reverse", "--no-sort"]
+    if header:
+        args += ["--header", header]
     p = subprocess.run(
-        ["fzf", "--prompt", prompt, "--height=60%", "--reverse", "--no-sort"],
+        args,
         input="\n".join(lines), capture_output=True, text=True,
     )
     sel = p.stdout.strip()
@@ -53,13 +56,21 @@ def main() -> int:
         return 1
 
     display = [f"{branch}\t{path}" for branch, path in rows]
-    pick = fzf(display, "worktree> ")
+    pick = fzf(
+        display,
+        "worktree> ",
+        header="Resume an existing worktree (its app stack will be respawned)",
+    )
     if not pick:
         return 0
     branch = pick.split("\t", 1)[0]
     name = branch.removeprefix("daphen/")
 
-    mode = fzf(["new", "resume", "fork"], "claude session> ") or "new"
+    mode = fzf(
+        ["new", "resume", "fork"],
+        "claude session> ",
+        header=f"Claude session for {name}",
+    ) or "new"
 
     cmd = [str(Path(__file__).parent / "ws-createwt"), name, "--mode", mode]
     if mode in ("resume", "fork"):

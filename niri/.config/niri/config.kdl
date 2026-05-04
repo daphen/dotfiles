@@ -592,6 +592,8 @@ binds {
     Super+w { spawn-sh "$HOME/.config/niri/scripts/ws-focus browser"; }
     Super+Shift+w { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-work"; }
     Super+m { spawn-sh "$HOME/.config/niri/scripts/ws-focus devenv"; }
+    // Pick an open lovable worktree (rofi) and focus its workspace.
+    Super+t { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-jump"; }
 
     // Notes - tiled window like spotify/claude
     Super+n { spawn "/home/daphen/.config/niri/scripts/spawn-notes"; }

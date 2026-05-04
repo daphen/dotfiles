@@ -25,37 +25,26 @@ if [ "${#names[@]}" -eq 0 ]; then
     exit 0
 fi
 
-# rofi -dmenu icon protocol: each entry can carry metadata after a
-# NUL byte. Format: "<display>\0icon\x1f<path>\n". With -show-icons,
-# rofi renders the lovable.png icon next to each name — same image
-# the waybar worktree pill uses.
-#
-# IMPORTANT: bash command-substitution $(...) strips NUL bytes, so we
-# can't build the entries in an array. Pipe straight from a function
-# / loop into rofi instead.
+# Prompt-label gets the lovable icon as a background-image so the
+# brand cue sits next to the word "worktree" instead of being
+# repeated on every entry.
 #
 # kb-custom-1 (Ctrl+W) → exit 10. Default Enter → exit 0. Esc → exit 1.
 # Rofi binds Control+w to kb-clear-line by default; unbind it before
 # reassigning.
-emit_entries() {
-    local n
-    for n in "${names[@]}"; do
-        printf '%s\0icon\x1f%s\n' "$n" "$LOVABLE_ICON"
-    done
-}
-
-selected=$(emit_entries | rofi -dmenu -i \
-    -show-icons \
+selected=$(printf '%s\n' "${names[@]}" | rofi -dmenu -i \
     -p "worktree" \
-    -theme-str 'window {width: 30em;}' \
+    -theme-str "window { width: 30em; }" \
+    -theme-str "prompt {
+        background-image: url(\"$LOVABLE_ICON\", height);
+        padding: 0 0 0 1.6em;
+        margin: 0 0.4em 0 0;
+    }" \
     -mesg "Enter: focus    Ctrl+W: close worktree" \
     -kb-clear-line "" \
     -kb-custom-1 "Control+w")
 rc=$?
 
-# rofi returns just the display string (the part before the NUL),
-# even though we still pass through $() — that's safe because the
-# string we're capturing has no NULs in it after rofi's selection.
 name="$selected"
 
 if [ -z "$name" ]; then

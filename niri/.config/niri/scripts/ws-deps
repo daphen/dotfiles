@@ -1,144 +1,153 @@
-#!/usr/bin/env bash
-# ws-deps
-#
-# Toggle/summon-or-spawn for the lovable `devenv deps` singleton.
-# Behaves like an i3/sway scratchpad: press once to summon onto the
-# focused workspace, press again to dismiss (moves it to a hidden
-# `deps-stash` workspace).
-#
-# Spawning runs `devenv deps` from the /lovable root. The window is
-# set to open-floating via niri window-rule.
+#!/usr/bin/env python3
+"""
+ws-deps
 
-set -euo pipefail
+i3-style scratchpad for the lovable `devenv deps` singleton. Bound to
+Super+Ctrl+M:
 
-ID_FILE="$HOME/.local/state/wt-stacks/deps.id"
-LOVABLE_DIR="$HOME/work/lovable"
-STASH="deps-stash"
+    deps on focused workspace  →  park it on `deps-stash` (hidden)
+    deps elsewhere             →  bring it to the focused workspace
+    no deps yet                →  spawn it (window-rule handles
+                                  open-floating + initial size)
 
-mkdir -p "$(dirname "$ID_FILE")"
+Same-output toggles preserve the window's last position, so repeat
+toggles look instant. Cross-output summons re-center via niri's
+move-window-to-monitor + center-window. The lag we saw before came
+from niri's window-movement / window-resize animations on every move;
+those are disabled in config.kdl so this script's effect is immediate.
 
-deps_window_alive() {
-    local id="$1"
-    [ -z "$id" ] && return 1
-    niri msg --json windows 2>/dev/null \
-        | jq -e --arg id "$id" \
-            'any(.[]; .id == ($id | tonumber) and .app_id == "lovable_deps")' \
-        >/dev/null
-}
+Stateless — no ID file. niri's window list is the source of truth.
+"""
+from __future__ import annotations
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
 
-# Ensure the stash workspace exists. Niri keeps named workspaces
-# wherever they're moved; this just creates one once.
-ensure_stash() {
-    if niri msg --json workspaces 2>/dev/null \
-            | jq -e --arg n "$STASH" '.[] | select(.name == $n)' >/dev/null 2>&1; then
+LOVABLE_DIR = Path(os.environ["HOME"]) / "work/lovable"
+STASH = "deps-stash"
+APP_ID = "lovable_deps"
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args],
+        capture_output=True, text=True, timeout=2,
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def niri_action(*args: str) -> None:
+    subprocess.run(
+        ["niri", "msg", "action", *args],
+        capture_output=True, timeout=2,
+    )
+
+
+def ensure_stash(workspaces: list, focused_output: str) -> None:
+    """Make sure a `deps-stash` workspace exists ON the focused output.
+
+    If it doesn't exist anywhere, name a trailing empty workspace on
+    the focused output. If it exists but on the wrong output, drag it
+    to the focused output via move-workspace-to-monitor — without this,
+    every summon back from a different monitor is a cross-output move,
+    which re-rasters kitty's process-compose grid (visible "small to
+    fill up" lag) and skips position preservation (visible off-center
+    on whichever monitor isn't the stash's).
+    """
+    existing = next((w for w in workspaces if w.get("name") == STASH), None)
+    if existing is None:
+        candidates = [
+            w for w in workspaces
+            if w.get("output") == focused_output
+            and w.get("name") is None
+            and w.get("active_window_id") is None
+        ]
+        if not candidates:
+            return
+        target = max(candidates, key=lambda w: w.get("idx") or 0)
+        niri_action("set-workspace-name",
+                    "--workspace", str(target["idx"]), STASH)
+        return
+    if existing.get("output") != focused_output:
+        niri_action("move-workspace-to-monitor",
+                    "--reference", STASH, focused_output)
+
+
+def spawn_deps() -> int:
+    subprocess.Popen(
+        ["setsid", "kitty", "--hold", "--class", APP_ID,
+         "--working-directory", str(LOVABLE_DIR),
+         "-e", "direnv", "exec", ".", "devenv", "deps"],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    for _ in range(60):
+        time.sleep(0.15)
+        for w in niri_json("windows") or []:
+            if w.get("app_id") == APP_ID:
+                niri_action("center-window", "--id", str(w["id"]))
+                niri_action("focus-window", "--id", str(w["id"]))
+                return 0
+    print("ws-deps: failed to find spawned lovable_deps window",
+          file=sys.stderr)
+    return 1
+
+
+def main() -> int:
+    workspaces = niri_json("workspaces") or []
+    windows = niri_json("windows") or []
+
+    focused_ws = next((w for w in workspaces if w.get("is_focused")), None)
+    if focused_ws is None:
+        return 1
+    focused_output = focused_ws["output"]
+    # Reference for move-window-to-workspace: prefer the name (resolves
+    # globally), fall back to per-output idx.
+    focused_ref = focused_ws.get("name") or str(focused_ws["idx"])
+
+    deps = next((w for w in windows if w.get("app_id") == APP_ID), None)
+    if deps is None:
+        return spawn_deps()
+
+    deps_id = deps["id"]
+    deps_ws_id = deps.get("workspace_id")
+
+    if deps_ws_id == focused_ws["id"]:
+        # Dismiss.
+        ensure_stash(workspaces, focused_output)
+        niri_action("move-window-to-workspace",
+                    "--window-id", str(deps_id),
+                    "--focus=false", STASH)
         return 0
-    fi
-    # Find a trailing empty unnamed workspace on the focused output and
-    # name it. Niri auto-creates a new trailing empty after.
-    local out empty_idx
-    out=$(niri msg --json workspaces 2>/dev/null \
-        | jq -r '[.[] | select(.is_focused == true)] | .[0].output // ""')
-    if [ -z "$out" ]; then
-        out=$(niri msg --json workspaces 2>/dev/null | jq -r '.[0].output // ""')
-    fi
-    [ -z "$out" ] && return 1
-    empty_idx=$(niri msg --json workspaces 2>/dev/null \
-        | jq -r --arg out "$out" '
-            [.[] | select(.output == $out and .name == null and .active_window_id == null)]
-            | sort_by(-.idx) | .[0].idx // ""')
-    [ -z "$empty_idx" ] && return 1
-    niri msg action set-workspace-name --workspace "$empty_idx" "$STASH" 2>/dev/null || true
-}
 
-# Resolve the focused workspace. niri's `move-window-to-workspace`
-# REFERENCE arg is either a name or an *idx* (NOT the internal id) —
-# AND the idx is per-output, interpreted relative to the *current
-# output of the window being moved*. When deps lives on the
-# external monitor and the user is focused on the laptop, passing
-# the laptop workspace's idx finds the wrong workspace on the
-# external monitor.
-#
-# Workaround: move deps to the focused output first via
-# move-window-to-monitor, then move-window-to-workspace by idx
-# resolves correctly.
-read focused_ws_id focused_ws_output focused_ws_ref <<<"$(niri msg --json workspaces 2>/dev/null \
-    | jq -r '[.[] | select(.is_focused == true)] | .[0]
-             | "\(.id) \(.output) \((.name // (.idx | tostring)))"')"
+    # Summon. For cross-output we line up the window's monitor first
+    # (so the workspace REFERENCE resolves on the right output) and
+    # then re-center, since niri's relative-position translation
+    # doesn't preserve "centered". For same-output the window's last
+    # position is already correct — just re-attach it.
+    deps_ws = next((w for w in workspaces if w.get("id") == deps_ws_id), None)
+    deps_output = deps_ws["output"] if deps_ws else focused_output
 
-# Resolve current deps window id (cache file → fallback live lookup).
-deps_id=""
-if [ -f "$ID_FILE" ]; then
-    cached=$(cat "$ID_FILE" 2>/dev/null || true)
-    deps_window_alive "$cached" && deps_id="$cached"
-fi
-if [ -z "$deps_id" ]; then
-    deps_id=$(niri msg --json windows 2>/dev/null \
-        | jq -r '[.[] | select(.app_id == "lovable_deps")] | .[0].id // empty')
-    [ -n "$deps_id" ] && echo "$deps_id" > "$ID_FILE"
-fi
+    if deps_output != focused_output:
+        # Cross-output. The window-rule's min/max locks logical size to
+        # 1500x850 on every monitor, so niri's auto-rescale clamps in
+        # one step and kitty sees no column/row reflow.
+        niri_action("move-window-to-monitor",
+                    "--id", str(deps_id), focused_output)
+    niri_action("move-window-to-workspace",
+                "--window-id", str(deps_id),
+                "--focus=false", focused_ref)
+    # Always center: cheap when already centered (no-op, no animation),
+    # corrects the position otherwise.
+    niri_action("center-window", "--id", str(deps_id))
+    niri_action("focus-window", "--id", str(deps_id))
+    return 0
 
-if [ -n "$deps_id" ]; then
-    # Toggle: if deps is currently on the focused workspace, dismiss
-    # to the stash. Otherwise summon onto the focused workspace.
-    deps_ws=$(niri msg --json windows 2>/dev/null \
-        | jq -r --arg id "$deps_id" '.[] | select(.id == ($id | tonumber)) | .workspace_id')
-    if [ "$deps_ws" = "$focused_ws_id" ]; then
-        ensure_stash
-        niri msg action move-window-to-workspace \
-            --window-id "$deps_id" --focus false "$STASH" 2>/dev/null || true
-    else
-        # Look up deps's current output + size so we can skip every
-        # niri action that would just be a no-op. Each action niri
-        # accepts triggers an animation, so the more we skip the
-        # less the window visibly bounces around.
-        deps_state=$(niri msg --json windows 2>/dev/null \
-            | jq --arg id "$deps_id" '.[] | select(.id == ($id | tonumber))')
-        deps_output=$(niri msg --json workspaces 2>/dev/null \
-            | jq -r --arg id "$deps_ws" '.[] | select(.id == ($id | tonumber)) | .output // ""')
-        cur_w=$(echo "$deps_state" | jq -r '.layout.window_size[0] // 0')
-        cur_h=$(echo "$deps_state" | jq -r '.layout.window_size[1] // 0')
 
-        # 1. Same monitor? Skip the cross-output move.
-        if [ "$deps_output" != "$focused_ws_output" ]; then
-            niri msg action move-window-to-monitor \
-                --id "$deps_id" "$focused_ws_output" 2>/dev/null || true
-        fi
-
-        # 2. Move to the focused workspace.
-        niri msg action move-window-to-workspace \
-            --window-id "$deps_id" --focus false "$focused_ws_ref" 2>/dev/null || true
-
-        # 3. Resize only if the dimensions have drifted.
-        if [ "$cur_w" != "1500" ]; then
-            niri msg action set-window-width  --id "$deps_id" "1500" 2>/dev/null || true
-        fi
-        if [ "$cur_h" != "850" ]; then
-            niri msg action set-window-height --id "$deps_id" "850"  2>/dev/null || true
-        fi
-
-        # 4. Centre + focus (centre is cheap; focus must run last).
-        niri msg action center-window --id "$deps_id" 2>/dev/null || true
-        niri msg action focus-window  --id "$deps_id"
-    fi
-    exit 0
-fi
-
-# No deps window — spawn one (it'll land floating on the focused
-# workspace via the window-rule, which is exactly the "summoned" state).
-setsid kitty --hold --class lovable_deps --working-directory "$LOVABLE_DIR" \
-    -e direnv exec . devenv deps </dev/null >/dev/null 2>&1 &
-disown
-
-for _ in $(seq 1 60); do
-    sleep 0.15
-    new=$(niri msg --json windows 2>/dev/null \
-        | jq -r '[.[] | select(.app_id == "lovable_deps")] | .[0].id // empty')
-    if [ -n "$new" ]; then
-        echo "$new" > "$ID_FILE"
-        niri msg action focus-window --id "$new"
-        exit 0
-    fi
-done
-
-echo "ws-deps: failed to find spawned lovable_deps window" >&2
-exit 1
+if __name__ == "__main__":
+    sys.exit(main())

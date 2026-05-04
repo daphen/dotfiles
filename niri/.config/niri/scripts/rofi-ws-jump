@@ -4,12 +4,18 @@
 #   Enter   → focus the selected worktree's workspace
 #   Ctrl+W  → close the worktree (kills windows, devenv kill, wt remove).
 #             Confirmed via a second rofi prompt.
+#
+# Order: most-recently visited first (read from ws-tracker's recency
+# state). The currently-active worktree is highlighted in bold.
 
 set -uo pipefail
 
 SCRIPT_DIR="$HOME/.config/niri/scripts"
 LOVABLE_ICON="$HOME/.local/share/icons/hicolor/512x512/apps/lovable.png"
+RECENCY_FILE="$HOME/.local/state/wt-stacks/ws/recency"
+ACTIVE_FILE="$HOME/.local/state/wt-stacks/ws/active"
 
+# Existing lovable-<name> workspaces (stripped names).
 mapfile -t names < <(niri msg --json workspaces 2>/dev/null \
     | jq -r '.[]
         | select(.name
@@ -25,13 +31,57 @@ if [ "${#names[@]}" -eq 0 ]; then
     exit 0
 fi
 
-# Add a custom `icon-prompt` widget as a child of `inputbar`, BEFORE
-# the regular prompt. Sized to the icon so the lovable.png doesn't
-# tile, then the actual prompt label "worktree" follows.
-#
-# kb-custom-1 (Ctrl+W) → exit 10. Default Enter → exit 0. Esc → exit 1.
-# Rofi binds Control+w to kb-clear-line by default; unbind it before
-# reassigning.
+# Recency-ordered names from ws-tracker (full lovable-<name>, most
+# recent first), stripped to bare names.
+recency_names=()
+if [ -f "$RECENCY_FILE" ]; then
+    mapfile -t recency_names < <(jq -r '.[]?' "$RECENCY_FILE" 2>/dev/null \
+        | sed 's|^lovable-||')
+fi
+
+# Active worktree (bare name).
+active_name=""
+if [ -f "$ACTIVE_FILE" ]; then
+    active_name=$(sed 's|^lovable-||' "$ACTIVE_FILE" 2>/dev/null | tr -d '\n')
+fi
+
+# Build display order: recency first (filtered to currently-existing
+# worktrees, deduped), then any worktree that isn't in recency yet
+# (e.g. just-created) appended at the end.
+declare -A name_present
+for n in "${names[@]}"; do
+    name_present["$n"]=1
+done
+
+declare -A seen
+ordered=()
+for n in "${recency_names[@]}"; do
+    if [ "${name_present[$n]:-}" = "1" ] && [ -z "${seen[$n]:-}" ]; then
+        ordered+=("$n")
+        seen[$n]=1
+    fi
+done
+for n in "${names[@]}"; do
+    if [ -z "${seen[$n]:-}" ]; then
+        ordered+=("$n")
+        seen[$n]=1
+    fi
+done
+
+# Markup rows: active worktree gets bold + a small dot marker so it's
+# obvious which one we're already on.
+rows=()
+for n in "${ordered[@]}"; do
+    if [ "$n" = "$active_name" ]; then
+        rows+=("<b>$n</b>  ●")
+    else
+        rows+=("$n")
+    fi
+done
+
+# Custom `icon-prompt` child widget so the lovable.png shows next to
+# the prompt label without tiling. kb-custom-1 (Ctrl+W) → exit 10;
+# Ctrl+W is bound to kb-clear-line by default, so unbind it first.
 ICON_THEME='
 inputbar { children: [ icon-prompt, prompt, entry ]; }
 icon-prompt {
@@ -42,7 +92,11 @@ icon-prompt {
 }
 '
 
-selected=$(printf '%s\n' "${names[@]}" | rofi -dmenu -i \
+# -format i returns the index of the selected row in our input list,
+# which lets us look up the bare name without parsing markup.
+selected_idx=$(printf '%s\n' "${rows[@]}" | rofi -dmenu -i \
+    -format i \
+    -markup-rows \
     -p "worktree" \
     -theme-str "window { width: 30em; }" \
     -theme-str "$ICON_THEME" \
@@ -51,11 +105,10 @@ selected=$(printf '%s\n' "${names[@]}" | rofi -dmenu -i \
     -kb-custom-1 "Control+w")
 rc=$?
 
-name="$selected"
-
-if [ -z "$name" ]; then
+if [ -z "$selected_idx" ]; then
     exit 0
 fi
+name="${ordered[$selected_idx]}"
 
 case "$rc" in
     0)

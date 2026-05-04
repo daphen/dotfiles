@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""
+ws-toggle-worktree
+
+Jump to the previously visited `lovable-<name>` workspace — like Ctrl+O
+in vim/neovim. Press once to go back, press again to return.
+
+The recency list is maintained by ws-tracker (writes most-recently
+focused stack to the front on every Workspace focused event). We pick
+the second entry when currently on the first; otherwise the first.
+"""
+from __future__ import annotations
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+RECENCY_FILE = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws/recency"
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=2
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def main() -> int:
+    try:
+        recent = json.loads(RECENCY_FILE.read_text())
+    except Exception:
+        recent = []
+    if not isinstance(recent, list) or not recent:
+        return 0
+
+    workspaces = niri_json("workspaces") or []
+    existing = {w.get("name") for w in workspaces if w.get("name")}
+    recent = [n for n in recent if isinstance(n, str) and n in existing]
+    if not recent:
+        return 0
+
+    focused_name = next(
+        (w.get("name") for w in workspaces if w.get("is_focused")), None
+    )
+    # If we're on the most-recent, the toggle target is the next one
+    # down. Otherwise (off the lovable group entirely, or recency hasn't
+    # caught up yet) jump to the most-recent.
+    if focused_name == recent[0] and len(recent) > 1:
+        target = recent[1]
+    else:
+        target = recent[0]
+
+    subprocess.run(
+        ["niri", "msg", "action", "focus-workspace", target],
+        check=False, timeout=2,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

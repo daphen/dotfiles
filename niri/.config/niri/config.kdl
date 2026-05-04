@@ -355,6 +355,7 @@ spawn-sh-at-startup "/home/daphen/.config/niri/scripts/ws-tracker >> /tmp/ws-tra
 // they're moved.
 spawn-sh-at-startup "/home/daphen/.config/niri/scripts/ensure-chat-workspace"
 
+
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
 
@@ -524,6 +525,16 @@ window-rule {
     open-floating true
     default-column-width { fixed 1500; }
     default-window-height { fixed 850; }
+    // Lock the logical size on every monitor. Niri's cross-output
+    // auto-rescale (preserves physical pixels) would otherwise change
+    // the window's logical size and force kitty to reflow the
+    // process-compose grid every cross-monitor toggle. With min == max
+    // the rescale is clamped back to 1500x850 in one step, so kitty
+    // sees no column/row change — just the unavoidable DPI re-raster.
+    min-width 1500
+    max-width 1500
+    min-height 850
+    max-height 850
 }
 
 // Chat apps (Vesktop, Slack) live on a named "chat" workspace so they
@@ -615,6 +626,9 @@ binds {
     Super+t       { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-jump"; }
     Super+Shift+t { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-createwt"; }
     Super+Ctrl+t  { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-startwt"; }
+
+    // Super+O: toggle to the previously visited worktree (vim ctrl-o style).
+    Super+o       { spawn-sh "$HOME/.config/niri/scripts/ws-toggle-worktree"; }
 
     // Notes - tiled window like spotify/claude
     Super+n { spawn "/home/daphen/.config/niri/scripts/spawn-notes"; }

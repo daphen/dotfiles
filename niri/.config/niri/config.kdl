@@ -592,15 +592,21 @@ binds {
     Super+w { spawn-sh "$HOME/.config/niri/scripts/ws-focus browser"; }
     Super+Shift+w { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-work"; }
     Super+m { spawn-sh "$HOME/.config/niri/scripts/ws-focus devenv"; }
-    // Pick an open lovable worktree (rofi) and focus its workspace.
-    Super+t { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-jump"; }
+
+    // Lovable worktree shortcuts (T for tree):
+    //   Super+T        — pick an OPEN worktree and focus it
+    //   Super+Shift+T  — create a NEW worktree (rofi name prompt)
+    //   Super+Ctrl+T   — start an EXISTING worktree from disk (fzf picker)
+    Super+t       { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-jump"; }
+    Super+Shift+t { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-createwt"; }
+    Super+Ctrl+t  { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-startwt"; }
 
     // Notes - tiled window like spotify/claude
     Super+n { spawn "/home/daphen/.config/niri/scripts/spawn-notes"; }
     Super+Shift+n { spawn "/home/daphen/.config/niri/scripts/spawn-new-note"; }
 
-    // Theme toggle
-    Super+Ctrl+t hotkey-overlay-title="Toggle Theme" { spawn-sh "~/.config/themes/theme-manager.sh toggle"; }
+    // Theme toggle is now reachable from the app launcher
+    // ("Toggle Theme") — Super+Ctrl+T was repurposed for ws-startwt.
 
     // Media and function keys for Asus ProArt P16
     // XF86 keycodes (for external keyboards / future use)

@@ -25,21 +25,27 @@ if [ "${#names[@]}" -eq 0 ]; then
     exit 0
 fi
 
-# Prompt-label gets the lovable icon as a background-image so the
-# brand cue sits next to the word "worktree" instead of being
-# repeated on every entry.
+# Add a custom `icon-prompt` widget as a child of `inputbar`, BEFORE
+# the regular prompt. Sized to the icon so the lovable.png doesn't
+# tile, then the actual prompt label "worktree" follows.
 #
 # kb-custom-1 (Ctrl+W) → exit 10. Default Enter → exit 0. Esc → exit 1.
 # Rofi binds Control+w to kb-clear-line by default; unbind it before
 # reassigning.
+ICON_THEME='
+inputbar { children: [ icon-prompt, prompt, entry ]; }
+icon-prompt {
+    expand: false;
+    background-image: url("'"$LOVABLE_ICON"'", none);
+    size: 1.4em;
+    margin: 0 0.5em 0 0;
+}
+'
+
 selected=$(printf '%s\n' "${names[@]}" | rofi -dmenu -i \
     -p "worktree" \
     -theme-str "window { width: 30em; }" \
-    -theme-str "prompt {
-        background-image: url(\"$LOVABLE_ICON\", height);
-        padding: 0 0 0 1.6em;
-        margin: 0 0.4em 0 0;
-    }" \
+    -theme-str "$ICON_THEME" \
     -mesg "Enter: focus    Ctrl+W: close worktree" \
     -kb-clear-line "" \
     -kb-custom-1 "Control+w")

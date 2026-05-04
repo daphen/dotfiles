@@ -8,7 +8,7 @@
 set -uo pipefail
 
 SCRIPT_DIR="$HOME/.config/niri/scripts"
-HEART="♥"
+LOVABLE_ICON="$HOME/.local/share/icons/hicolor/512x512/apps/lovable.png"
 
 mapfile -t names < <(niri msg --json workspaces 2>/dev/null \
     | jq -r '.[]
@@ -25,15 +25,20 @@ if [ "${#names[@]}" -eq 0 ]; then
     exit 0
 fi
 
+# rofi -dmenu icon protocol: each entry can carry metadata after a
+# NUL byte. Format: "<display>\0icon\x1f<path>". With -show-icons,
+# rofi renders the lovable.png icon next to each name — same image
+# the waybar worktree pill uses.
 entries=()
 for n in "${names[@]}"; do
-    entries+=("$HEART  $n")
+    entries+=("$(printf '%s\0icon\x1f%s' "$n" "$LOVABLE_ICON")")
 done
 
 # kb-custom-1 (Ctrl+W) → exit 10. Default Enter → exit 0. Esc → exit 1.
 # Rofi binds Control+w to kb-clear-line by default; unbind it
 # (-kb-clear-line "") before reassigning.
 selected=$(printf '%s\n' "${entries[@]}" | rofi -dmenu -i \
+    -show-icons \
     -p "worktree" \
     -theme-str 'window {width: 30em;}' \
     -mesg "Enter: focus    Ctrl+W: close worktree" \
@@ -41,8 +46,8 @@ selected=$(printf '%s\n' "${entries[@]}" | rofi -dmenu -i \
     -kb-custom-1 "Control+w")
 rc=$?
 
-# Strip the heart prefix to get the bare name.
-name="${selected#"$HEART  "}"
+# rofi returns just the display string (the part before the NUL).
+name="$selected"
 
 if [ -z "$name" ]; then
     exit 0

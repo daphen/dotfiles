@@ -82,7 +82,12 @@ if [ -n "$deps_id" ]; then
     else
         niri msg action move-window-to-workspace \
             --window-id "$deps_id" --focus false "$focused_ws_ref" 2>/dev/null || true
-        niri msg action focus-window --id "$deps_id"
+        # Re-apply size each summon so it adapts to whatever monitor
+        # the focused workspace is on, then centre.
+        niri msg action set-window-width  --id "$deps_id" "70%" 2>/dev/null || true
+        niri msg action set-window-height --id "$deps_id" "70%" 2>/dev/null || true
+        niri msg action center-window     --id "$deps_id" 2>/dev/null || true
+        niri msg action focus-window      --id "$deps_id"
     fi
     exit 0
 fi

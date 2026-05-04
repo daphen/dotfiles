@@ -26,18 +26,25 @@ if [ "${#names[@]}" -eq 0 ]; then
 fi
 
 # rofi -dmenu icon protocol: each entry can carry metadata after a
-# NUL byte. Format: "<display>\0icon\x1f<path>". With -show-icons,
+# NUL byte. Format: "<display>\0icon\x1f<path>\n". With -show-icons,
 # rofi renders the lovable.png icon next to each name — same image
 # the waybar worktree pill uses.
-entries=()
-for n in "${names[@]}"; do
-    entries+=("$(printf '%s\0icon\x1f%s' "$n" "$LOVABLE_ICON")")
-done
-
+#
+# IMPORTANT: bash command-substitution $(...) strips NUL bytes, so we
+# can't build the entries in an array. Pipe straight from a function
+# / loop into rofi instead.
+#
 # kb-custom-1 (Ctrl+W) → exit 10. Default Enter → exit 0. Esc → exit 1.
-# Rofi binds Control+w to kb-clear-line by default; unbind it
-# (-kb-clear-line "") before reassigning.
-selected=$(printf '%s\n' "${entries[@]}" | rofi -dmenu -i \
+# Rofi binds Control+w to kb-clear-line by default; unbind it before
+# reassigning.
+emit_entries() {
+    local n
+    for n in "${names[@]}"; do
+        printf '%s\0icon\x1f%s\n' "$n" "$LOVABLE_ICON"
+    done
+}
+
+selected=$(emit_entries | rofi -dmenu -i \
     -show-icons \
     -p "worktree" \
     -theme-str 'window {width: 30em;}' \
@@ -46,7 +53,9 @@ selected=$(printf '%s\n' "${entries[@]}" | rofi -dmenu -i \
     -kb-custom-1 "Control+w")
 rc=$?
 
-# rofi returns just the display string (the part before the NUL).
+# rofi returns just the display string (the part before the NUL),
+# even though we still pass through $() — that's safe because the
+# string we're capturing has no NULs in it after rofi's selection.
 name="$selected"
 
 if [ -z "$name" ]; then

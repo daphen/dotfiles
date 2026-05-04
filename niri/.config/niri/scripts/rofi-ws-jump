@@ -31,13 +31,13 @@ for n in "${names[@]}"; do
 done
 
 # kb-custom-1 (Ctrl+W) → exit 10. Default Enter → exit 0. Esc → exit 1.
-# Rofi binds Control+w to "remove word back" by default; unbind it
-# (-kb-remove-word-back "") before reassigning.
+# Rofi binds Control+w to kb-clear-line by default; unbind it
+# (-kb-clear-line "") before reassigning.
 selected=$(printf '%s\n' "${entries[@]}" | rofi -dmenu -i \
     -p "worktree" \
     -theme-str 'window {width: 30em;}' \
     -mesg "Enter: focus    Ctrl+W: close worktree" \
-    -kb-remove-word-back "" \
+    -kb-clear-line "" \
     -kb-custom-1 "Control+w")
 rc=$?
 

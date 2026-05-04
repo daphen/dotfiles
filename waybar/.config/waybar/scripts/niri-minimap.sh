@@ -116,10 +116,13 @@ def render(c_active: str, c_normal: str) -> str:
             )
         blocks.append("".join(parts))
 
-    # Single regular space between workspaces. Tighter values
-    # (U+200A hair, U+2009 thin) overlapped or ran characters into each
-    # other given the negative letter_spacing applied within blocks.
-    text = " ".join(blocks) if blocks else "·"
+    body = " ".join(blocks) if blocks else "·"
+    # Invisible 28pt + rise span anchors the line height to the tallest
+    # bar size, so the waybar container doesn't shrink when no focused
+    # bar is currently being rendered (e.g. focus on a floating window
+    # like rofi, or no focused window at all).
+    anchor = "<span size='28000' rise='-12000'>​</span>"
+    text = anchor + body
     tooltip = "\\n".join(tooltip_lines) or "no windows"
     return json.dumps({"text": text, "tooltip": tooltip, "markup": "pango"})
 

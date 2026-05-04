@@ -23,9 +23,6 @@ return {
 				vim.cmd.colorscheme("custom-theme-" .. theme_mode)
 			end
 
-			-- Apply initial theme
-			apply_theme()
-
 			-- Re-apply theme when LSP attaches to ensure @lsp highlights take effect
 			vim.api.nvim_create_autocmd("LspAttach", {
 				callback = function()
@@ -46,7 +43,11 @@ return {
 				end))
 			end
 
-			-- Additional highlight overrides
+			-- Additional highlight overrides. Register the autocmd
+			-- BEFORE the initial apply_theme() call so the very first
+			-- ColorScheme event triggers the overrides — otherwise the
+			-- only way to apply them on startup was via LspAttach (and
+			-- on a buffer with no LSP, e.g. fresh nvim, they never ran).
 			vim.api.nvim_create_autocmd("ColorScheme", {
 				pattern = "custom-theme-*",
 				callback = function()
@@ -96,6 +97,10 @@ return {
 				end
 				end,
 			})
+
+			-- Apply initial theme — must come AFTER the autocmd above
+			-- so the first ColorScheme event fires our overrides.
+			apply_theme()
 		end,
 	},
 }

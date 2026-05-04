@@ -87,19 +87,38 @@ if [ -n "$deps_id" ]; then
         niri msg action move-window-to-workspace \
             --window-id "$deps_id" --focus false "$STASH" 2>/dev/null || true
     else
-        # First make sure deps is on the focused MONITOR — otherwise the
-        # idx-based workspace reference is resolved against the wrong
-        # output and deps lands on a workspace on the original monitor.
-        niri msg action move-window-to-monitor \
-            --id "$deps_id" "$focused_ws_output" 2>/dev/null || true
+        # Look up deps's current output + size so we can skip every
+        # niri action that would just be a no-op. Each action niri
+        # accepts triggers an animation, so the more we skip the
+        # less the window visibly bounces around.
+        deps_state=$(niri msg --json windows 2>/dev/null \
+            | jq --arg id "$deps_id" '.[] | select(.id == ($id | tonumber))')
+        deps_output=$(niri msg --json workspaces 2>/dev/null \
+            | jq -r --arg id "$deps_ws" '.[] | select(.id == ($id | tonumber)) | .output // ""')
+        cur_w=$(echo "$deps_state" | jq -r '.layout.window_size[0] // 0')
+        cur_h=$(echo "$deps_state" | jq -r '.layout.window_size[1] // 0')
+
+        # 1. Same monitor? Skip the cross-output move.
+        if [ "$deps_output" != "$focused_ws_output" ]; then
+            niri msg action move-window-to-monitor \
+                --id "$deps_id" "$focused_ws_output" 2>/dev/null || true
+        fi
+
+        # 2. Move to the focused workspace.
         niri msg action move-window-to-workspace \
             --window-id "$deps_id" --focus false "$focused_ws_ref" 2>/dev/null || true
-        # Re-apply size each summon to a fixed footprint that reads
-        # well on both laptop and ultrawide monitors, then centre.
-        niri msg action set-window-width  --id "$deps_id" "1500" 2>/dev/null || true
-        niri msg action set-window-height --id "$deps_id" "850"  2>/dev/null || true
-        niri msg action center-window     --id "$deps_id" 2>/dev/null || true
-        niri msg action focus-window      --id "$deps_id"
+
+        # 3. Resize only if the dimensions have drifted.
+        if [ "$cur_w" != "1500" ]; then
+            niri msg action set-window-width  --id "$deps_id" "1500" 2>/dev/null || true
+        fi
+        if [ "$cur_h" != "850" ]; then
+            niri msg action set-window-height --id "$deps_id" "850"  2>/dev/null || true
+        fi
+
+        # 4. Centre + focus (centre is cheap; focus must run last).
+        niri msg action center-window --id "$deps_id" 2>/dev/null || true
+        niri msg action focus-window  --id "$deps_id"
     fi
     exit 0
 fi

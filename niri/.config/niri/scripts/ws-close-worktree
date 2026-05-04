@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""
+ws-close-worktree <name>
+
+Closes a lovable worktree end-to-end:
+  1. Closes every window on the `lovable-<name>` workspace.
+  2. Runs `devenv kill` in the worktree directory (best effort).
+  3. Removes the git worktree via `wt remove daphen/<name>`.
+
+The named workspace will disappear once empty. If anything fails the
+script prints to stderr and exits non-zero so the caller can show an
+error.
+"""
+from __future__ import annotations
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+HOME = Path(os.environ["HOME"])
+LOVABLE_DIR = HOME / "work" / "lovable"
+
+
+def niri_json(*args: str):
+    try:
+        out = subprocess.run(
+            ["niri", "msg", "--json", *args],
+            capture_output=True, text=True, timeout=3,
+        )
+    except subprocess.TimeoutExpired:
+        return None
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def main() -> int:
+    if len(sys.argv) != 2 or not sys.argv[1]:
+        print("usage: ws-close-worktree <name>", file=sys.stderr)
+        return 2
+    name = sys.argv[1]
+    workspace = f"lovable-{name}"
+    branch = f"daphen/{name}"
+    wt_path = HOME / f"work/lovable.daphen-{name}"
+
+    # 0. If we're currently focused on the workspace we're about to
+    #    close, jump to another lovable worktree first (else niri
+    #    flings us to whichever workspace happens to take its place
+    #    when the named one disappears).
+    workspaces = niri_json("workspaces") or []
+    focused_ws = next((w for w in workspaces if w.get("is_focused")), None)
+    if focused_ws and focused_ws.get("name") == workspace:
+        siblings = sorted(
+            (w for w in workspaces
+             if (w.get("name") or "").startswith("lovable-")
+             and w.get("name") != workspace
+             and w.get("name") not in ("lovable", "lovable-deps")),
+            key=lambda w: (w.get("output") or "", w.get("idx") or 0),
+        )
+        if siblings:
+            subprocess.run(
+                ["niri", "msg", "action",
+                 "focus-workspace", siblings[0]["name"]],
+                capture_output=True, timeout=2,
+            )
+
+    # 1. Close every window on the workspace.
+    ws = next((w for w in workspaces if w.get("name") == workspace), None)
+    if ws is not None:
+        windows = niri_json("windows") or []
+        wids = [w["id"] for w in windows if w.get("workspace_id") == ws["id"]]
+        for wid in wids:
+            subprocess.run(
+                ["niri", "msg", "action", "close-window", "--id", str(wid)],
+                capture_output=True, timeout=2,
+            )
+        # Wait briefly for windows to actually close so wt remove
+        # doesn't run while devenv is still holding the dir.
+        for _ in range(20):
+            time.sleep(0.15)
+            still = niri_json("windows") or []
+            if not any(w.get("workspace_id") == ws["id"] for w in still):
+                break
+
+    # 2. Best-effort `devenv kill` for this worktree's dev services.
+    if wt_path.is_dir():
+        log = open("/tmp/ws-close-worktree-kill.log", "ab")
+        subprocess.Popen(
+            ["sh", "-c", f"cd '{wt_path}' && direnv exec . devenv kill"],
+            stdout=log, stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL, start_new_session=True,
+        )
+
+    # 3. Remove the git worktree (and branch, if merged) via `wt`.
+    if wt_path.is_dir():
+        rc = subprocess.run(
+            ["wt", "remove", branch],
+            cwd=str(LOVABLE_DIR),
+            capture_output=True, text=True,
+        )
+        if rc.returncode != 0:
+            print(rc.stdout, end="", file=sys.stderr)
+            print(rc.stderr, end="", file=sys.stderr)
+            return rc.returncode
+
+    # 4. Clear active-stack state if it pointed here.
+    active_file = HOME / ".local/state/wt-stacks/ws/active"
+    try:
+        if active_file.read_text().strip() == workspace:
+            active_file.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+    print(f"closed worktree '{name}'")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

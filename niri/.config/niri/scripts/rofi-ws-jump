@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
-# Show a rofi picker over currently-open lovable worktrees and focus
-# the selected one. Just lists `lovable-<name>` workspaces niri
-# already has — doesn't create anything new.
-set -euo pipefail
+# Rofi picker over open lovable worktrees.
+#
+#   Enter   → focus the selected worktree's workspace
+#   Ctrl+W  → close the worktree (kills windows, devenv kill, wt remove).
+#             Confirmed via a second rofi prompt.
+
+set -uo pipefail
+
+SCRIPT_DIR="$HOME/.config/niri/scripts"
+HEART="♥"
 
 mapfile -t names < <(niri msg --json workspaces 2>/dev/null \
     | jq -r '.[]
@@ -19,9 +25,36 @@ if [ "${#names[@]}" -eq 0 ]; then
     exit 0
 fi
 
-selected=$(printf '%s\n' "${names[@]}" \
-    | rofi -dmenu -i -p "worktree" -theme-str 'window {width: 30em;}' || true)
+entries=()
+for n in "${names[@]}"; do
+    entries+=("$HEART  $n")
+done
 
-[ -z "$selected" ] && exit 0
+# kb-custom-1 (Ctrl+W) → exit 10. Default Enter → exit 0. Esc → exit 1.
+selected=$(printf '%s\n' "${entries[@]}" | rofi -dmenu -i \
+    -p "worktree" \
+    -theme-str 'window {width: 30em;}' \
+    -mesg "Enter: focus    Ctrl+W: close worktree" \
+    -kb-custom-1 "Control+w")
+rc=$?
 
-niri msg action focus-workspace "lovable-$selected"
+# Strip the heart prefix to get the bare name.
+name="${selected#"$HEART  "}"
+
+if [ -z "$name" ]; then
+    exit 0
+fi
+
+case "$rc" in
+    0)
+        niri msg action focus-workspace "lovable-$name"
+        ;;
+    10)
+        confirm=$(printf 'no\nyes\n' | rofi -dmenu -i \
+            -p "Close '$name'?" \
+            -theme-str 'window {width: 24em;}')
+        if [ "$confirm" = "yes" ]; then
+            "$SCRIPT_DIR/ws-close-worktree" "$name"
+        fi
+        ;;
+esac

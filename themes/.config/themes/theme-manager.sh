@@ -597,7 +597,7 @@ apply_system_theme() {
     fi
     if [[ -f "$niri_config" ]]; then
         if [[ "$theme_mode" == "dark" ]]; then
-            local active_color="#ffffff"
+            local active_color=$(jq -r '.themes.dark.semantic.cursor' "$COLORS_FILE")
             local inactive_color="#3A3A3A"
         else
             local active_color=$(jq -r '.themes.light.semantic.cursor' "$COLORS_FILE")
@@ -636,7 +636,40 @@ switch_theme() {
     # Apply system-wide settings
     apply_system_theme "$theme_mode"
 
+    # Some Electron apps (Vesktop, Slack) detect the theme change live
+    # but instantly revert to their cached value, so they need a full
+    # restart to pick up the new theme.
+    restart_electron_apps
+
     log_success "Theme switched to $theme_mode mode"
+}
+
+# Restart Electron apps that don't honor live theme changes. Only
+# restarts the apps that are *currently running* so a toggle when
+# they're closed doesn't surprise-spawn them.
+restart_electron_apps() {
+    # Vesktop (Discord) — comm is `electron`, but cmdline contains
+    # "Vesktop" / "vesktop" via its path/data-dir, so match that.
+    if pgrep -if vesktop >/dev/null 2>&1; then
+        log_info "Restarting Vesktop…"
+        pkill -if vesktop 2>/dev/null
+        sleep 1
+        pkill -KILL -if vesktop 2>/dev/null
+        sleep 0.3
+        setsid -f vesktop </dev/null >/dev/null 2>&1 &
+        disown 2>/dev/null || true
+    fi
+
+    # Slack — comm is exactly `slack`.
+    if pgrep -x slack >/dev/null 2>&1; then
+        log_info "Restarting Slack…"
+        pkill -x slack 2>/dev/null
+        sleep 1
+        pkill -KILL -x slack 2>/dev/null
+        sleep 0.3
+        setsid -f slack </dev/null >/dev/null 2>&1 &
+        disown 2>/dev/null || true
+    fi
 }
 
 # Toggle between light and dark

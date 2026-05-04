@@ -36,7 +36,7 @@ ICON_THEME='
 inputbar { children: [ icon-prompt, prompt, entry ]; }
 icon-prompt {
     expand: false;
-    background-image: url("'"$LOVABLE_ICON"'", none);
+    background-image: url("'"$LOVABLE_ICON"'", both);
     size: 1.4em;
     margin: 0 0.5em 0 0;
 }

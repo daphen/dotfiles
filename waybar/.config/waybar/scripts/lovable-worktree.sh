@@ -28,19 +28,6 @@ def niri_json(*args: str):
     return json.loads(out) if out.strip() else None
 
 
-def stack_workspaces(workspaces: list[dict]) -> list[dict]:
-    """Stack workspaces only — `lovable-<name>` excluding the legacy
-    `lovable` and `lovable-deps`. Sorted by output then idx so the
-    visual order matches the workspace stack."""
-    out = [
-        w for w in workspaces
-        if (w.get("name") or "").startswith("lovable-")
-        and w.get("name") not in ("lovable", "lovable-deps")
-    ]
-    out.sort(key=lambda w: (w.get("output") or "", w.get("idx") or 0))
-    return out
-
-
 def render() -> str:
     workspaces = niri_json("workspaces") or []
     fw = next((w for w in workspaces if w.get("is_focused")), None)
@@ -49,24 +36,22 @@ def render() -> str:
         return json.dumps({"text": "", "class": "empty", "tooltip": ""})
     stack_name = fname.removeprefix("lovable-")
 
-    # Dot row: one per stack workspace, filled = focused. Spacing is a
-    # thin space (U+2009) so dots feel like a unit.
-    dots: list[str] = []
-    for w in stack_workspaces(workspaces):
-        dots.append("●" if w.get("is_focused") else "○")
-    dot_row = " ".join(dots)
-
-    text = f"{stack_name}  {dot_row}" if dot_row else stack_name
-    tooltip_lines = [f"focused worktree: {stack_name}"]
-    other = [
+    # Just the worktree name — the dot row was dropped because
+    # ws-reorder pins the active workspace at the bottom of the
+    # lovable group, so the active dot kept moving in the row
+    # instead of tracking visual order. Use Super+T to switch.
+    other = sorted(
         (w.get("name") or "").removeprefix("lovable-")
-        for w in stack_workspaces(workspaces)
-        if not w.get("is_focused")
-    ]
+        for w in workspaces
+        if (w.get("name") or "").startswith("lovable-")
+        and w.get("name") not in ("lovable", "lovable-deps")
+        and not w.get("is_focused")
+    )
+    tooltip_lines = [f"focused worktree: {stack_name}"]
     if other:
-        tooltip_lines.append("inactive: " + ", ".join(other))
+        tooltip_lines.append("other: " + ", ".join(other))
     return json.dumps({
-        "text": text,
+        "text": stack_name,
         "class": "lovable",
         "tooltip": "\\n".join(tooltip_lines),
     })

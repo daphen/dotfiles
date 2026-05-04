@@ -32,6 +32,7 @@ from pathlib import Path
 
 HOME = Path(os.environ["HOME"])
 COLORS_FILE = HOME / ".config/themes/colors.json"
+ACTIVE_FILE = HOME / ".local/state/wt-stacks/ws/active"
 
 RELEVANT_EVENT_RE = re.compile(
     r"^("
@@ -72,11 +73,35 @@ def window_sort_key(w: dict) -> tuple[int, int, int, int]:
     return (1, 0, 0, w["id"])
 
 
+def is_inactive_lovable_stack(ws: dict, active: str | None) -> bool:
+    """A `lovable-<name>` workspace that isn't the active stack.
+    The legacy `lovable` and `lovable-deps` aren't stacks — they
+    pass through."""
+    name = ws.get("name") or ""
+    if not name.startswith("lovable-"):
+        return False
+    if name in ("lovable", "lovable-deps"):
+        return False
+    return name != active
+
+
+def read_active_stack() -> str | None:
+    try:
+        return ACTIVE_FILE.read_text().strip() or None
+    except OSError:
+        return None
+
+
 def render(c_active: str, c_normal: str) -> str:
     workspaces = niri_json("workspaces") or []
     windows = niri_json("windows") or []
+    active_stack = read_active_stack()
+    # Hide inactive lovable-<name> workspaces from the minimap so the
+    # row only shows the workspaces the user can actually navigate to
+    # via Super+J/K (which already filters them) plus normal workspaces.
     workspaces_sorted = sorted(
-        workspaces, key=lambda w: (w.get("output") or "", w["idx"])
+        [w for w in workspaces if not is_inactive_lovable_stack(w, active_stack)],
+        key=lambda w: (w.get("output") or "", w["idx"]),
     )
 
     blocks: list[str] = []

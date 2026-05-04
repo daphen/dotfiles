@@ -46,12 +46,14 @@ def main(direction: str) -> int:
     except Exception:
         active_stack = ""
 
-    # Filter to: same output, has windows, NOT an inactive lovable-*
+    # Filter to: same output, has windows, NOT an inactive lovable-*,
+    # NOT the deps-stash workspace (it's a hidden HUD parking spot).
     candidates = [
         w for w in workspaces
         if w.get("output") == cur_output
         and w.get("active_window_id") is not None
         and not is_inactive_lovable(w.get("name"), active_stack)
+        and w.get("name") != "deps-stash"
     ]
     candidates.sort(key=lambda w: w.get("idx") or 0)
 

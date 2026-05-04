@@ -73,11 +73,13 @@ def window_sort_key(w: dict) -> tuple[int, int, int, int]:
     return (1, 0, 0, w["id"])
 
 
-def is_inactive_lovable_stack(ws: dict, active: str | None) -> bool:
-    """A `lovable-<name>` workspace that isn't the active stack.
-    The legacy `lovable` and `lovable-deps` aren't stacks — they
-    pass through."""
+def is_hidden_workspace(ws: dict, active: str | None) -> bool:
+    """Workspaces that should be filtered out of the minimap row:
+    inactive lovable stacks (only the active one is reachable via
+    Super+J/K) and the deps-stash HUD parking workspace."""
     name = ws.get("name") or ""
+    if name == "deps-stash":
+        return True
     if not name.startswith("lovable-"):
         return False
     if name in ("lovable", "lovable-deps"):
@@ -100,7 +102,7 @@ def render(c_active: str, c_normal: str) -> str:
     # row only shows the workspaces the user can actually navigate to
     # via Super+J/K (which already filters them) plus normal workspaces.
     workspaces_sorted = sorted(
-        [w for w in workspaces if not is_inactive_lovable_stack(w, active_stack)],
+        [w for w in workspaces if not is_hidden_workspace(w, active_stack)],
         key=lambda w: (w.get("output") or "", w["idx"]),
     )
 

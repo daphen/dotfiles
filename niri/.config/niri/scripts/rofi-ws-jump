@@ -20,7 +20,7 @@ if [ "${#names[@]}" -eq 0 ]; then
 fi
 
 selected=$(printf '%s\n' "${names[@]}" \
-    | rofi -dmenu -i -p "worktree" -theme-str 'window {width: 30em;}' </dev/null || true)
+    | rofi -dmenu -i -p "worktree" -theme-str 'window {width: 30em;}' || true)
 
 [ -z "$selected" ] && exit 0
 

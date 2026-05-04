@@ -65,3 +65,13 @@ claude/.claude/sessions/
 claude/.claude/image-cache/
 claude/.claude/paste-cache/
 claude/.claude/.claude/
+
+# Claude Code per-session runtime caches/telemetry
+claude/.claude/telemetry/
+claude/.claude/tasks/
+claude/.claude/cache/my-closed-issues.json
+claude/.claude/stats-cache.json
+claude/.claude/plugins/install-counts-cache.json
+
+# JS/TS deps inside ai-tracker channel
+nvim/.config/nvim/lua/ai-tracker/channel/node_modules/

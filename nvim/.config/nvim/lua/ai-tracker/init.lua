@@ -25,6 +25,10 @@ M.config = {
   -- if the file is in this nvim's project). Skipped while in insert mode so
   -- it doesn't yank the buffer out from under live typing.
   live_follow = true,
+  -- When true, watch the current project's .git/HEAD and clear JSONL entries
+  -- whose files no longer have uncommitted changes. Keeps the log in sync
+  -- with what's actually pending review.
+  auto_clear_on_commit = true,
   preview = {
     -- Live diff preview for Claude Code Edit/Write/MultiEdit. When enabled,
     -- the PreToolUse hook (preview-hook.py) blocks until you accept/reject
@@ -81,6 +85,48 @@ local function path_in_current_project(path)
   return root ~= nil and path ~= nil and vim.startswith(path, root)
 end
 
+-- Memoized git common dir per directory. The "common dir" is the shared
+-- .git location for all worktrees of a repo, so two worktrees of the same
+-- repo resolve to the same value.
+local _common_dir_cache = {}
+local function git_common_dir(dir)
+  if not dir or dir == "" then return nil end
+  if _common_dir_cache[dir] ~= nil then
+    local v = _common_dir_cache[dir]
+    return v ~= "" and v or nil
+  end
+  local cmd = string.format("git -C %s rev-parse --git-common-dir 2>/dev/null", vim.fn.shellescape(dir))
+  local out = vim.fn.system(cmd)
+  if vim.v.shell_error ~= 0 then
+    _common_dir_cache[dir] = ""
+    return nil
+  end
+  out = out:gsub("\n", "")
+  if out == "" then
+    _common_dir_cache[dir] = ""
+    return nil
+  end
+  if not vim.startswith(out, "/") then out = dir .. "/" .. out end
+  out = vim.fn.resolve(out)
+  _common_dir_cache[dir] = out
+  return out
+end
+
+-- Memoized common dir for the current project root.
+local function current_git_common_dir()
+  local root = current_project_root()
+  if not root then return nil end
+  return git_common_dir(root)
+end
+
+local function path_in_same_repo(path)
+  local our_common = current_git_common_dir()
+  if not our_common then return false end
+  -- Resolve path's directory and look up its common dir.
+  local dir = vim.fn.fnamemodify(path, ":h")
+  return git_common_dir(dir) == our_common
+end
+
 -- Exported so preview.lua can stamp the heartbeat with our project root.
 M.current_project_root = current_project_root
 
@@ -127,12 +173,70 @@ function M.setup(opts)
     require("ai-tracker.preview").start()
   end
 
+  if M.config.auto_clear_on_commit then
+    M.start_commit_watcher()
+    -- Catch up on commits that happened while nvim wasn't running.
+    vim.defer_fn(function()
+      local root = current_project_root()
+      if root then M.clear_clean_files_in_project(root, true) end
+    end, 200)
+  end
+
   -- Auto-switch to the most recent AI edit on startup. Deferred so that
   -- session-restoration plugins finish first.
   vim.api.nvim_create_autocmd("VimEnter", {
     once = true,
     callback = function()
       vim.defer_fn(function() M.on_vim_enter() end, 100)
+    end,
+  })
+end
+
+--- Watch the current project's git HEAD for movement (i.e. commits) and
+--- auto-clear JSONL entries that no longer have working-tree changes.
+--- Worktree-aware: uses git rev-parse to find the right HEAD file.
+function M.start_commit_watcher()
+  local root = current_project_root()
+  if not root then return end
+
+  local out = vim.fn.system(
+    string.format("git -C %s rev-parse --absolute-git-dir 2>/dev/null", vim.fn.shellescape(root))
+  )
+  if vim.v.shell_error ~= 0 then return end
+  local git_dir = out:gsub("\n", "")
+  if git_dir == "" then return end
+
+  local head_path = git_dir .. "/HEAD"
+  if vim.fn.filereadable(head_path) == 0 then return end
+
+  local uv = vim.uv or vim.loop
+  local fs_event = uv.new_fs_event()
+  M.state._commit_watcher = fs_event
+
+  pcall(function()
+    fs_event:start(
+      head_path,
+      {},
+      vim.schedule_wrap(function(err)
+        if err then return end
+        -- Debounce: git writes HEAD then quickly writes other refs; let it settle.
+        vim.defer_fn(function()
+          M.clear_clean_files_in_project(root, false)
+        end, 250)
+      end)
+    )
+  end)
+
+  vim.api.nvim_create_autocmd("VimLeavePre", {
+    once = true,
+    callback = function()
+      if M.state._commit_watcher then
+        pcall(function()
+          M.state._commit_watcher:stop()
+          M.state._commit_watcher:close()
+        end)
+        M.state._commit_watcher = nil
+      end
     end,
   })
 end
@@ -296,25 +400,31 @@ function M.handle_batch(entries)
   -- project so the user can watch the AI work in real time. Insert mode is a
   -- hard veto so we never clobber a buffer the user is actively typing in.
   if M.config.live_follow and not in_insert_mode() then
-    local follow
+    -- Prefer entries within this nvim's project (exact prefix match), but
+    -- fall back to entries in any worktree of the same repo so a single
+    -- nvim can follow a Claude session that ranges across worktrees.
+    local follow_in_project, follow_same_repo
     for _, e in ipairs(entries) do
       if e.file_path and path_in_current_project(e.file_path) then
-        if not follow or (e.timestamp or "") > (follow.timestamp or "") then
-          follow = e
+        if not follow_in_project or (e.timestamp or "") > (follow_in_project.timestamp or "") then
+          follow_in_project = e
+        end
+      elseif e.file_path and path_in_same_repo(e.file_path) then
+        if not follow_same_repo or (e.timestamp or "") > (follow_same_repo.timestamp or "") then
+          follow_same_repo = e
         end
       end
     end
+    local follow = follow_in_project or follow_same_repo
     if follow and vim.fn.filereadable(follow.file_path) ~= 0 then
       local cur = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p")
       if cur ~= follow.file_path then
         pcall(vim.cmd, "edit " .. vim.fn.fnameescape(follow.file_path))
       end
-      if follow.line_number then
-        pcall(vim.fn.cursor, follow.line_number, 1)
-        pcall(vim.cmd, "normal! zz")
-      end
+      utils.jump_to_line(follow.line_number)
     end
   end
+
 end
 
 --- Reload a buffer from disk, unless it has unsaved changes or is a special buftype.
@@ -432,10 +542,7 @@ function M.jump_to_latest()
   if current ~= latest.file_path then
     vim.cmd("edit " .. vim.fn.fnameescape(latest.file_path))
   end
-  if latest.line_number then
-    vim.fn.cursor(latest.line_number, 1)
-    vim.cmd("normal! zz")
-  end
+  utils.jump_to_line(latest.line_number)
 end
 
 --- Does the current buffer's file appear in the AI change log?
@@ -475,8 +582,7 @@ function M.on_vim_enter()
   end
 
   vim.cmd("edit " .. vim.fn.fnameescape(latest.file_path))
-  vim.fn.cursor(line, 1)
-  vim.cmd("normal! zz")
+  utils.jump_to_line(line)
 end
 
 --- Jump to the first unread AI-touched line in the current buffer.
@@ -492,8 +598,7 @@ function M.jump_to_unread()
     if (tonumber(l) or math.huge) < first then first = tonumber(l) end
   end
   if first == math.huge then return end
-  vim.fn.cursor(first, 1)
-  vim.cmd("normal! zz")
+  utils.jump_to_line(first)
 end
 
 --- Setup autocmds for manual file change tracking
@@ -625,6 +730,38 @@ function M.setup_commands()
   vim.api.nvim_create_user_command("AITrackerPreviewToggle", function()
     require("ai-tracker.preview").toggle()
   end, { desc = "Toggle the AI Tracker preview gate (passthrough when off)" })
+
+  vim.api.nvim_create_user_command("AITrackerPause", function()
+    require("ai-tracker.preview").toggle_pause()
+  end, { desc = "Pause/resume Claude tool calls (denies all when paused)" })
+
+  vim.api.nvim_create_user_command("AITrackerAsk", function()
+    require("ai-tracker.preview").ask_about_chunk()
+  end, { desc = "Copy chunk + question to clipboard for pasting into Claude" })
+
+  vim.api.nvim_create_user_command("AITrackerChannelInstall", function()
+    local source = debug.getinfo(1, "S").source:sub(2)
+    local dir = vim.fn.fnamemodify(source, ":h")
+    local channel_path = dir .. "/channel/channel.ts"
+    local snippet = {
+      "Add to ~/.claude.json (top level, alongside other keys):",
+      "",
+      vim.inspect({
+        mcpServers = {
+          ["ai-tracker"] = {
+            command = "bun",
+            args = { channel_path },
+          },
+        },
+      }),
+      "",
+      "Then start Claude with the channel enabled:",
+      "  claude --dangerously-load-development-channels server:ai-tracker",
+      "",
+      "Pro/Max plans: works directly. Team/Enterprise: admin must enable channels first.",
+    }
+    vim.notify(table.concat(snippet, "\n"), vim.log.levels.INFO, { title = "AI Tracker — Channel Install" })
+  end, { desc = "Show .claude.json snippet to enable the ai-tracker channel" })
 
   vim.api.nvim_create_user_command("AITrackerPreviewInstall", function()
     local hook_path = require("ai-tracker.preview").hook_path()
@@ -913,6 +1050,51 @@ function M.clear_clean_files()
   if #clean_files > 0 then
     M.clear_files(clean_files)
     vim.notify(string.format("AI Tracker: Cleared tracking for %d clean file(s)", #clean_files), vim.log.levels.INFO)
+  end
+end
+
+--- Clear JSONL entries for files in `project_root` that no longer have
+--- uncommitted changes. Scoped so it doesn't touch entries from other repos.
+---@param project_root string Absolute path to project root
+---@param silent? boolean Skip the user-facing notification
+function M.clear_clean_files_in_project(project_root, silent)
+  if not project_root or project_root == "" then return end
+
+  local cmd = string.format("git -C %s status --porcelain 2>/dev/null", vim.fn.shellescape(project_root))
+  local result = vim.fn.system(cmd)
+  if vim.v.shell_error ~= 0 then return end
+
+  -- Build set of files currently dirty in this project (absolute paths).
+  local dirty = {}
+  for line in result:gmatch("[^\r\n]+") do
+    local rel = line:match("^.. (.+)$")
+    if rel then
+      local abs = vim.fn.fnamemodify(project_root .. "/" .. rel, ":p")
+      dirty[abs] = true
+    end
+  end
+
+  -- Find tracked files under project_root that are now clean.
+  local all_changes = M.read_changes()
+  local seen = {}
+  local clean_files = {}
+  for _, change in ipairs(all_changes) do
+    local fp = change.file_path
+    if fp and not seen[fp] and vim.startswith(fp, project_root) and not dirty[fp] then
+      seen[fp] = true
+      table.insert(clean_files, fp)
+    end
+  end
+
+  if #clean_files > 0 then
+    M.clear_files(clean_files)
+    if not silent then
+      vim.notify(
+        string.format("AI Tracker: cleared %d committed file(s)", #clean_files),
+        vim.log.levels.INFO,
+        { title = "AI Tracker" }
+      )
+    end
   end
 end
 

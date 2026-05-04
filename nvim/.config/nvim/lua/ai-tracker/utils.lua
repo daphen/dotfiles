@@ -169,4 +169,15 @@ function M.get_tool_icon(tool)
 	return icons[tool] or ""
 end
 
+--- Move the cursor to a line and align the view to put it near the top of
+--- the window (respecting `scrolloff`). Used everywhere we navigate to an
+--- AI-relevant line so the change appears with context below, not above.
+---@param line integer? 1-based line number; no-op if nil
+---@param col? integer 1-based column (default 1)
+function M.jump_to_line(line, col)
+	if not line then return end
+	pcall(vim.fn.cursor, line, col or 1)
+	pcall(vim.cmd, "normal! zt")
+end
+
 return M

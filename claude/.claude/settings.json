@@ -39,6 +39,9 @@
       }
     ]
   },
+  "enabledPlugins": {
+    "graphite-workflow@lovable-internal": true
+  },
   "alwaysThinkingEnabled": true,
   "theme": "light-ansi",
   "skipAutoPermissionPrompt": true

@@ -19,7 +19,15 @@ return {
 			bigfile = { enabled = true },
 			dashboard = { enabled = true },
 			indent = { enabled = false },
-			input = { enabled = false },
+			input = {
+				enabled = true,
+				win = {
+					relative = "cursor",
+					row = 1,
+					col = 0,
+					border = "rounded",
+				},
+			},
 			words = { enabled = false },
 			notifier = { enabled = false },
 			quickfile = { enabled = true },

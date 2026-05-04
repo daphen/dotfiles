@@ -4,7 +4,7 @@
   "engineVersion": 1,
   "version": 1,
 
-  "colorBg":          "{{background.secondary}}",
+  "colorBg":          "{{background.overlay}}",
   "colorFg":          "{{foreground.primary}}",
   "colorAccentBg":    "{{background.overlay}}",
   "colorHighlightBg": "{{semantic.cursor}}",

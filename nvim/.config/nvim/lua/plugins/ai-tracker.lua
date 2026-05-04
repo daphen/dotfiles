@@ -86,6 +86,31 @@ return {
 			function() require("ai-tracker.preview").toggle() end,
 			desc = "Toggle AI Tracker preview gate",
 		},
+		{
+			"<C-g><leader>",
+			function() require("ai-tracker.preview").toggle_pause() end,
+			desc = "Pause/resume Claude tool calls",
+		},
+		{
+			"<C-g>y",
+			function() require("ai-tracker.preview").ask_about_chunk() end,
+			desc = "Send chunk + question to Claude",
+		},
+		{
+			"<C-g>o",
+			function() require("gitsigns").toggle_linehl() end,
+			desc = "Toggle git diff overlay (linehl)",
+		},
+		{
+			"]g",
+			function() require("ai-tracker.preview").next_chunk() end,
+			desc = "Next AI chunk / git hunk",
+		},
+		{
+			"[g",
+			function() require("ai-tracker.preview").prev_chunk() end,
+			desc = "Prev AI chunk / git hunk",
+		},
 
 		-- Manual annotation
 		{
@@ -121,5 +146,8 @@ return {
 		"AITrackerJumpLatest",
 		"AITrackerPreviewInstall",
 		"AITrackerPreviewToggle",
+		"AITrackerPause",
+		"AITrackerAsk",
+		"AITrackerChannelInstall",
 	},
 }

@@ -21,8 +21,8 @@ return {
 	},
 	{
 		"williamboman/mason-lspconfig.nvim",
-		dependencies = { "williamboman/mason.nvim" },
-		lazy = true,  -- LSP config will trigger loading when needed
+		dependencies = { "williamboman/mason.nvim", "neovim/nvim-lspconfig" },
+		event = "VeryLazy",  -- Load after session restoration so servers register on every startup
 		config = function()
 			local lspconfig = require("lspconfig")
 			local cmp_nvim_lsp = require("cmp_nvim_lsp")
@@ -40,6 +40,7 @@ return {
 					"svelte",
 					"graphql",
 					"pylsp",
+					"gopls",
 				},
 				automatic_installation = false,  -- Disabled to prevent cssls auto-install
 				handlers = {

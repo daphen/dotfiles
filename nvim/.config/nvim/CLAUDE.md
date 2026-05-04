@@ -112,7 +112,7 @@ All plugins use **lazy.nvim** with event-based loading for performance. Key load
 
 ### UI Enhancements
 - **Noice**: Enhanced messages, cmdline, and popups
-- **Dressing**: Better vim.ui.select/input interfaces
+- **Snacks Input**: Floating popup for `vim.ui.input` (cursor-relative, with history)
 - **Lualine**: Comprehensive status line with macro recording, git status, project detection
 
 ### Project Detection

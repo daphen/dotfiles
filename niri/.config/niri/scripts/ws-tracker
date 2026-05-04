@@ -23,6 +23,8 @@ import os
 import re
 import subprocess
 import sys
+import time
+import traceback
 from pathlib import Path
 
 STATE_DIR = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws"
@@ -128,6 +130,19 @@ def reorder() -> None:
         pass
 
 
+def niri_action(*args: str) -> None:
+    """Wrap `niri msg action` so timeouts/errors don't escape and
+    crash the daemon. Niri can briefly stall during heavy redraws
+    (e.g. ws-createwt spawning four windows at once)."""
+    try:
+        subprocess.run(
+            ["niri", "msg", "action", *args],
+            capture_output=True, timeout=2,
+        )
+    except Exception:
+        pass
+
+
 def move_deps_to_active() -> None:
     """Keep the lovable_deps singleton on the active stack workspace,
     pinned to the leftmost column. niri's `move-window-to-workspace`
@@ -159,34 +174,21 @@ def move_deps_to_active() -> None:
         return
 
     if needs_move:
-        subprocess.run(
-            ["niri", "msg", "action", "move-window-to-workspace",
-             "--window-id", str(deps["id"]),
-             "--focus", "false",
-             active],
-            capture_output=True, timeout=2,
-        )
+        niri_action("move-window-to-workspace",
+                    "--window-id", str(deps["id"]),
+                    "--focus", "false", active)
 
     # Re-pin to column 1. Save & restore focus around the focus dance
     # since move-column-to-first only operates on the focused column.
     fw = niri_json("focused-window")
     original_id = fw.get("id") if fw else None
-    subprocess.run(
-        ["niri", "msg", "action", "focus-window", "--id", str(deps["id"])],
-        capture_output=True, timeout=2,
-    )
-    subprocess.run(
-        ["niri", "msg", "action", "move-column-to-first"],
-        capture_output=True, timeout=2,
-    )
+    niri_action("focus-window", "--id", str(deps["id"]))
+    niri_action("move-column-to-first")
     if original_id is not None and original_id != deps["id"]:
-        subprocess.run(
-            ["niri", "msg", "action", "focus-window", "--id", str(original_id)],
-            capture_output=True, timeout=2,
-        )
+        niri_action("focus-window", "--id", str(original_id))
 
 
-def main() -> int:
+def daemon() -> int:
     # Startup: pick up currently focused stack workspace if any.
     fw = niri_json("focused-window")
     if fw and (ws_id := fw.get("workspace_id")) is not None:
@@ -223,7 +225,27 @@ def main() -> int:
         # set. Cheap (one niri msg per event), no animation triggers.
         update_excluded()
 
+    # event-stream returned EOF (niri restarted, IPC dropped, etc.).
+    # Caller should reconnect.
     return 0
+
+
+def main() -> int:
+    """Top-level retry loop. Anything that escapes daemon() — niri
+    restart, brief IPC outage, unforeseen exception — gets logged and
+    we reconnect after a short sleep. Beats the previous behavior
+    where one TimeoutExpired killed the daemon for the rest of the
+    session."""
+    while True:
+        try:
+            daemon()
+            print("ws-tracker: event-stream closed, reconnecting in 1s…",
+                  file=sys.stderr, flush=True)
+        except Exception:
+            print("ws-tracker: unhandled error, reconnecting in 1s…",
+                  file=sys.stderr, flush=True)
+            traceback.print_exc()
+        time.sleep(1)
 
 
 if __name__ == "__main__":

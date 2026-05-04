@@ -144,48 +144,21 @@ def niri_action(*args: str) -> None:
 
 
 def move_deps_to_active() -> None:
-    """Keep the lovable_deps singleton on the active stack workspace,
-    pinned to the leftmost column. niri's `move-window-to-workspace`
-    appends to the right end, so after moving we briefly focus deps to
-    run `move-column-to-first`, then restore the original focus.
+    """Previously moved the lovable_deps singleton onto the focused
+    stack workspace and pinned it to column 1. The pinning required a
+    focus-window → move-column-to-first → refocus dance that shifted
+    the viewport on every cross-workspace switch — your column index
+    bumped from 1 to 2 as deps slid in on the left, and niri's
+    center-focused-column scrolled the view.
 
-    No-op if deps is already on the active workspace AND already at
-    column 1, so this is cheap to call on every focus event."""
-    active = read_active()
-    if not active:
-        return
-    workspaces = niri_json("workspaces") or []
-    target_ws = next((w for w in workspaces if w.get("name") == active), None)
-    if target_ws is None:
-        return
+    Behavior dropped: deps now stays on whatever workspace it was
+    last spawned on. Super+M (ws-focus devenv) still finds it
+    anywhere via the process-compose title regex, so nothing breaks
+    functionally — you just lose the "deps always next to the active
+    stack" visual.
 
-    deps = next(
-        (w for w in (niri_json("windows") or [])
-         if (w.get("app_id") or "") == "lovable_deps"),
-        None,
-    )
-    if deps is None:
-        return
-
-    needs_move = deps.get("workspace_id") != target_ws["id"]
-    pos = (deps.get("layout") or {}).get("pos_in_scrolling_layout") or [0, 0]
-    needs_pin = pos[0] != 1
-    if not needs_move and not needs_pin:
-        return
-
-    if needs_move:
-        niri_action("move-window-to-workspace",
-                    "--window-id", str(deps["id"]),
-                    "--focus", "false", active)
-
-    # Re-pin to column 1. Save & restore focus around the focus dance
-    # since move-column-to-first only operates on the focused column.
-    fw = niri_json("focused-window")
-    original_id = fw.get("id") if fw else None
-    niri_action("focus-window", "--id", str(deps["id"]))
-    niri_action("move-column-to-first")
-    if original_id is not None and original_id != deps["id"]:
-        niri_action("focus-window", "--id", str(original_id))
+    Kept as a no-op stub so we don't have to touch every call site."""
+    return
 
 
 def daemon() -> int:

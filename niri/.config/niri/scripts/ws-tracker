@@ -144,20 +144,10 @@ def niri_action(*args: str) -> None:
 
 
 def move_deps_to_active() -> None:
-    """Previously moved the lovable_deps singleton onto the focused
-    stack workspace and pinned it to column 1. The pinning required a
-    focus-window → move-column-to-first → refocus dance that shifted
-    the viewport on every cross-workspace switch — your column index
-    bumped from 1 to 2 as deps slid in on the left, and niri's
-    center-focused-column scrolled the view.
-
-    Behavior dropped: deps now stays on whatever workspace it was
-    last spawned on. Super+M (ws-focus devenv) still finds it
-    anywhere via the process-compose title regex, so nothing breaks
-    functionally — you just lose the "deps always next to the active
-    stack" visual.
-
-    Kept as a no-op stub so we don't have to touch every call site."""
+    """Stub — deps is now a floating window (set via niri window-rule)
+    and is reached on demand via Super+Ctrl+M (ws-focus deps), so
+    there's no need to drag it onto the active stack on every focus
+    event. Kept as a no-op so we don't have to touch the call site."""
     return
 
 

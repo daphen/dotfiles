@@ -3,8 +3,8 @@
 #
 # Spawn-or-jump for the lovable `devenv deps` singleton. Always runs
 # from the /lovable root (not a worktree). One window for the whole
-# session — `ws-tracker` migrates it to whichever stack workspace is
-# active, so wherever it lands at spawn time is fine.
+# session. The window is set to open-floating via niri window-rule
+# so it overlays the current workspace instead of claiming a tile.
 
 set -euo pipefail
 
@@ -41,7 +41,8 @@ if [ -n "$existing" ]; then
     exit 0
 fi
 
-# 3. Spawn a fresh one — ws-tracker will move it onto the active stack.
+# 3. Spawn a fresh one. The window-rule for app-id="lovable_deps"
+#    handles the floating layout, so no post-spawn positioning needed.
 setsid kitty --hold --class lovable_deps --working-directory "$LOVABLE_DIR" \
     -e direnv exec . devenv deps </dev/null >/dev/null 2>&1 &
 disown
@@ -53,10 +54,6 @@ for _ in $(seq 1 60); do
     if [ -n "$new" ]; then
         echo "$new" > "$ID_FILE"
         niri msg action focus-window --id "$new"
-        sleep 0.1
-        # Pin deps to the leftmost column so the rest of the stack sits
-        # to its right.
-        niri msg action move-column-to-first 2>/dev/null || true
         exit 0
     fi
 done

@@ -514,6 +514,18 @@ window-rule {
     default-window-height { proportion 1.0; }
 }
 
+// Devenv deps singleton: floats so it never claims a tiled column
+// slot. ws-tracker still drags it onto the active stack workspace
+// so Super+M shows it overlaid on whatever stack is in front, but
+// floating moves don't shift tiled column indices, so the viewport
+// stays stable when switching worktrees.
+window-rule {
+    match app-id="lovable_deps"
+    open-floating true
+    default-column-width { fixed 1200; }
+    default-window-height { fixed 700; }
+}
+
 // Chat apps (Vesktop, Slack) live on a named "chat" workspace so they
 // stay together regardless of where they were spawned from. The
 // workspace itself is created by ensure-chat-workspace at startup; its
@@ -592,6 +604,9 @@ binds {
     Super+w { spawn-sh "$HOME/.config/niri/scripts/ws-focus browser"; }
     Super+Shift+w { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-work"; }
     Super+m { spawn-sh "$HOME/.config/niri/scripts/ws-focus devenv"; }
+    // Super+Ctrl+M: focus (or spawn) the lovable_deps singleton —
+    // floating, reachable from any workspace.
+    Super+Ctrl+m { spawn-sh "$HOME/.config/niri/scripts/ws-deps"; }
 
     // Lovable worktree shortcuts (T for tree):
     //   Super+T        — pick an OPEN worktree and focus it

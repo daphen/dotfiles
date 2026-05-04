@@ -46,7 +46,10 @@ PERSONAL_VIVALDI_FILE = Path("/tmp/vivaldi-personal-window-id")
 # calls, so we lean on the tracker which observes every focus event.
 FOCUS_TIMES_FILE = Path("/tmp/niri-focus-tracker/focus-times.json")
 
-DEVENV_TITLE_RE = re.compile(r"^process-compose: proart/lovable")
+# Worktree devenv-wt term only — has the `.daphen-<name>` suffix on
+# the process-compose title. The bare-suffixless variant is the deps
+# singleton, which is reached separately via Super+Ctrl+M (ws-deps).
+DEVENV_TITLE_RE = re.compile(r"^process-compose: proart/lovable\.daphen-")
 VIVALDI_CLASSES = {"vivaldi-work", "vivaldi-stable"}
 
 ROLES = ("browser", "claude", "devenv", "term")
@@ -170,7 +173,10 @@ def fallback(role: str) -> None:
             [str(scripts / "spawn-terminal-with-claude")],
         )
     elif role == "devenv":
-        os.execv(str(scripts / "ws-deps"), [str(scripts / "ws-deps")])
+        # No fallback — the worktree devenv-wt is set up by
+        # ws-createwt. If you've closed it, re-create the worktree.
+        # ws-deps (the deps singleton) is on Super+Ctrl+M now.
+        pass
     elif role == "term":
         subprocess.Popen(
             ["setsid", "kitty"],

@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
 # ws-deps
 #
-# Spawn-or-jump for the lovable `devenv deps` singleton. Always runs
-# from the /lovable root (not a worktree). One window for the whole
-# session. The window is set to open-floating via niri window-rule
-# so it overlays the current workspace instead of claiming a tile.
+# Toggle/summon-or-spawn for the lovable `devenv deps` singleton.
+# Behaves like an i3/sway scratchpad: press once to summon onto the
+# focused workspace, press again to dismiss (moves it to a hidden
+# `deps-stash` workspace).
+#
+# Spawning runs `devenv deps` from the /lovable root. The window is
+# set to open-floating via niri window-rule.
 
 set -euo pipefail
 
 ID_FILE="$HOME/.local/state/wt-stacks/deps.id"
 LOVABLE_DIR="$HOME/work/lovable"
+STASH="deps-stash"
 
 mkdir -p "$(dirname "$ID_FILE")"
 
-# Helper: does a window with this id exist and is it our deps app?
 deps_window_alive() {
     local id="$1"
     [ -z "$id" ] && return 1
@@ -23,26 +26,65 @@ deps_window_alive() {
         >/dev/null
 }
 
-# 1. If we have a stored id and it's still alive, focus it.
-if [ -f "$ID_FILE" ]; then
-    stored=$(cat "$ID_FILE" 2>/dev/null || true)
-    if deps_window_alive "$stored"; then
-        niri msg action focus-window --id "$stored"
-        exit 0
+# Ensure the stash workspace exists. Niri keeps named workspaces
+# wherever they're moved; this just creates one once.
+ensure_stash() {
+    if niri msg --json workspaces 2>/dev/null \
+            | jq -e --arg n "$STASH" '.[] | select(.name == $n)' >/dev/null 2>&1; then
+        return 0
     fi
+    # Find a trailing empty unnamed workspace on the focused output and
+    # name it. Niri auto-creates a new trailing empty after.
+    local out empty_idx
+    out=$(niri msg --json workspaces 2>/dev/null \
+        | jq -r '[.[] | select(.is_focused == true)] | .[0].output // ""')
+    if [ -z "$out" ]; then
+        out=$(niri msg --json workspaces 2>/dev/null | jq -r '.[0].output // ""')
+    fi
+    [ -z "$out" ] && return 1
+    empty_idx=$(niri msg --json workspaces 2>/dev/null \
+        | jq -r --arg out "$out" '
+            [.[] | select(.output == $out and .name == null and .active_window_id == null)]
+            | sort_by(-.idx) | .[0].idx // ""')
+    [ -z "$empty_idx" ] && return 1
+    niri msg action set-workspace-name --workspace "$empty_idx" "$STASH" 2>/dev/null || true
+}
+
+# Resolve the focused workspace (always exists).
+focused_ws_id=$(niri msg --json workspaces 2>/dev/null \
+    | jq -r '[.[] | select(.is_focused == true)] | .[0].id // empty')
+
+# Resolve current deps window id (cache file → fallback live lookup).
+deps_id=""
+if [ -f "$ID_FILE" ]; then
+    cached=$(cat "$ID_FILE" 2>/dev/null || true)
+    deps_window_alive "$cached" && deps_id="$cached"
+fi
+if [ -z "$deps_id" ]; then
+    deps_id=$(niri msg --json windows 2>/dev/null \
+        | jq -r '[.[] | select(.app_id == "lovable_deps")] | .[0].id // empty')
+    [ -n "$deps_id" ] && echo "$deps_id" > "$ID_FILE"
 fi
 
-# 2. Fallback: any existing lovable_deps window niri knows about.
-existing=$(niri msg --json windows 2>/dev/null \
-    | jq -r '[.[] | select(.app_id == "lovable_deps")] | .[0].id // empty')
-if [ -n "$existing" ]; then
-    echo "$existing" > "$ID_FILE"
-    niri msg action focus-window --id "$existing"
+if [ -n "$deps_id" ]; then
+    # Toggle: if deps is currently on the focused workspace, dismiss
+    # to the stash. Otherwise summon onto the focused workspace.
+    deps_ws=$(niri msg --json windows 2>/dev/null \
+        | jq -r --arg id "$deps_id" '.[] | select(.id == ($id | tonumber)) | .workspace_id')
+    if [ "$deps_ws" = "$focused_ws_id" ]; then
+        ensure_stash
+        niri msg action move-window-to-workspace \
+            --window-id "$deps_id" --focus false "$STASH" 2>/dev/null || true
+    else
+        niri msg action move-window-to-workspace \
+            --window-id "$deps_id" --focus false "$focused_ws_id" 2>/dev/null || true
+        niri msg action focus-window --id "$deps_id"
+    fi
     exit 0
 fi
 
-# 3. Spawn a fresh one. The window-rule for app-id="lovable_deps"
-#    handles the floating layout, so no post-spawn positioning needed.
+# No deps window — spawn one (it'll land floating on the focused
+# workspace via the window-rule, which is exactly the "summoned" state).
 setsid kitty --hold --class lovable_deps --working-directory "$LOVABLE_DIR" \
     -e direnv exec . devenv deps </dev/null >/dev/null 2>&1 &
 disown

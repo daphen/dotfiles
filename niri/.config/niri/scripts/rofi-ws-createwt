@@ -13,6 +13,7 @@ icon-prompt {
     size: 1.4em;
     margin: 0 0.5em 0 0;
 }
+entry { placeholder: "name (a-z, 0-9, hyphens)"; }
 '
 
 name=$(rofi -dmenu \

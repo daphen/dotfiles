@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# ensure-chat-workspace
+#
+# Idempotently creates a niri workspace named "chat" if one doesn't
+# exist. Run once at niri startup so window-rules with
+# `open-on-workspace "chat"` (Vesktop, Slack) have somewhere to land.
+#
+# The workspace's position is NOT pinned — niri keeps named workspaces
+# wherever they're moved, and this script only checks existence.
+
+set -euo pipefail
+
+# Already exists? Nothing to do.
+if niri msg --json workspaces 2>/dev/null \
+        | jq -e '.[] | select(.name == "chat")' >/dev/null 2>&1; then
+    exit 0
+fi
+
+# Pick the trailing empty unnamed workspace on the focused output and
+# name it "chat". Uses the same pattern as ws-createwt's ensure_workspace.
+focused_output=$(niri msg --json focused-window 2>/dev/null \
+    | jq -r '.workspace_id // empty')
+if [ -z "$focused_output" ]; then
+    output="DP-2"
+else
+    output=$(niri msg --json workspaces 2>/dev/null \
+        | jq -r --arg id "$focused_output" \
+            '.[] | select(.id == ($id | tonumber)) | .output // ""')
+    output=${output:-DP-2}
+fi
+
+empty_idx=$(niri msg --json workspaces 2>/dev/null \
+    | jq -r --arg out "$output" '
+        [.[] | select(.output == $out and .name == null and .active_window_id == null)]
+        | sort_by(-.idx) | .[0].idx // ""')
+if [ -z "$empty_idx" ]; then
+    echo "ensure-chat-workspace: no empty unnamed workspace on $output" >&2
+    exit 1
+fi
+
+niri msg action set-workspace-name --workspace "$empty_idx" chat

@@ -233,7 +233,7 @@ layout {
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#3A3A3A"
+        inactive-color "#999999"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -258,7 +258,7 @@ layout {
 
         width 4
         active-color "#FF570D"
-        inactive-color "#3A3A3A"
+        inactive-color "#999999"
 
         // Color of the border around windows that request your attention.
         urgent-color "#9b0000"
@@ -349,6 +349,11 @@ spawn-sh-at-startup "/home/daphen/.config/niri/scripts/niri-focus-tracker >> /tm
 
 // Start workspace-stack tracker (records the active lovable-* workspace)
 spawn-sh-at-startup "/home/daphen/.config/niri/scripts/ws-tracker >> /tmp/ws-tracker.log 2>&1"
+
+// Ensure a named "chat" workspace exists for the chat-app window-rules
+// below. Position isn't pinned — niri keeps named workspaces wherever
+// they're moved.
+spawn-sh-at-startup "/home/daphen/.config/niri/scripts/ensure-chat-workspace"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
@@ -507,6 +512,16 @@ window-rule {
     match app-id="spotify_player"
     default-column-width { fixed 1500; }
     default-window-height { proportion 1.0; }
+}
+
+// Chat apps (Vesktop, Slack) live on a named "chat" workspace so they
+// stay together regardless of where they were spawned from. The
+// workspace itself is created by ensure-chat-workspace at startup; its
+// position is not pinned and can be moved freely with Alt+Shift+J/K.
+window-rule {
+    match app-id="vesktop"
+    match app-id="Slack"
+    open-on-workspace "chat"
 }
 
 // Notes window - tiled like other apps

@@ -13,6 +13,11 @@ name=$(printf '%s' "$name" | tr -cd '[:alnum:]-' )
 
 exec kitty --class lovable_picker bash -c "
 set -e
+# Pull the current theme's fzf colors into this bash env (niri-spawned
+# scripts inherit a possibly-stale FZF_DEFAULT_OPTS).
+[ -f \"\$HOME/.config/themes/load-fzf-bash.sh\" ] && \
+  source \"\$HOME/.config/themes/load-fzf-bash.sh\"
+
 mode=\$(printf '%s\n' new resume fork | fzf --prompt='claude session> ' --height=8 --reverse --no-sort)
 [ -z \"\${mode:-}\" ] && mode=new
 

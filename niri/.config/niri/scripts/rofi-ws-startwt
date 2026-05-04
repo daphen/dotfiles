@@ -2,5 +2,13 @@
 # Open a kitty and run ws-startwt (fzf picker over existing worktrees +
 # claude mode picker). The kitty floats via the `lovable_picker`
 # window-rule in niri config.
+#
+# The bash wrapper sources the theme-aware fzf-color loader before
+# exec'ing ws-startwt, so the picker uses the *current* theme's colors
+# even when niri inherits a stale FZF_DEFAULT_OPTS from the session
+# that started the compositor.
 set -euo pipefail
-exec kitty --class lovable_picker "$HOME/.config/niri/scripts/ws-startwt"
+exec kitty --class lovable_picker bash -c "
+source \"\$HOME/.config/themes/load-fzf-bash.sh\" 2>/dev/null || true
+exec \"\$HOME/.config/niri/scripts/ws-startwt\"
+"

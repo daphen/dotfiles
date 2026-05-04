@@ -11,6 +11,13 @@ if [[ "${1:-}" == "--id-only" ]]; then
     ID_ONLY=1
 fi
 
+# Pull the current theme's fzf colors into this bash env. niri-spawned
+# scripts inherit FZF_DEFAULT_OPTS from whoever started the compositor
+# session, which can be stale after a theme toggle.
+# shellcheck disable=SC1091
+[ -f "$HOME/.config/themes/load-fzf-bash.sh" ] && \
+    source "$HOME/.config/themes/load-fzf-bash.sh"
+
 SESSIONS_DIR="$HOME/.claude/projects"
 
 if [ ! -d "$SESSIONS_DIR" ]; then

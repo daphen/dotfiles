@@ -50,9 +50,13 @@ ensure_stash() {
     niri msg action set-workspace-name --workspace "$empty_idx" "$STASH" 2>/dev/null || true
 }
 
-# Resolve the focused workspace (always exists).
-focused_ws_id=$(niri msg --json workspaces 2>/dev/null \
-    | jq -r '[.[] | select(.is_focused == true)] | .[0].id // empty')
+# Resolve the focused workspace. niri's `move-window-to-workspace`
+# REFERENCE arg is either a name or an *idx* (NOT the internal id).
+# Prefer the name if the workspace has one; fall back to idx as a
+# string. The internal id is also fetched for the deps_ws comparison.
+read focused_ws_id focused_ws_ref <<<"$(niri msg --json workspaces 2>/dev/null \
+    | jq -r '[.[] | select(.is_focused == true)] | .[0]
+             | "\(.id) \((.name // (.idx | tostring)))"')"
 
 # Resolve current deps window id (cache file → fallback live lookup).
 deps_id=""
@@ -77,7 +81,7 @@ if [ -n "$deps_id" ]; then
             --window-id "$deps_id" --focus false "$STASH" 2>/dev/null || true
     else
         niri msg action move-window-to-workspace \
-            --window-id "$deps_id" --focus false "$focused_ws_id" 2>/dev/null || true
+            --window-id "$deps_id" --focus false "$focused_ws_ref" 2>/dev/null || true
         niri msg action focus-window --id "$deps_id"
     fi
     exit 0

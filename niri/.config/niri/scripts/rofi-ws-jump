@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Show a rofi picker over currently-open lovable worktrees and focus
+# the selected one. Just lists `lovable-<name>` workspaces niri
+# already has — doesn't create anything new.
+set -euo pipefail
+
+mapfile -t names < <(niri msg --json workspaces 2>/dev/null \
+    | jq -r '.[]
+        | select(.name
+                 and (.name | startswith("lovable-"))
+                 and .name != "lovable"
+                 and .name != "lovable-deps")
+        | .name
+        | sub("^lovable-"; "")')
+
+if [ "${#names[@]}" -eq 0 ]; then
+    notify-send -a "lovable" "No open worktrees" \
+        "Use Lovable: New Worktree to create one." 2>/dev/null || true
+    exit 0
+fi
+
+selected=$(printf '%s\n' "${names[@]}" \
+    | rofi -dmenu -i -p "worktree" -theme-str 'window {width: 30em;}' </dev/null || true)
+
+[ -z "$selected" ] && exit 0
+
+niri msg action focus-workspace "lovable-$selected"

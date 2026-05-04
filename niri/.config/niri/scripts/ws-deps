@@ -51,12 +51,19 @@ ensure_stash() {
 }
 
 # Resolve the focused workspace. niri's `move-window-to-workspace`
-# REFERENCE arg is either a name or an *idx* (NOT the internal id).
-# Prefer the name if the workspace has one; fall back to idx as a
-# string. The internal id is also fetched for the deps_ws comparison.
-read focused_ws_id focused_ws_ref <<<"$(niri msg --json workspaces 2>/dev/null \
+# REFERENCE arg is either a name or an *idx* (NOT the internal id) —
+# AND the idx is per-output, interpreted relative to the *current
+# output of the window being moved*. When deps lives on the
+# external monitor and the user is focused on the laptop, passing
+# the laptop workspace's idx finds the wrong workspace on the
+# external monitor.
+#
+# Workaround: move deps to the focused output first via
+# move-window-to-monitor, then move-window-to-workspace by idx
+# resolves correctly.
+read focused_ws_id focused_ws_output focused_ws_ref <<<"$(niri msg --json workspaces 2>/dev/null \
     | jq -r '[.[] | select(.is_focused == true)] | .[0]
-             | "\(.id) \((.name // (.idx | tostring)))"')"
+             | "\(.id) \(.output) \((.name // (.idx | tostring)))"')"
 
 # Resolve current deps window id (cache file → fallback live lookup).
 deps_id=""
@@ -80,6 +87,11 @@ if [ -n "$deps_id" ]; then
         niri msg action move-window-to-workspace \
             --window-id "$deps_id" --focus false "$STASH" 2>/dev/null || true
     else
+        # First make sure deps is on the focused MONITOR — otherwise the
+        # idx-based workspace reference is resolved against the wrong
+        # output and deps lands on a workspace on the original monitor.
+        niri msg action move-window-to-monitor \
+            --id "$deps_id" "$focused_ws_output" 2>/dev/null || true
         niri msg action move-window-to-workspace \
             --window-id "$deps_id" --focus false "$focused_ws_ref" 2>/dev/null || true
         # Re-apply size each summon to a fixed footprint that reads

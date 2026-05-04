@@ -44,6 +44,12 @@ for w in windows:
 " 2>/dev/null)
     if [[ -n "$new_id" ]]; then
         echo "$new_id" > "$PERSONAL_ID_FILE"
+        # Pin to the named "chat" workspace alongside Vesktop/Slack.
+        # Window-rules can't distinguish personal vs work vivaldi (they
+        # share WM_CLASS via the Chromium daemon), so the move happens
+        # programmatically here.
+        niri msg action move-window-to-workspace \
+            --window-id "$new_id" --focus false chat 2>/dev/null || true
         break
     fi
 done

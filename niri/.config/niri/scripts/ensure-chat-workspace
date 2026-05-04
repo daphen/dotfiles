@@ -10,29 +10,52 @@
 
 set -euo pipefail
 
+# Niri's IPC may not be ready in the first hundred or so milliseconds
+# of startup. Retry briefly on failure.
+get_workspaces_json() {
+    for _ in $(seq 1 30); do
+        out=$(niri msg --json workspaces 2>/dev/null || true)
+        if [ -n "$out" ]; then
+            printf '%s' "$out"
+            return 0
+        fi
+        sleep 0.1
+    done
+    return 1
+}
+
+ws_json=$(get_workspaces_json) || {
+    echo "ensure-chat-workspace: niri IPC not responding" >&2
+    exit 1
+}
+
 # Already exists? Nothing to do.
-if niri msg --json workspaces 2>/dev/null \
-        | jq -e '.[] | select(.name == "chat")' >/dev/null 2>&1; then
+if echo "$ws_json" | jq -e '.[] | select(.name == "chat")' >/dev/null 2>&1; then
     exit 0
 fi
 
-# Pick the trailing empty unnamed workspace on the focused output and
-# name it "chat". Uses the same pattern as ws-createwt's ensure_workspace.
-focused_output=$(niri msg --json focused-window 2>/dev/null \
-    | jq -r '.workspace_id // empty')
-if [ -z "$focused_output" ]; then
-    output="DP-2"
-else
-    output=$(niri msg --json workspaces 2>/dev/null \
-        | jq -r --arg id "$focused_output" \
-            '.[] | select(.id == ($id | tonumber)) | .output // ""')
-    output=${output:-DP-2}
+# Pick the focused workspace's output. The focused workspace ALWAYS
+# exists (even with no windows), unlike focused-window which is null
+# when nothing is focused — that's the case at fresh login on a
+# laptop-only boot.
+output=$(echo "$ws_json" | jq -r '
+    [.[] | select(.is_focused == true)] | .[0].output // ""
+')
+if [ -z "$output" ]; then
+    # Fallback: take the first output we see in the workspace list.
+    output=$(echo "$ws_json" | jq -r '.[0].output // ""')
+fi
+if [ -z "$output" ]; then
+    echo "ensure-chat-workspace: no output found" >&2
+    exit 1
 fi
 
-empty_idx=$(niri msg --json workspaces 2>/dev/null \
-    | jq -r --arg out "$output" '
-        [.[] | select(.output == $out and .name == null and .active_window_id == null)]
-        | sort_by(-.idx) | .[0].idx // ""')
+# Trailing empty unnamed workspace on that output — niri keeps one
+# alive at the bottom of every output's stack.
+empty_idx=$(echo "$ws_json" | jq -r --arg out "$output" '
+    [.[] | select(.output == $out and .name == null and .active_window_id == null)]
+    | sort_by(-.idx) | .[0].idx // ""
+')
 if [ -z "$empty_idx" ]; then
     echo "ensure-chat-workspace: no empty unnamed workspace on $output" >&2
     exit 1

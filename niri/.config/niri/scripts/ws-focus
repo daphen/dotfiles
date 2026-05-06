@@ -18,10 +18,14 @@ Behavior:
   - If no candidates match, run the role's fallback launcher.
 
 Roles (mutually exclusive — every window is owned by at most one bind):
-  browser   browser-work (work-profile browser windows; class set by
-            browser-work --class flag, see browser-config.sh). Personal
-            profile uses a distinct class (browser-personal) so no
-            window-id exclusion is needed — just app-id matching.
+  browser   any browser window (helium / chromium-derived) MINUS the
+            personal-profile window id tracked at
+            /tmp/browser-personal-window-id. We can't use --class to
+            distinguish profiles because Chromium honours --class only
+            at the FIRST launch in a process — every subsequent window
+            inherits that class regardless of the flag we pass. So all
+            browser windows look the same class-wise; we identify the
+            personal one by its tracked id and treat the rest as work.
   claude    app_id == "claude" (set by every claude-spawn script) OR
             a plain kitty whose process tree contains `claude`
             (catches an ad-hoc Claude Code session in a regular kitty).
@@ -46,16 +50,20 @@ EXCLUDED_FILE = Path(HOME) / ".local/state/wt-stacks/ws/excluded"
 # own `focus_timestamp` doesn't reliably update on programmatic focus-window
 # calls, so we lean on the tracker which observes every focus event.
 FOCUS_TIMES_FILE = Path("/tmp/niri-focus-tracker/focus-times.json")
+# browser-personal stashes the personal-profile window id here on launch.
+PERSONAL_BROWSER_FILE = Path("/tmp/browser-personal-window-id")
 
 # Worktree devenv-wt term only — has the `.daphen-<name>` suffix on
 # the process-compose title. The bare-suffixless variant is the deps
 # singleton, which is reached separately via Super+Ctrl+M (ws-deps).
 DEVENV_TITLE_RE = re.compile(r"^process-compose: proart/lovable\.daphen-")
-# Work-profile browser app-id (set by browser-work via --class). Stable
-# across browser swaps — the binary path lives in browser-config.sh, but
-# the Wayland class is just a label so it doesn't change. Personal profile
-# uses browser-personal and is bound separately to Super+Q.
-BROWSER_WORK_CLASSES = {"browser-work"}
+# All browser-window classes we treat as candidates for the "browser"
+# role. Includes legacy helium-* names so already-running windows from
+# a prior session are still picked up after the rename. Personal vs
+# work isn't determined by class (see PERSONAL_BROWSER_FILE comment) —
+# it's determined by excluding the tracked personal id.
+BROWSER_CLASSES = {"browser-personal", "browser-work",
+                   "helium-personal", "helium-work"}
 
 ROLES = ("browser", "claude", "devenv", "term")
 
@@ -136,10 +144,21 @@ def is_devenv(w: dict) -> bool:
     return bool(DEVENV_TITLE_RE.match(w.get("title") or ""))
 
 
-def matches(w: dict, role: str) -> bool:
+def read_personal_browser_id() -> int | None:
+    try:
+        return int(PERSONAL_BROWSER_FILE.read_text().strip())
+    except Exception:
+        return None
+
+
+def matches(w: dict, role: str, personal_browser_id: int | None) -> bool:
     app = w.get("app_id") or ""
     if role == "browser":
-        return app in BROWSER_WORK_CLASSES
+        if app not in BROWSER_CLASSES:
+            return False
+        if personal_browser_id is not None and w.get("id") == personal_browser_id:
+            return False
+        return True
     if role == "claude":
         return is_claude(w)
     if role == "devenv":
@@ -190,10 +209,11 @@ def main() -> int:
     windows = niri_json("windows") or []
     excluded = read_excluded()
     overlay = read_focus_times()
+    personal_browser = read_personal_browser_id() if role == "browser" else None
 
     candidates = [
         w for w in windows
-        if matches(w, role)
+        if matches(w, role, personal_browser)
         and w.get("id") not in excluded
     ]
 

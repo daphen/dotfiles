@@ -625,6 +625,7 @@ binds {
     Super+q { spawn-sh "/home/daphen/.config/niri/scripts/browser-personal"; }
     Super+w { spawn-sh "$HOME/.config/niri/scripts/ws-focus browser"; }
     Super+Shift+q { spawn-sh "/home/daphen/.config/niri/scripts/chromium-launch"; }
+    Super+Shift+w { spawn-sh "$HOME/.config/niri/scripts/browser-work-new"; }
     Super+m { spawn-sh "$HOME/.config/niri/scripts/ws-focus devenv"; }
     // Super+Ctrl+M: focus (or spawn) the lovable_deps singleton —
     // floating, reachable from any workspace.

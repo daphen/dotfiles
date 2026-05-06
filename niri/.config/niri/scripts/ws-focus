@@ -18,8 +18,9 @@ Behavior:
   - If no candidates match, run the role's fallback launcher.
 
 Roles (mutually exclusive — every window is owned by at most one bind):
-  browser   vivaldi-{work,stable}, excluding the personal window id
-            tracked at /tmp/vivaldi-personal-window-id.
+  browser   helium-work (work-profile Helium windows). The personal
+            profile uses a distinct app_id (helium-personal) so no
+            window-id exclusion is needed — just app-id matching.
   claude    app_id == "claude" (set by every claude-spawn script) OR
             a plain kitty whose process tree contains `claude`
             (catches an ad-hoc Claude Code session in a regular kitty).
@@ -40,7 +41,6 @@ from pathlib import Path
 
 HOME = os.environ["HOME"]
 EXCLUDED_FILE = Path(HOME) / ".local/state/wt-stacks/ws/excluded"
-PERSONAL_VIVALDI_FILE = Path("/tmp/vivaldi-personal-window-id")
 # Authoritative recency overlay maintained by niri-focus-tracker. Niri's
 # own `focus_timestamp` doesn't reliably update on programmatic focus-window
 # calls, so we lean on the tracker which observes every focus event.
@@ -50,7 +50,10 @@ FOCUS_TIMES_FILE = Path("/tmp/niri-focus-tracker/focus-times.json")
 # the process-compose title. The bare-suffixless variant is the deps
 # singleton, which is reached separately via Super+Ctrl+M (ws-deps).
 DEVENV_TITLE_RE = re.compile(r"^process-compose: proart/lovable\.daphen-")
-VIVALDI_CLASSES = {"vivaldi-work", "vivaldi-stable"}
+# Work-profile Helium app-id. Personal profile is helium-personal and is
+# matched by a separate keybind (Super+Q → helium-personal script), not
+# the browser role here.
+BROWSER_WORK_CLASSES = {"helium-work"}
 
 ROLES = ("browser", "claude", "devenv", "term")
 
@@ -118,13 +121,6 @@ def read_excluded() -> set[int]:
         return set()
 
 
-def read_personal_vivaldi_id() -> int | None:
-    try:
-        return int(PERSONAL_VIVALDI_FILE.read_text().strip())
-    except Exception:
-        return None
-
-
 def is_claude(w: dict) -> bool:
     app = w.get("app_id") or ""
     if app == "claude":
@@ -138,14 +134,10 @@ def is_devenv(w: dict) -> bool:
     return bool(DEVENV_TITLE_RE.match(w.get("title") or ""))
 
 
-def matches(w: dict, role: str, personal_vivaldi_id: int | None) -> bool:
+def matches(w: dict, role: str) -> bool:
     app = w.get("app_id") or ""
     if role == "browser":
-        if app not in VIVALDI_CLASSES:
-            return False
-        if personal_vivaldi_id is not None and w.get("id") == personal_vivaldi_id:
-            return False
-        return True
+        return app in BROWSER_WORK_CLASSES
     if role == "claude":
         return is_claude(w)
     if role == "devenv":
@@ -166,7 +158,7 @@ def matches(w: dict, role: str, personal_vivaldi_id: int | None) -> bool:
 def fallback(role: str) -> None:
     scripts = Path(HOME) / ".config/niri/scripts"
     if role == "browser":
-        os.execv(str(scripts / "vivaldi-work"), [str(scripts / "vivaldi-work")])
+        os.execv(str(scripts / "helium-work"), [str(scripts / "helium-work")])
     elif role == "claude":
         os.execv(
             str(scripts / "spawn-terminal-with-claude"),
@@ -196,11 +188,10 @@ def main() -> int:
     windows = niri_json("windows") or []
     excluded = read_excluded()
     overlay = read_focus_times()
-    personal_vivaldi = read_personal_vivaldi_id() if role == "browser" else None
 
     candidates = [
         w for w in windows
-        if matches(w, role, personal_vivaldi)
+        if matches(w, role)
         and w.get("id") not in excluded
     ]
 

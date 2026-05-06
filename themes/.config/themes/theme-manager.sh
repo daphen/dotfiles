@@ -270,6 +270,50 @@ apply_tool_theme() {
                 log_success "Applied opencode theme ($label)"
             fi
             ;;
+        "claude-code")
+            # Claude Code reads custom themes from ~/.claude/themes/<slug>.json.
+            # We write a single dotfiles.json that's swapped between light/dark
+            # bases per apply, and pin settings.json's theme to "custom:dotfiles"
+            # so Claude Code re-reads on its next session start.
+            local cc_themes="$HOME/.claude/themes"
+            local cc_settings="$HOME/.claude/settings.json"
+            mkdir -p "$cc_themes"
+            cp "$generated_file" "$cc_themes/dotfiles.json"
+            log_success "Wrote claude-code ${theme_mode} theme to dotfiles.json"
+            if [[ -f "$cc_settings" ]]; then
+                python3 - "$cc_settings" << 'PYEOF'
+import json, sys
+path = sys.argv[1]
+with open(path) as f:
+    s = json.load(f)
+if s.get("theme") != "custom:dotfiles":
+    s["theme"] = "custom:dotfiles"
+    with open(path, "w") as f:
+        json.dump(s, f, indent=2)
+    print("Pinned settings.json theme to custom:dotfiles")
+PYEOF
+            fi
+            ;;
+        "chromium-palette")
+            # Chromium-palette extension lives outside ~/.config — it's a
+            # real source repo at ~/personal/chromium-palette. Write the
+            # generated SCSS partial into src/ and rebuild the extension so
+            # a reload at chrome://extensions picks up the new theme.
+            local cp_repo="$HOME/personal/chromium-palette"
+            if [[ ! -d "$cp_repo" ]]; then
+                log_warning "chromium-palette repo not found at $cp_repo"
+                return 1
+            fi
+            cp "$generated_file" "$cp_repo/src/pages/popup/_theme.scss"
+            log_success "Wrote chromium-palette ${theme_mode} theme to _theme.scss"
+            if [[ -x "$cp_repo/node_modules/.bin/vite" ]]; then
+                (cd "$cp_repo" && ./node_modules/.bin/vite build > /dev/null 2>&1) \
+                    && log_success "Rebuilt chromium-palette (reload at chrome://extensions)" \
+                    || log_warning "chromium-palette rebuild failed; run vite build manually"
+            else
+                log_info "chromium-palette: install deps then run vite build to pick up the theme"
+            fi
+            ;;
         "starship")
             # Starship uses a single file at ~/.config/starship.toml — not a dir —
             # so get_tool_target's "symlinked directory" check doesn't apply.
@@ -434,86 +478,6 @@ SVGEOF
 
             log_success "Applied Kvantum Qt theme"
             ;;
-        "vivaldi")
-            local prefs="$HOME/.config/vivaldi/Default/Preferences"
-            if [[ ! -f "$prefs" ]]; then
-                log_warning "Vivaldi Preferences not found — has Vivaldi been launched at least once?"
-                return 1
-            fi
-            if pgrep -x vivaldi-bin > /dev/null 2>&1; then
-                log_warning "Vivaldi is running — close it first, then re-run apply to update the theme"
-                return 1
-            fi
-            # Inject generated theme into Preferences and set as active
-            python3 - "$prefs" "$generated_file" "$theme_mode" << 'PYEOF'
-import json, sys
-prefs_path, theme_path, mode = sys.argv[1], sys.argv[2], sys.argv[3]
-
-with open(prefs_path) as f:
-    prefs = json.load(f)
-with open(theme_path) as f:
-    theme = json.load(f)
-
-theme_id = theme["id"]
-vivaldi = prefs.setdefault("vivaldi", {})
-themes = vivaldi.setdefault("themes", {})
-user_themes = themes.setdefault("user", [])
-
-# Find existing theme with same id to preserve buttons and other Vivaldi-managed fields
-existing = next((t for t in user_themes if t.get("id") == theme_id), None)
-if existing:
-    # Preserve buttons object Vivaldi manages, update our color/setting fields
-    existing.update(theme)
-else:
-    # Copy buttons from first existing user theme if available (Vivaldi adds these)
-    if user_themes and "buttons" in user_themes[0]:
-        theme["buttons"] = user_themes[0]["buttons"]
-    user_themes.append(theme)
-
-# Set as active for the current OS mode and enable OS-based scheduling
-o_s = vivaldi.setdefault("theme", {}).setdefault("schedule", {}).setdefault("o_s", {})
-o_s["dark"] = theme_id
-o_s["light"] = theme_id
-
-with open(prefs_path, "w") as f:
-    json.dump(prefs, f, separators=(",", ":"))
-PYEOF
-            # Also apply to Profile 2 (work profile) if it exists
-            local work_prefs="$HOME/.config/vivaldi/Profile 2/Preferences"
-            if [[ -f "$work_prefs" ]]; then
-                python3 - "$work_prefs" "$generated_file" "$theme_mode" << 'PYEOF'
-import json, sys
-prefs_path, theme_path, mode = sys.argv[1], sys.argv[2], sys.argv[3]
-
-with open(prefs_path) as f:
-    prefs = json.load(f)
-with open(theme_path) as f:
-    theme = json.load(f)
-
-theme_id = theme["id"]
-vivaldi = prefs.setdefault("vivaldi", {})
-themes = vivaldi.setdefault("themes", {})
-user_themes = themes.setdefault("user", [])
-
-existing = next((t for t in user_themes if t.get("id") == theme_id), None)
-if existing:
-    existing.update(theme)
-else:
-    if user_themes and "buttons" in user_themes[0]:
-        theme["buttons"] = user_themes[0]["buttons"]
-    user_themes.append(theme)
-
-o_s = vivaldi.setdefault("theme", {}).setdefault("schedule", {}).setdefault("o_s", {})
-o_s["dark"] = theme_id
-o_s["light"] = theme_id
-
-with open(prefs_path, "w") as f:
-    json.dump(prefs, f, separators=(",", ":"))
-PYEOF
-            fi
-            log_success "Applied Vivaldi theme (${theme_mode}) — reopen Vivaldi to see changes"
-            ;;
-
         *)
             log_warning "Unknown tool: $tool"
             return 1

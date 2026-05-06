@@ -471,10 +471,10 @@ window-rule {
     default-window-height { proportion 1.0; }
 }
 
-// Vivaldi work-profile windows on the lovable workspace - same fixed
+// Helium work-profile windows on the lovable workspace - same fixed
 // width so the stack browser column matches its term/claude/nvim siblings.
 window-rule {
-    match app-id="vivaldi-work" title=r#"daphen-.+\.localhost"#
+    match app-id="helium-work" title=r#"daphen-.+\.localhost"#
     default-column-width { fixed 1500; }
 }
 
@@ -610,10 +610,15 @@ binds {
     Super+Shift+d { spawn-sh "SHOW_FASTFETCH=1 kitty"; }
     Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack slack"; }
     Super+a { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'title:spotify_player' 'kitty --class spotify_player spotify_player'"; }
-    Super+q { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-personal"; }
-    Super+Shift+q { spawn-sh "/home/daphen/.config/niri/scripts/chromium-launch"; }
+    // Browser keybinds:
+    // Super+Q  = personal (direct launch-or-focus, single tracked window)
+    // Super+W  = work — uses ws-focus so it scopes to the active worktree's
+    //   helium-work window, falling back to the helium-work script when
+    //   no candidate window matches. helium-work in INACTIVE worktrees is
+    //   excluded automatically via ws-tracker's excluded-id list.
+    Super+q { spawn-sh "/home/daphen/.config/niri/scripts/helium-personal"; }
     Super+w { spawn-sh "$HOME/.config/niri/scripts/ws-focus browser"; }
-    Super+Shift+w { spawn-sh "/home/daphen/.config/niri/scripts/vivaldi-work"; }
+    Super+Shift+q { spawn-sh "/home/daphen/.config/niri/scripts/chromium-launch"; }
     Super+m { spawn-sh "$HOME/.config/niri/scripts/ws-focus devenv"; }
     // Super+Ctrl+M: focus (or spawn) the lovable_deps singleton —
     // floating, reachable from any workspace.

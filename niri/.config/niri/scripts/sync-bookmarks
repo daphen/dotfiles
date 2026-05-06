@@ -13,7 +13,7 @@ import urllib.parse
 import http.cookiejar
 
 ENV_FILE = Path.home() / "personal/synced/.env"
-BOOKMARKS_FILE = Path.home() / ".config/vivaldi/Default/Bookmarks"
+BOOKMARKS_FILE = Path.home() / ".config/net.imput.helium/Default/Bookmarks"
 SYNCED_URL = "https://synced-wine.vercel.app"
 FOLDER_NAME = "Synced"
 
@@ -91,10 +91,10 @@ def sync(links):
         notify("Bookmarks file not found — has Chrome been opened at least once?")
         sys.exit(1)
 
-    # Warn if Chromium is running (it will overwrite the file on exit)
-    result = subprocess.run(["pgrep", "-x", "vivaldi"], capture_output=True)
+    # Warn if Helium is running (it will overwrite the file on exit)
+    result = subprocess.run(["pgrep", "-x", "helium"], capture_output=True)
     if result.returncode == 0:
-        notify("Close Chromium before syncing bookmarks")
+        notify("Close Helium before syncing bookmarks")
         sys.exit(1)
 
     with open(BOOKMARKS_FILE) as f:

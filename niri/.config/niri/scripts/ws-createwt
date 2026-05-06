@@ -3,8 +3,9 @@
 ws-createwt <worktree-name> [--mode new|resume|fork] [--session-id <sid>]
 
 Each worktree lives on its own named niri workspace `lovable-<name>`.
-Spawns 4 windows in 4 columns: devenv terminal (kitty), vivaldi work
-profile, claude (kitty `--class claude`), nvim (kitty). Niri places
+Spawns 4 windows in 4 columns: devenv terminal (kitty), work-profile
+browser window (via browser-dispatch), claude (kitty `--class claude`),
+nvim (kitty). Niri places
 each spawn naturally as a new column on the focused workspace.
 
 The "active" stack is whichever lovable-<name> workspace is currently
@@ -172,11 +173,15 @@ def main() -> int:
         "-e", "bash", "-c", "direnv exec . devenv wt; exec fish",
     ])
 
-    print(f"==> spawning vivaldi (Work profile) → {preview_url}")
+    # Browser-agnostic: route through browser-dispatch with an explicit
+    # work-profile + new-window override. Switching default browser later
+    # only requires editing browser-dispatch.
+    print(f"==> spawning work browser (via browser-dispatch) → {preview_url}")
     spawn_and_wait([
-        "/run/current-system/sw/bin/vivaldi",
-        "--profile-directory=Profile 2",
-        "--new-window", preview_url,
+        "/home/daphen/.config/niri/scripts/browser-dispatch",
+        "--profile=work",
+        "--new-window",
+        preview_url,
     ])
 
     print(f"==> spawning claude session ({args.mode})")

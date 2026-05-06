@@ -28,6 +28,15 @@ qutebrowser/.config/qutebrowser/userstyles.css
 wezterm/.config/wezterm/colors/
 eww/.config/eww/eww.scss
 eww/.config/eww/assets/
+clipse/.config/clipse/custom_theme.json
+fish/.config/fish/conf.d/z_custom_theme_colors.fish
+nvim/.config/nvim/colors/custom-theme-dark.lua
+nvim/.config/nvim/colors/custom-theme-light.lua
+opencode/.config/opencode/themes/customtheme.json
+rofi/.config/rofi/theme.rasi
+spotify-player/.config/spotify-player/theme.toml
+swaylock/.config/swaylock/config
+claude/.claude/themes/
 # Note: starship.toml is intentionally tracked (not gitignored) so the
 # portable daphen-remote config can fetch it via inputs.dotfiles. Theme
 # switches will produce diffs on the file — expected.

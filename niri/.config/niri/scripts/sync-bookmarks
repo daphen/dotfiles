@@ -3,6 +3,7 @@
 
 import json
 import os
+import re
 import sys
 import uuid
 import subprocess
@@ -12,8 +13,31 @@ import urllib.request
 import urllib.parse
 import http.cookiejar
 
+
+def read_browser_config() -> dict:
+    """Pull BROWSER_* values from the shell-sourced browser-config.sh
+    so the path/process-name follow whichever browser is configured."""
+    config = Path(__file__).resolve().parent / "browser-config.sh"
+    out: dict[str, str] = {}
+    if not config.exists():
+        return out
+    pat = re.compile(r'^([A-Z_]+)="?([^"]*)"?\s*$')
+    for line in config.read_text().splitlines():
+        m = pat.match(line.strip())
+        if m:
+            val = m.group(2).replace("$HOME", str(Path.home()))
+            out[m.group(1)] = val
+    return out
+
+
+_browser = read_browser_config()
 ENV_FILE = Path.home() / "personal/synced/.env"
-BOOKMARKS_FILE = Path.home() / ".config/net.imput.helium/Default/Bookmarks"
+BOOKMARKS_FILE = (
+    Path(_browser.get("BROWSER_CONFIG_ROOT", str(Path.home() / ".config/chromium")))
+    / _browser.get("BROWSER_PROFILE_PERSONAL", "Default")
+    / "Bookmarks"
+)
+BROWSER_PROCESS = _browser.get("BROWSER_PROCESS_NAME", "chromium")
 SYNCED_URL = "https://synced-wine.vercel.app"
 FOLDER_NAME = "Synced"
 
@@ -91,10 +115,10 @@ def sync(links):
         notify("Bookmarks file not found — has Chrome been opened at least once?")
         sys.exit(1)
 
-    # Warn if Helium is running (it will overwrite the file on exit)
-    result = subprocess.run(["pgrep", "-x", "helium"], capture_output=True)
+    # Warn if the browser is running (it will overwrite the file on exit)
+    result = subprocess.run(["pgrep", "-x", BROWSER_PROCESS], capture_output=True)
     if result.returncode == 0:
-        notify("Close Helium before syncing bookmarks")
+        notify(f"Close {BROWSER_PROCESS} before syncing bookmarks")
         sys.exit(1)
 
     with open(BOOKMARKS_FILE) as f:

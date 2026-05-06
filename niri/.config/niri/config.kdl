@@ -471,10 +471,15 @@ window-rule {
     default-window-height { proportion 1.0; }
 }
 
-// Helium work-profile windows on the lovable workspace - same fixed
-// width so the stack browser column matches its term/claude/nvim siblings.
+// Work-profile browser windows — same fixed width as the lovable
+// stack siblings. The previous version constrained on title=daphen-…
+// .localhost, but niri evaluates default-column-width at window-open
+// time when the title is still "New Tab" / "Helium", so the rule
+// never matched. Class-only match is reliable because browser-work
+// is reserved for the work-profile browser (set by browser-dispatch
+// / browser-work via --class=browser-work).
 window-rule {
-    match app-id="helium-work" title=r#"daphen-.+\.localhost"#
+    match app-id="browser-work"
     default-column-width { fixed 1500; }
 }
 
@@ -610,13 +615,14 @@ binds {
     Super+Shift+d { spawn-sh "SHOW_FASTFETCH=1 kitty"; }
     Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack slack"; }
     Super+a { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'title:spotify_player' 'kitty --class spotify_player spotify_player'"; }
-    // Browser keybinds:
+    // Browser keybinds. Browser binary lives in browser-config.sh —
+    // these scripts are browser-agnostic.
     // Super+Q  = personal (direct launch-or-focus, single tracked window)
     // Super+W  = work — uses ws-focus so it scopes to the active worktree's
-    //   helium-work window, falling back to the helium-work script when
-    //   no candidate window matches. helium-work in INACTIVE worktrees is
+    //   browser-work window, falling back to the browser-work script when
+    //   no candidate window matches. browser-work in INACTIVE worktrees is
     //   excluded automatically via ws-tracker's excluded-id list.
-    Super+q { spawn-sh "/home/daphen/.config/niri/scripts/helium-personal"; }
+    Super+q { spawn-sh "/home/daphen/.config/niri/scripts/browser-personal"; }
     Super+w { spawn-sh "$HOME/.config/niri/scripts/ws-focus browser"; }
     Super+Shift+q { spawn-sh "/home/daphen/.config/niri/scripts/chromium-launch"; }
     Super+m { spawn-sh "$HOME/.config/niri/scripts/ws-focus devenv"; }

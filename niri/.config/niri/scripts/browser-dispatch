@@ -9,8 +9,12 @@
 #   browser-dispatch --new-window <url>                 open in a new window
 #   browser-dispatch --profile=work --new-window <url>  combine both
 #
-# To switch browsers (e.g. revert to Vivaldi), edit only the dispatch block
-# at the bottom; the routing logic above is browser-agnostic.
+# Browser binary, profile names and class names live in browser-config.sh
+# — switching browsers is a one-file edit.
+
+set -u
+
+source "$(dirname "$0")/browser-config.sh"
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
 
@@ -40,13 +44,16 @@ is_work_url() {
 
 # Default: whichever browser profile was last focused. niri-focus-tracker
 # writes per-app-id ids to /tmp/niri-focus-tracker/app-<app-id>;
-# helium-personal / helium-work stash each profile's window id in
-# /tmp/helium-{personal,work}-window-id at launch.
+# browser-personal / browser-work stash each profile's window id in
+# /tmp/<class>-window-id at launch.
 pick_last_focused_profile() {
     local last_id personal_id work_id
-    last_id=$(cat /tmp/niri-focus-tracker/app-helium-personal /tmp/niri-focus-tracker/app-helium-work 2>/dev/null | tail -1)
-    personal_id=$(cat /tmp/helium-personal-window-id 2>/dev/null)
-    work_id=$(cat /tmp/helium-work-window-id 2>/dev/null)
+    last_id=$(cat \
+        "/tmp/niri-focus-tracker/app-${BROWSER_CLASS_PERSONAL}" \
+        "/tmp/niri-focus-tracker/app-${BROWSER_CLASS_WORK}" \
+        2>/dev/null | tail -1)
+    personal_id=$(cat "/tmp/${BROWSER_CLASS_PERSONAL}-window-id" 2>/dev/null)
+    work_id=$(cat "/tmp/${BROWSER_CLASS_WORK}-window-id" 2>/dev/null)
     if [[ -n "$last_id" && "$last_id" == "$work_id" ]]; then
         echo "work"
     elif [[ -n "$last_id" && "$last_id" == "$personal_id" ]]; then
@@ -64,34 +71,16 @@ else
     if is_personal_url "$URL"; then PROFILE="personal"; fi
 fi
 
-# ── Helium dispatch ───────────────────────────────────────────────────────────
-
-HELIUM=/etc/profiles/per-user/daphen/bin/helium
+# ── Browser dispatch ──────────────────────────────────────────────────────────
 
 if [[ "$PROFILE" == "work" ]]; then
-    exec "$HELIUM" --profile-directory="Profile 2" --class=helium-work $NEW_WINDOW "$URL"
+    exec "$BROWSER_BIN" \
+        --profile-directory="$BROWSER_PROFILE_WORK" \
+        --class="$BROWSER_CLASS_WORK" \
+        $NEW_WINDOW "$URL"
 else
-    exec "$HELIUM" --profile-directory=Default --class=helium-personal $NEW_WINDOW "$URL"
+    exec "$BROWSER_BIN" \
+        --profile-directory="$BROWSER_PROFILE_PERSONAL" \
+        --class="$BROWSER_CLASS_PERSONAL" \
+        $NEW_WINDOW "$URL"
 fi
-
-# ── Vivaldi dispatch (commented out — uncomment to revert) ────────────────────
-#
-# if [[ "$PROFILE" == "work" ]]; then
-#     exec /run/current-system/sw/bin/vivaldi --profile-directory="Profile 2" $NEW_WINDOW "$URL"
-# else
-#     exec /run/current-system/sw/bin/vivaldi --profile-directory=Default $NEW_WINDOW "$URL"
-# fi
-
-# ── Qutebrowser dispatch (commented out — uncomment to revert) ────────────────
-#
-# TRACKER_DIR="/tmp/niri-focus-tracker"
-# PERSONAL_STATE="$TRACKER_DIR/app-qutebrowser-personal"
-# WORK_STATE="$TRACKER_DIR/app-qutebrowser-work"
-# WORK_BASEDIR="$HOME/.config/qutebrowser/work"
-# WORK_CONFIG="$HOME/.config/qutebrowser/config.py"
-# if [[ "$PROFILE" == "work" ]]; then
-#     exec qutebrowser --target tab --basedir "$WORK_BASEDIR" \
-#         --config-py "$WORK_CONFIG" --desktop-file-name qutebrowser-work "$URL"
-# else
-#     exec qutebrowser --target tab --desktop-file-name qutebrowser-personal "$URL"
-# fi

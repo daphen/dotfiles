@@ -18,8 +18,9 @@ Behavior:
   - If no candidates match, run the role's fallback launcher.
 
 Roles (mutually exclusive — every window is owned by at most one bind):
-  browser   helium-work (work-profile Helium windows). The personal
-            profile uses a distinct app_id (helium-personal) so no
+  browser   browser-work (work-profile browser windows; class set by
+            browser-work --class flag, see browser-config.sh). Personal
+            profile uses a distinct class (browser-personal) so no
             window-id exclusion is needed — just app-id matching.
   claude    app_id == "claude" (set by every claude-spawn script) OR
             a plain kitty whose process tree contains `claude`
@@ -50,10 +51,11 @@ FOCUS_TIMES_FILE = Path("/tmp/niri-focus-tracker/focus-times.json")
 # the process-compose title. The bare-suffixless variant is the deps
 # singleton, which is reached separately via Super+Ctrl+M (ws-deps).
 DEVENV_TITLE_RE = re.compile(r"^process-compose: proart/lovable\.daphen-")
-# Work-profile Helium app-id. Personal profile is helium-personal and is
-# matched by a separate keybind (Super+Q → helium-personal script), not
-# the browser role here.
-BROWSER_WORK_CLASSES = {"helium-work"}
+# Work-profile browser app-id (set by browser-work via --class). Stable
+# across browser swaps — the binary path lives in browser-config.sh, but
+# the Wayland class is just a label so it doesn't change. Personal profile
+# uses browser-personal and is bound separately to Super+Q.
+BROWSER_WORK_CLASSES = {"browser-work"}
 
 ROLES = ("browser", "claude", "devenv", "term")
 
@@ -158,7 +160,7 @@ def matches(w: dict, role: str) -> bool:
 def fallback(role: str) -> None:
     scripts = Path(HOME) / ".config/niri/scripts"
     if role == "browser":
-        os.execv(str(scripts / "helium-work"), [str(scripts / "helium-work")])
+        os.execv(str(scripts / "browser-work"), [str(scripts / "browser-work")])
     elif role == "claude":
         os.execv(
             str(scripts / "spawn-terminal-with-claude"),

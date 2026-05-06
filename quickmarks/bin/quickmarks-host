@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+"""
+Native messaging host for Chromium Palette quickmarks.
+
+Reads a length-prefixed JSON request from stdin and replies on stdout.
+
+Actions:
+    { "action": "list",  "profile": "personal" | "work" }
+        → { "entries": [{"name": ..., "url": ...}, ...] }
+
+    { "action": "add",   "profile": ..., "name": ..., "url": ... }
+        → appends "<name> <url>" to the file, returns the refreshed list.
+
+`action` defaults to "list" if omitted (back-compat for the old call shape).
+
+Quickmarks file format (one entry per line, qutebrowser-style):
+    name url
+    # comment
+    <blank line>
+
+Files live at ~/.config/quickmarks/<profile>-quickmarks (symlinked to
+~/dotfiles/quickmarks/.config/quickmarks/ via home-manager). Re-read
+on every request, so edits to the file appear in the palette on the
+next open — no rebuild, no extension reload.
+"""
+from __future__ import annotations
+
+import json
+import struct
+import sys
+from pathlib import Path
+
+ALLOWED_PROFILES = {"personal", "work"}
+QUICKMARKS_DIR = Path.home() / ".config/quickmarks"
+
+
+def read_message() -> dict | None:
+    raw = sys.stdin.buffer.read(4)
+    if len(raw) < 4:
+        return None
+    (msg_len,) = struct.unpack("<I", raw)
+    body = sys.stdin.buffer.read(msg_len).decode("utf-8")
+    return json.loads(body)
+
+
+def send_message(obj: dict) -> None:
+    body = json.dumps(obj).encode("utf-8")
+    sys.stdout.buffer.write(struct.pack("<I", len(body)))
+    sys.stdout.buffer.write(body)
+    sys.stdout.buffer.flush()
+
+
+def parse_quickmarks(path: Path) -> list[dict]:
+    entries: list[dict] = []
+    if not path.exists():
+        return entries
+    for raw in path.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        # qutebrowser convention: name can contain spaces, URL is the
+        # last whitespace-delimited token (URLs don't legally contain
+        # unencoded spaces). Split from the right.
+        parts = line.rsplit(None, 1)
+        if len(parts) != 2:
+            continue
+        name, url = parts
+        entries.append({"name": name, "url": url})
+    return entries
+
+
+def append_entry(path: Path, name: str, url: str) -> None:
+    name = name.strip()
+    url = url.strip()
+    if not name or not url:
+        raise ValueError("name and url are both required")
+    if any(c in name for c in "\n\r"):
+        raise ValueError("name may not contain newlines")
+    if any(c in url for c in "\n\r"):
+        raise ValueError("url may not contain newlines")
+    existing = path.read_text() if path.exists() else ""
+    if existing and not existing.endswith("\n"):
+        existing += "\n"
+    path.write_text(existing + f"{name} {url}\n")
+
+
+def main() -> int:
+    msg = read_message()
+    if msg is None:
+        send_message({"entries": [], "error": "empty request"})
+        return 0
+
+    profile = (msg.get("profile") or "").strip()
+    if profile not in ALLOWED_PROFILES:
+        send_message(
+            {"entries": [], "error": f"unknown profile: {profile!r}"}
+        )
+        return 0
+
+    path = QUICKMARKS_DIR / f"{profile}-quickmarks"
+    action = (msg.get("action") or "list").strip()
+
+    if action == "add":
+        try:
+            append_entry(path, msg.get("name") or "", msg.get("url") or "")
+        except ValueError as e:
+            send_message({"entries": parse_quickmarks(path), "error": str(e)})
+            return 0
+        send_message(
+            {"entries": parse_quickmarks(path), "added": True}
+        )
+        return 0
+
+    if action != "list":
+        send_message(
+            {"entries": [], "error": f"unknown action: {action!r}"}
+        )
+        return 0
+
+    send_message({"entries": parse_quickmarks(path)})
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except Exception as e:  # noqa: BLE001
+        # Native messaging eats stderr in some contexts, so fold the
+        # error into the response so the extension can surface it.
+        try:
+            send_message({"entries": [], "error": f"host crashed: {e}"})
+        except Exception:
+            pass
+        sys.exit(1)

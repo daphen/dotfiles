@@ -1,0 +1,20 @@
+# Work Quickmarks for Chrome Palette / Helium work profile.
+# Format: <name> <url>
+# Lines starting with # and blank lines are ignored.
+#
+# Live-edited: edits to this file appear in the palette on the next open.
+#
+# Initially seeded from Helium's "Bookmarks bar/Quickmarks" folder
+# (Profile 2). Going forward, edit this file directly — Helium's bookmark
+# folder is no longer the source of truth.
+
+mail https://mail.google.com/mail/u/0/?authuser=david.karlsson@lovable.dev#inbox
+prod https://lovable.dev/
+calendar https://calendar.google.com/calendar/u/0/r?authuser=david.karlsson@lovable.dev
+linear https://linear.app/lovable/my-issues/assigned
+golinks https://app.golinks.io/
+dev http://localhost:3000/dashboard
+review https://github.com/lovablelabs/lovable/pulls?q=is%3Apr+is%3Aopen+user-review-requested%3A%40me
+posthog https://us.posthog.com/project/47074/llm-analytics/dashboard
+PR https://github.com/lovablelabs/lovable/pulls/@me
+confidence https://app.confidence.spotify.com/

@@ -13,7 +13,7 @@ window#waybar {
 
 /* Left side modules */
 .modules-left {
-  background: alpha({{background.secondary}}, 0.85);
+  background: alpha({{background.primary}}, 0.85);
   border-radius: 8px;
   margin: 10px 8px 10px 20px;
   padding: 0px 8px;
@@ -56,7 +56,7 @@ window#waybar {
  * background image. Hidden entirely when no lovable-* workspace is
  * focused (.empty class). */
 #custom-lovable-worktree {
-  background: alpha({{background.secondary}}, 0.85);
+  background: alpha({{background.primary}}, 0.85);
   border-radius: 8px;
   margin: 10px 0 10px 0;
   padding: 2px 14px 2px 30px;
@@ -80,7 +80,7 @@ window#waybar {
 
 /* Right side container - all items grouped */
 .modules-right {
-  background: alpha({{background.secondary}}, 0.85);
+  background: alpha({{background.primary}}, 0.85);
   border-radius: 8px;
   margin: 10px 20px 10px 8px;
   padding: 0px 8px;

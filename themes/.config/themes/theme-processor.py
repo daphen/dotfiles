@@ -49,11 +49,15 @@ def process_template(template_file, colors_file, theme_mode, output_file, tool_n
     # Fish expects bare hex colors without '#' prefix (it treats '#' as a comment)
     strip_hash = tool_name in ('fish', 'tide')
     
-    # Check if this is the nvim template which needs both themes
-    is_nvim_template = 'nvim' in os.path.basename(template_file)
-    
-    if is_nvim_template:
-        # Load all colors for nvim template
+    # Templates that bundle both themes side-by-side and let the consumer
+    # pick at runtime (prefers-color-scheme media query, vim background
+    # autocmd, etc.) need access to both palettes in a single pass.
+    base = os.path.basename(template_file)
+    is_dual_theme_template = (
+        'nvim' in base or base.startswith('chromium-palette')
+    )
+
+    if is_dual_theme_template:
         all_colors = load_all_colors(colors_file)
         colors = all_colors  # Contains both 'dark' and 'light' themes
     else:

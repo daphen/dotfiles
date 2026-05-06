@@ -17,6 +17,7 @@
     accent-green:   {{accent.green}};
     accent-blue:    {{accent.blue}};
     accent-red:     {{accent.red}};
+    accent-cursor:  {{semantic.cursor}};
 
     /* Apply to rofi */
     background-color:   transparent;
@@ -28,7 +29,7 @@
 window {
     background-color:   @bg-primary;
     border:             2px solid;
-    border-color:       @bg-overlay;
+    border-color:       @accent-cursor;
     border-radius:      10px;
     width:              500px;
     padding:            20px;
@@ -51,7 +52,7 @@ inputbar {
 
 prompt {
     background-color:   transparent;
-    text-color:         @accent-orange;
+    text-color:         @accent-cursor;
     font:               "GeistMono Nerd Font Bold 12";
 }
 
@@ -100,10 +101,10 @@ element alternate.normal {
 }
 
 element selected.normal {
-    background-color:   @bg-overlay;
+    background-color:   @bg-secondary;
     text-color:         @fg-primary;
     border:             0 0 0 3px solid;
-    border-color:       @accent-orange;
+    border-color:       @accent-cursor;
 }
 
 element-icon {

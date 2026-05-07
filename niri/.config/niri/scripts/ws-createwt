@@ -167,14 +167,10 @@ def main() -> int:
     # 4. Spawn the 4 stack windows. Each one lands as its own column on
     #    the (now-focused) workspace — no merge logic needed.
     print("==> spawning devenv wt")
-    # Mirrors the `dwt` fish function: DEVENV_NO_LOG_COLOR=1 +
-    # --theme "Custom Style" for the matching process-compose theme.
-    # Inline because fish functions aren't on PATH.
     spawn_and_wait([
         "kitty",
         "--working-directory", str(worktree_path),
-        "-e", "bash", "-c",
-        "DEVENV_NO_LOG_COLOR=1 direnv exec . devenv wt -- --theme 'Custom Style'; exec fish",
+        "-e", "bash", "-c", "direnv exec . devenv wt; exec fish",
     ])
 
     # Browser-agnostic: route through browser-dispatch with an explicit

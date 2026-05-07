@@ -82,6 +82,7 @@ claude/.claude/cache/
 claude/.claude/stats-cache.json
 claude/.claude/plugins/install-counts-cache.json
 claude/.claude/plugins/known_marketplaces.json
+claude/.claude/.last-cleanup
 
 # Per-project Claude Code state written into other tools' config dirs
 qutebrowser/.config/qutebrowser/.claude/

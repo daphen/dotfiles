@@ -61,9 +61,13 @@
         "highlight_low": "#2F2E3E",
         "highlight_medium": "#545168",
         "highlight_high": "#6F6C85",
-        "highlight_succ": "#2B2F2D",
+        "highlight_succ": "#2B3D30",
         "highlight_warn": "#3A291B",
-        "highlight_err": "#3A2625"
+        "highlight_err": "#3A2F25",
+        "highlight_succ_dim": "#222B25",
+        "highlight_err_dim": "#2A2218",
+        "highlight_succ_word": "#4A6C50",
+        "highlight_err_word": "#5E4530"
       },
       "terminal": {
         "black": "background.tertiary",
@@ -139,9 +143,13 @@
         "highlight_low": "#E8EAED",
         "highlight_medium": "#D5D8DD",
         "highlight_high": "#C2C6CC",
-        "highlight_succ": "#D5D5C6",
+        "highlight_succ": "#E2EAE4",
         "highlight_warn": "#D8D5C5",
-        "highlight_err": "#F9C5B9"
+        "highlight_err": "#EED8D0",
+        "highlight_succ_dim": "#EAEFEC",
+        "highlight_err_dim": "#F5E5DD",
+        "highlight_succ_word": "#C5D5C9",
+        "highlight_err_word": "#DBB8AC"
       },
       "terminal": {
         "black": "#1C1C1C",

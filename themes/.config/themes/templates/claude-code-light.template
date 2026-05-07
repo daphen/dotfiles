@@ -21,12 +21,12 @@
     "bashMessageBackgroundColor": "{{background.surface}}",
     "memoryBackgroundColor": "{{background.surface}}",
 
-    "diffAdded": "#D6E4D8",
-    "diffRemoved": "#ECDBC8",
-    "diffAddedDimmed": "#E8EFE8",
-    "diffRemovedDimmed": "#F4E9D8",
-    "diffAddedWord": "#A8C9B4",
-    "diffRemovedWord": "#DDB695",
+    "diffAdded": "{{semantic.highlight_succ}}",
+    "diffRemoved": "{{semantic.highlight_err}}",
+    "diffAddedDimmed": "{{semantic.highlight_succ_dim}}",
+    "diffRemovedDimmed": "{{semantic.highlight_err_dim}}",
+    "diffAddedWord": "{{semantic.highlight_succ_word}}",
+    "diffRemovedWord": "{{semantic.highlight_err_word}}",
 
     "fastMode": "{{accent.orange}}",
     "fastModeShimmer": "{{accent.yellow}}",

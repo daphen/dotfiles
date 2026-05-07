@@ -1,0 +1,46 @@
+style:
+  name: "Custom Style"
+
+  body:
+    fgColor: "{{foreground.primary}}"
+    bgColor: "{{background.primary}}"
+    secondaryTextColor: "{{foreground.muted}}"
+    tertiaryTextColor: "{{foreground.subtle}}"
+    borderColor: "{{foreground.muted}}"
+
+  stat_table:
+    keyFgColor: "{{foreground.muted}}"
+    valueFgColor: "{{foreground.primary}}"
+    bgColor: "{{background.primary}}"
+    logoColor: "{{accent.orange}}"
+
+  proc_table:
+    fgColor: "{{foreground.primary}}"
+    fgWarning: "{{accent.yellow}}"
+    fgPending: "{{foreground.subtle}}"
+    fgCompleted: "{{accent.green}}"
+    fgError: "{{accent.red}}"
+    bgColor: "{{background.primary}}"
+    headerFgColor: "{{accent.blue}}"
+
+  help:
+    fgColor: "{{foreground.primary}}"
+    keyColor: "{{accent.blue}}"
+    hlColor: "{{background.selection}}"
+    buttonBgColor: "{{background.selection}}"
+    categoryFgColor: "{{accent.blue}}"
+    linkDonateColor: "{{foreground.muted}}"
+    linkAskColor: "{{accent.orange}}"
+
+  dialog:
+    fgColor: "{{foreground.primary}}"
+    bgColor: "{{background.primary}}"
+    contrastBgColor: "{{background.selection}}"
+    attentionBgColor: "{{accent.red}}"
+    buttonFgColor: "{{foreground.primary}}"
+    buttonBgColor: "{{background.selection}}"
+    buttonFocusFgColor: "{{background.primary}}"
+    buttonFocusBgColor: "{{accent.blue}}"
+    labelFgColor: "{{foreground.primary}}"
+    fieldFgColor: "{{foreground.primary}}"
+    fieldBgColor: "{{background.selection}}"

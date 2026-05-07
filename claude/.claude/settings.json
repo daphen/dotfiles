@@ -42,7 +42,8 @@
   "enabledPlugins": {
     "graphite-workflow@lovable-internal": true
   },
+  "syntaxHighlightingDisabled": true,
   "alwaysThinkingEnabled": true,
-  "theme": "light-ansi",
+  "theme": "custom:dotfiles",
   "skipAutoPermissionPrompt": true
 }

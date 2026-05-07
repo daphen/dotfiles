@@ -108,13 +108,13 @@
       },
       "accent": {
         "red": "#A8333A",
-        "orange": "#d7827e",
+        "orange": "#e16511",
         "yellow": "#69756C",
         "green": "#5E7270",
-        "cyan": "#4A7C59",
+        "cyan": "#397446",
         "blue": "#286983",
-        "purple": "#B8713A",
-        "pink": "#8A92A7"
+        "purple": "#eb2146",
+        "pink": "#516088"
       },
       "semantic": {
         "error": "accent.red",

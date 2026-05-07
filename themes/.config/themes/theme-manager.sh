@@ -270,6 +270,14 @@ apply_tool_theme() {
                 log_success "Applied opencode theme ($label)"
             fi
             ;;
+        "process-compose")
+            # process-compose reads its custom theme from ~/.config/process-compose/theme.yaml.
+            # The override is selected at runtime via `--theme "Custom Style"`.
+            local pc_dir="$HOME/.config/process-compose"
+            mkdir -p "$pc_dir"
+            cp "$generated_file" "$pc_dir/theme.yaml"
+            log_success "Applied process-compose theme (local)"
+            ;;
         "claude-code")
             # Claude Code reads custom themes from ~/.claude/themes/<slug>.json.
             # We write a single dotfiles.json that's swapped between light/dark

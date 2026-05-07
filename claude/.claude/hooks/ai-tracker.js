@@ -6,6 +6,7 @@
  */
 
 import { appendFileSync, readFileSync, mkdirSync } from 'fs';
+import { execSync } from 'child_process';
 import { homedir } from 'os';
 import { join, dirname } from 'path';
 
@@ -34,6 +35,54 @@ function debugLog(message, data = null) {
 // Track the current prompt/session context
 let currentPrompt = "";
 let sessionId = `claudecode-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+// Cached niri workspace_id for this Claude session (so the nvim live-follow
+// can scope to "edits made by a Claude in my niri workspace" instead of
+// every edit to any worktree of the repo).
+let workspaceIdCache = undefined; // undefined = not computed; null = no workspace
+
+function readPpidNode(pid) {
+  try {
+    const status = readFileSync(`/proc/${pid}/status`, 'utf8');
+    const m = status.match(/^PPid:\s+(\d+)/m);
+    return m ? parseInt(m[1], 10) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getClaudeWorkspaceId() {
+  if (workspaceIdCache !== undefined) return workspaceIdCache;
+  workspaceIdCache = null;
+  try {
+    const out = execSync('niri msg --json windows 2>/dev/null', {
+      timeout: 2000,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    const windows = JSON.parse(out);
+    if (!Array.isArray(windows)) return null;
+    const pidToWs = {};
+    for (const w of windows) {
+      if (typeof w.pid === 'number' && typeof w.workspace_id === 'number') {
+        pidToWs[w.pid] = w.workspace_id;
+      }
+    }
+    let cur = process.ppid;
+    let depth = 0;
+    while (cur && cur !== 1 && depth < 50) {
+      if (pidToWs[cur] !== undefined) {
+        workspaceIdCache = pidToWs[cur];
+        return workspaceIdCache;
+      }
+      cur = readPpidNode(cur);
+      depth++;
+    }
+  } catch {
+    // niri unavailable — leave cache as null
+  }
+  return null;
+}
 
 // Track recently logged changes to prevent duplicates
 const recentChanges = new Map(); // key: hash of change, value: timestamp
@@ -116,6 +165,7 @@ function logChange(entry) {
     timestamp: new Date().toISOString(),
     session_id: sessionId,
     source: "claudecode",
+    niri_workspace_id: getClaudeWorkspaceId(),
     ...entry
   }) + '\n';
 

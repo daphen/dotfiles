@@ -396,26 +396,19 @@ function M.handle_batch(entries)
     end
   end
 
-  -- Live-follow: switch the current window to the latest AI edit in this
-  -- project so the user can watch the AI work in real time. Insert mode is a
-  -- hard veto so we never clobber a buffer the user is actively typing in.
+  -- Live-follow: switch the current window to the latest AI edit *in this
+  -- nvim's project*. Strict prefix match — files in other worktrees of the
+  -- same repo are intentionally ignored so one-nvim-per-worktree setups
+  -- don't bleed edits across each other.
   if M.config.live_follow and not in_insert_mode() then
-    -- Prefer entries within this nvim's project (exact prefix match), but
-    -- fall back to entries in any worktree of the same repo so a single
-    -- nvim can follow a Claude session that ranges across worktrees.
-    local follow_in_project, follow_same_repo
+    local follow
     for _, e in ipairs(entries) do
       if e.file_path and path_in_current_project(e.file_path) then
-        if not follow_in_project or (e.timestamp or "") > (follow_in_project.timestamp or "") then
-          follow_in_project = e
-        end
-      elseif e.file_path and path_in_same_repo(e.file_path) then
-        if not follow_same_repo or (e.timestamp or "") > (follow_same_repo.timestamp or "") then
-          follow_same_repo = e
+        if not follow or (e.timestamp or "") > (follow.timestamp or "") then
+          follow = e
         end
       end
     end
-    local follow = follow_in_project or follow_same_repo
     if follow and vim.fn.filereadable(follow.file_path) ~= 0 then
       local cur = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p")
       if cur ~= follow.file_path then

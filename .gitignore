@@ -78,9 +78,13 @@ claude/.claude/.claude/
 # Claude Code per-session runtime caches/telemetry
 claude/.claude/telemetry/
 claude/.claude/tasks/
-claude/.claude/cache/my-closed-issues.json
+claude/.claude/cache/
 claude/.claude/stats-cache.json
 claude/.claude/plugins/install-counts-cache.json
+claude/.claude/plugins/known_marketplaces.json
+
+# Per-project Claude Code state written into other tools' config dirs
+qutebrowser/.config/qutebrowser/.claude/
 
 # JS/TS deps inside ai-tracker channel
 nvim/.config/nvim/lua/ai-tracker/channel/node_modules/

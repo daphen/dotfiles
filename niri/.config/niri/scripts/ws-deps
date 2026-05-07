@@ -86,14 +86,20 @@ def ensure_stash(workspaces: list, focused_output: str) -> None:
 
 
 def spawn_deps() -> int:
+    # Mirrors the `ddeps` fish function: DEVENV_NO_LOG_COLOR=1 +
+    # --theme "Custom Style" so process-compose picks up our generated
+    # theme. Kept inline because fish functions aren't on PATH.
+    env = {**os.environ, "DEVENV_NO_LOG_COLOR": "1"}
     subprocess.Popen(
         ["setsid", "kitty", "--hold", "--class", APP_ID,
          "--working-directory", str(LOVABLE_DIR),
-         "-e", "direnv", "exec", ".", "devenv", "deps"],
+         "-e", "direnv", "exec", ".",
+         "devenv", "deps", "--", "--theme", "Custom Style"],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         start_new_session=True,
+        env=env,
     )
     for _ in range(60):
         time.sleep(0.15)

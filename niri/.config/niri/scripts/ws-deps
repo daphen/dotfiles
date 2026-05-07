@@ -47,7 +47,8 @@ def niri_action(*args: str) -> None:
 
 
 def ensure_stash(workspaces: list, focused_output: str) -> None:
-    """Make sure a `deps-stash` workspace exists ON the focused output.
+    """Make sure a `deps-stash` workspace exists ON the focused output
+    AND sits at the top of the workspace pile (idx 1).
 
     If it doesn't exist anywhere, name a trailing empty workspace on
     the focused output. If it exists but on the wrong output, drag it
@@ -56,6 +57,11 @@ def ensure_stash(workspaces: list, focused_output: str) -> None:
     which re-rasters kitty's process-compose grid (visible "small to
     fill up" lag) and skips position preservation (visible off-center
     on whichever monitor isn't the stash's).
+
+    Pinning to idx 1 keeps it out of the way: Super+J/K already filters
+    it out (ws-focus-workspace-up), so a top slot just means it's
+    consistently placed and never accidentally landed on by manual
+    workspace navigation.
     """
     existing = next((w for w in workspaces if w.get("name") == STASH), None)
     if existing is None:
@@ -70,10 +76,13 @@ def ensure_stash(workspaces: list, focused_output: str) -> None:
         target = max(candidates, key=lambda w: w.get("idx") or 0)
         niri_action("set-workspace-name",
                     "--workspace", str(target["idx"]), STASH)
-        return
-    if existing.get("output") != focused_output:
+    elif existing.get("output") != focused_output:
         niri_action("move-workspace-to-monitor",
                     "--reference", STASH, focused_output)
+
+    # Pin to idx 1 (top of the pile). Re-runs every dismiss so it stays
+    # there even if the user manually reorders things.
+    niri_action("move-workspace-to-index", "--reference", STASH, "1")
 
 
 def spawn_deps() -> int:

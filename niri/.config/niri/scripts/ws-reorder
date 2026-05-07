@@ -2,11 +2,16 @@
 """
 ws-reorder
 
-Pin every `lovable-*` workspace to the top of its output's workspace
-stack, with the *active* stack workspace at the bottom of that pinned
-group (i.e. closest to the user's normal workspaces below it):
+Pin the `deps-stash` parking workspace to the top of its output's
+workspace stack, then every `lovable-*` workspace below it, with the
+*active* stack workspace at the bottom of the lovable group (i.e.
+closest to the user's normal workspaces below it):
 
-    [lovable-stack-inactive]   <- top of output
+    [deps-stash]               <- top of output (hidden via Super+J/K
+                                  filter + minimap filter; pinned here
+                                  so manual workspace moves don't shove
+                                  things into it).
+    [lovable-stack-inactive]
     [lovable-stack-inactive]
     [lovable-ACTIVE]
     [normal-workspace]
@@ -25,6 +30,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ACTIVE_FILE = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws/active"
+STASH = "deps-stash"
 
 
 def niri_json(*args: str):
@@ -64,13 +70,18 @@ def main() -> int:
 
     for output, ws_list in by_output.items():
         lovables = [w for w in ws_list if is_lovable(w.get("name"))]
-        if not lovables:
+        stash = next((w for w in ws_list if w.get("name") == STASH), None)
+        if not lovables and stash is None:
             continue
         lovables.sort(key=lambda w: w["idx"])
 
-        # Desired lovable order: inactives in current idx order, active last.
+        # Desired pinned order: deps-stash first, then lovable inactives
+        # in current idx order, active last (closest to normal workspaces).
         active_ws = next((w for w in lovables if w.get("name") == active), None)
-        desired = [w for w in lovables if w is not active_ws]
+        desired: list[dict] = []
+        if stash is not None:
+            desired.append(stash)
+        desired.extend(w for w in lovables if w is not active_ws)
         if active_ws is not None:
             desired.append(active_ws)
 

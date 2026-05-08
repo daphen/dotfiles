@@ -233,7 +233,7 @@ layout {
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#999999"
+        inactive-color "#3A3A3A"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -258,7 +258,7 @@ layout {
 
         width 4
         active-color "#FF570D"
-        inactive-color "#999999"
+        inactive-color "#3A3A3A"
 
         // Color of the border around windows that request your attention.
         urgent-color "#9b0000"
@@ -422,6 +422,15 @@ window-rule {
     open-floating true
 }
 
+// imv (images) and mpv (gif-as-mp4 + audio/video) are both launched by
+// endcord's media-viewer.sh. Float them so they overlay endcord without
+// reflowing the tile; niri centers floating windows on focus by default.
+window-rule {
+    match app-id=r#"^imv$"#
+    match app-id=r#"^mpv$"#
+    open-floating true
+}
+
 // Example: block out two password managers from screen capture.
 // (This example rule is commented out with a "/-" in front.)
 /-window-rule {
@@ -525,6 +534,16 @@ window-rule {
     default-window-height { proportion 1.0; }
 }
 
+// Endcord (Discord TUI) - same sizing as kitty. Launched via Super+C as
+// `kitty --class endcord -e endcord`, so its app-id is "endcord" (not
+// "kitty") which keeps it out of the Super+d "general terminal" cycle
+// (ws-focus filters by app_id == "kitty").
+window-rule {
+    match app-id="endcord"
+    default-column-width { fixed 1500; }
+    default-window-height { proportion 1.0; }
+}
+
 // Devenv deps singleton: floats so it never claims a tiled column
 // slot. ws-tracker still drags it onto the active stack workspace
 // so Super+M shows it overlaid on whatever stack is in front, but
@@ -591,7 +610,7 @@ binds {
     Super+Alt+S allow-when-locked=true hotkey-overlay-title=null { spawn-sh "pkill orca || exec orca"; }
 
     // Jump-or-exec keybinds for quick app access
-    Super+c { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec vesktop vesktop"; }
+    Super+c { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec endcord 'kitty --class endcord -e endcord'"; }
     Super+e { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-yazi"; }
     // Super+Ctrl+g: resume an existing claude session (fzf picker)
     // Super+Shift+g: start a NEW claude session, picking a working dir via zoxide+fzf

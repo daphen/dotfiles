@@ -404,6 +404,26 @@ PYEOF
             cp "$generated_file" "$pi_dir/${theme_mode}.json"
             log_success "Applied Pi coding agent ${theme_mode} theme"
             ;;
+        "endcord")
+            # Endcord resolves `theme = NAME` (no .ini) against its Themes/ dir.
+            # Master HEAD moved the config root from ~/.local/share/endcord to
+            # ~/.config/endcord (XDG); 1.4.2 and earlier used the old path.
+            # Write to whichever directory exists so we work across versions.
+            # Endcord re-reads config on launch only — running instances must
+            # be restarted.
+            local endcord_root
+            if [[ -d "$HOME/.config/endcord" ]]; then
+                endcord_root="$HOME/.config/endcord"
+            else
+                endcord_root="$HOME/.local/share/endcord"
+            fi
+            mkdir -p "$endcord_root/Themes"
+            cp "$generated_file" "$endcord_root/Themes/custom-${theme_mode}.ini"
+            if [[ -f "$endcord_root/config.ini" ]]; then
+                sed -i "s|^theme = .*|theme = custom-${theme_mode}|" "$endcord_root/config.ini"
+            fi
+            log_success "Applied endcord ${theme_mode} theme to $endcord_root (restart endcord to see it)"
+            ;;
         "qutebrowser")
             local target_dir is_managed
             if get_tool_target "$tool"; then

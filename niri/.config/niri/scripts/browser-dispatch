@@ -73,14 +73,17 @@ fi
 
 # ── Browser dispatch ──────────────────────────────────────────────────────────
 
+# Redirect stdout/stderr to /dev/null so chromium-based browsers don't
+# print "Opening in existing browser session." to whatever terminal
+# launched us (corrupts endcord's curses-rendered screen).
 if [[ "$PROFILE" == "work" ]]; then
     exec "$BROWSER_BIN" \
         --profile-directory="$BROWSER_PROFILE_WORK" \
         --class="$BROWSER_CLASS_WORK" \
-        $NEW_WINDOW "$URL"
+        $NEW_WINDOW "$URL" >/dev/null 2>&1
 else
     exec "$BROWSER_BIN" \
         --profile-directory="$BROWSER_PROFILE_PERSONAL" \
         --class="$BROWSER_CLASS_PERSONAL" \
-        $NEW_WINDOW "$URL"
+        $NEW_WINDOW "$URL" >/dev/null 2>&1
 fi

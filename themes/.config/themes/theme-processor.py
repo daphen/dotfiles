@@ -45,7 +45,7 @@ def get_nested_color(colors, path, max_depth=5, theme_context=None):
 
 def process_template(template_file, colors_file, theme_mode, output_file, tool_name=None):
     """Process template file and replace color variables."""
-    
+
     # Fish expects bare hex colors without '#' prefix (it treats '#' as a comment)
     strip_hash = tool_name in ('fish', 'tide')
     

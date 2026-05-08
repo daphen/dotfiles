@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+"""
+ws-startmain
+
+Idempotent launcher for the lovable-main workspace — the "always-on"
+home for work that's not tied to a specific worktree:
+
+    [devenv-deps] [claude] [browser]
+
+The deps singleton lives here as a regular tiled column (no scratchpad,
+no cross-monitor scaling tricks). The claude column auto-resumes the
+latest Claude Code session for ~/work/lovable, so "main context" sticks
+around across niri restarts. Browser opens lovable.dev in the work
+profile.
+
+Re-running is safe: it focuses lovable-main and only spawns the
+window types that aren't already there. So this can also be the
+spawn-at-startup entry point — first invocation creates everything,
+later presses just bring you back.
+"""
+from __future__ import annotations
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+LOVABLE_DIR = Path(HOME) / "work" / "lovable"
+WS_NAME = "lovable-main"
+LOVABLE_URL = "https://lovable.dev/"
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args],
+        capture_output=True, text=True, timeout=2,
+    ).stdout
+    return json.loads(out) if out.strip() else None
+
+
+def niri_action(*args: str) -> int:
+    return subprocess.run(
+        ["niri", "msg", "action", *args],
+        capture_output=True, timeout=2,
+    ).returncode
+
+
+def workspace_by_name(name: str) -> dict | None:
+    for w in (niri_json("workspaces") or []):
+        if w.get("name") == name:
+            return w
+    return None
+
+
+def focused_output() -> str | None:
+    for w in (niri_json("workspaces") or []):
+        if w.get("is_focused"):
+            return w.get("output")
+    return None
+
+
+def trailing_empty_unnamed_idx(output: str) -> int | None:
+    candidates = [
+        w for w in (niri_json("workspaces") or [])
+        if w.get("output") == output
+        and w.get("name") is None
+        and w.get("active_window_id") is None
+    ]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda w: w.get("idx") or 0)["idx"]
+
+
+def ensure_workspace() -> int:
+    """Make sure lovable-main exists and is focused. Returns workspace id."""
+    existing = workspace_by_name(WS_NAME)
+    if existing is not None:
+        niri_action("focus-workspace", WS_NAME)
+        return existing["id"]
+    out = focused_output() or "DP-2"
+    idx = trailing_empty_unnamed_idx(out)
+    if idx is None:
+        niri_action("focus-workspace-down")
+        time.sleep(0.15)
+        idx = trailing_empty_unnamed_idx(out)
+    if idx is None:
+        print("ws-startmain: no empty workspace to claim", file=sys.stderr)
+        sys.exit(1)
+    niri_action("set-workspace-name", "--workspace", str(idx), WS_NAME)
+    time.sleep(0.15)
+    niri_action("focus-workspace", WS_NAME)
+    time.sleep(0.1)
+    ws = workspace_by_name(WS_NAME)
+    return ws["id"] if ws else -1
+
+
+def windows_on(ws_id: int) -> list[dict]:
+    return [w for w in (niri_json("windows") or [])
+            if w.get("workspace_id") == ws_id]
+
+
+def has_app_id(windows: list[dict], app_id: str) -> bool:
+    return any(w.get("app_id") == app_id for w in windows)
+
+
+# Any browser-class window counts as "main has a browser" — Chromium
+# honours --class only at the first launch in a process, so a window
+# we requested with --class=browser-work may actually arrive tagged
+# browser-personal (or vice versa). For idempotence we just need to
+# know there's *some* browser window already on the workspace.
+BROWSER_CLASSES = {"browser-personal", "browser-work",
+                   "helium-personal", "helium-work"}
+
+
+def has_browser(windows: list[dict]) -> bool:
+    return any(w.get("app_id") in BROWSER_CLASSES for w in windows)
+
+
+def snapshot_ids() -> set[int]:
+    return {w["id"] for w in (niri_json("windows") or [])}
+
+
+def spawn_and_wait(cmd: list[str], timeout: float = 9.0) -> int | None:
+    before = snapshot_ids()
+    subprocess.Popen(
+        ["setsid", *cmd],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        time.sleep(0.15)
+        new = snapshot_ids() - before
+        if new:
+            return next(iter(new))
+    return None
+
+
+def main() -> int:
+    ws_id = ensure_workspace()
+    if ws_id <= 0:
+        return 1
+
+    win = windows_on(ws_id)
+
+    if not has_app_id(win, "lovable_deps"):
+        print("==> spawning devenv deps")
+        spawn_and_wait([
+            "kitty", "--class", "lovable_deps",
+            "--working-directory", str(LOVABLE_DIR),
+            "-e", "direnv", "exec", ".", "devenv", "deps",
+        ])
+
+    if not has_app_id(win, "claude"):
+        print("==> spawning claude (cwd=~/work/lovable, auto-resume)")
+        spawn_and_wait([
+            "kitty", "--class", "claude",
+            "--working-directory", str(LOVABLE_DIR),
+            "-e", "claude",
+        ])
+
+    if not has_browser(win):
+        print(f"==> spawning work browser → {LOVABLE_URL}")
+        spawn_and_wait([
+            "/home/daphen/.config/niri/scripts/browser-dispatch",
+            "--profile=work",
+            "--new-window",
+            LOVABLE_URL,
+        ])
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

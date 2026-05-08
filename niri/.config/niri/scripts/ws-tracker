@@ -71,11 +71,11 @@ def niri_json(*args: str):
 
 def lovable_stack_name_by_id(ws_id: int) -> str | None:
     """Return the workspace's name iff it's a `lovable-<x>` stack
-    (excludes the legacy `lovable` and `lovable-deps`)."""
+    (excludes the legacy bare `lovable` workspace)."""
     for w in (niri_json("workspaces") or []):
         if w.get("id") == ws_id:
             name = w.get("name") or ""
-            if name.startswith("lovable-") and name not in ("lovable", "lovable-deps"):
+            if name.startswith("lovable-") and name != "lovable":
                 return name
     return None
 
@@ -120,8 +120,8 @@ def update_excluded() -> None:
     """Recompute the set of window IDs that live on inactive
     `lovable-<name>` workspaces and atomically write to EXCLUDED_FILE.
 
-    The legacy `lovable` and `lovable-deps` workspaces are NOT inactive
-    stacks — windows on them pass through the filter."""
+    The legacy bare `lovable` workspace is NOT an inactive stack —
+    windows on it pass through the filter."""
     active = read_active()
     workspaces = niri_json("workspaces") or []
     inactive_ws_ids: set[int] = set()
@@ -129,7 +129,7 @@ def update_excluded() -> None:
         name = ws.get("name") or ""
         if not name.startswith("lovable-"):
             continue
-        if name in ("lovable", "lovable-deps"):
+        if name == "lovable":
             continue
         if name == active:
             continue

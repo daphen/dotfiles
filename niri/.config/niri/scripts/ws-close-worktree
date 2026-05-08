@@ -44,6 +44,10 @@ def main() -> int:
     workspace = f"lovable-{name}"
     branch = f"daphen/{name}"
     wt_path = HOME / f"work/lovable.daphen-{name}"
+    # `main` is the always-on workspace (~/work/lovable, no per-feature
+    # worktree). Don't run wt remove on it — there's nothing to remove,
+    # and it'd happily nuke the main worktree if we asked.
+    is_main = (name == "main")
 
     # 0. If we're currently focused on the workspace we're about to
     #    close, jump to another lovable worktree first (else niri
@@ -56,7 +60,7 @@ def main() -> int:
             (w for w in workspaces
              if (w.get("name") or "").startswith("lovable-")
              and w.get("name") != workspace
-             and w.get("name") not in ("lovable", "lovable-deps")),
+             and w.get("name") != "lovable"),
             key=lambda w: (w.get("output") or "", w.get("idx") or 0),
         )
         if siblings:
@@ -85,7 +89,9 @@ def main() -> int:
                 break
 
     # 2. Best-effort `devenv kill` for this worktree's dev services.
-    if wt_path.is_dir():
+    #    Skipped for main since the deps singleton lives on lovable-main
+    #    and is reused across worktree open/close cycles.
+    if not is_main and wt_path.is_dir():
         log = open("/tmp/ws-close-worktree-kill.log", "ab")
         subprocess.Popen(
             ["sh", "-c", f"cd '{wt_path}' && direnv exec . devenv kill"],
@@ -94,7 +100,9 @@ def main() -> int:
         )
 
     # 3. Remove the git worktree (and branch, if merged) via `wt`.
-    if wt_path.is_dir():
+    #    Skipped for main — there's no per-feature worktree to remove,
+    #    and `wt remove daphen/main` would nuke the main worktree.
+    if not is_main and wt_path.is_dir():
         rc = subprocess.run(
             ["wt", "remove", branch],
             cwd=str(LOVABLE_DIR),

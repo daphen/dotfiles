@@ -76,13 +76,12 @@ def window_sort_key(w: dict) -> tuple[int, int, int, int]:
 def is_hidden_workspace(ws: dict, active: str | None) -> bool:
     """Workspaces that should be filtered out of the minimap row:
     inactive lovable stacks (only the active one is reachable via
-    Super+J/K) and the deps-stash HUD parking workspace."""
+    Super+J/K). lovable-main is always shown — it's a permanent
+    workspace, not a per-feature stack."""
     name = ws.get("name") or ""
-    if name == "deps-stash":
-        return True
     if not name.startswith("lovable-"):
         return False
-    if name in ("lovable", "lovable-deps"):
+    if name in ("lovable", "lovable-deps", "lovable-main"):
         return False
     return name != active
 

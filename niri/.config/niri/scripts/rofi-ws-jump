@@ -2,7 +2,9 @@
 # Rofi picker over open lovable worktrees.
 #
 #   Enter   → focus the selected worktree's workspace
-#   Ctrl+W  → close the worktree (kills windows, devenv kill, wt remove).
+#   Ctrl+W  → close the worktree session: kills windows + devenv kill +
+#             unnames the workspace, but keeps the on-disk worktree dir
+#             so it can be reopened later via Super+Ctrl+T.
 #             Confirmed via a second rofi prompt.
 #
 # Order: most-recently visited first (read from ws-tracker's recency

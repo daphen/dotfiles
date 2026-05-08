@@ -2,13 +2,21 @@
 """
 ws-close-worktree <name>
 
-Closes a lovable worktree end-to-end:
+Tear down a lovable worktree's session WITHOUT touching the on-disk
+worktree:
+
   1. Closes every window on the `lovable-<name>` workspace.
-  2. Runs `devenv kill` in the worktree directory (best effort).
-  3. Removes the git worktree via `wt remove daphen/<name>`.
-  4. Unnames the workspace so niri can garbage-collect it. niri keeps
+  2. Runs `devenv kill` in the worktree directory to free dev ports
+     (best effort).
+  3. Unnames the workspace so niri can garbage-collect it. niri keeps
      NAMED workspaces around even when empty — only unnamed empty
      trailing workspaces auto-disappear.
+
+The git worktree at ~/work/lovable.daphen-<name> stays on disk —
+re-opening it later via Super+Ctrl+T (rofi-ws-startwt) is fast
+because no `wt switch --create` is needed. To fully remove the
+worktree (delete the dir + branch via `wt remove`), do that
+manually with `wt remove daphen/<name>`.
 
 If anything fails the script prints to stderr and exits non-zero so
 the caller can show an error.
@@ -22,7 +30,6 @@ import time
 from pathlib import Path
 
 HOME = Path(os.environ["HOME"])
-LOVABLE_DIR = HOME / "work" / "lovable"
 
 
 def niri_json(*args: str):
@@ -42,11 +49,10 @@ def main() -> int:
         return 2
     name = sys.argv[1]
     workspace = f"lovable-{name}"
-    branch = f"daphen/{name}"
     wt_path = HOME / f"work/lovable.daphen-{name}"
-    # `main` is the always-on workspace (~/work/lovable, no per-feature
-    # worktree). Don't run wt remove on it — there's nothing to remove,
-    # and it'd happily nuke the main worktree if we asked.
+    # `main` is the always-on workspace pointing at ~/work/lovable. We
+    # skip `devenv kill` for it because the deps singleton lives there
+    # and we don't want to take it down on every worktree-close cycle.
     is_main = (name == "main")
 
     # 0. If we're currently focused on the workspace we're about to
@@ -80,8 +86,8 @@ def main() -> int:
                 ["niri", "msg", "action", "close-window", "--id", str(wid)],
                 capture_output=True, timeout=2,
             )
-        # Wait briefly for windows to actually close so wt remove
-        # doesn't run while devenv is still holding the dir.
+        # Wait briefly for windows to actually close so devenv kill
+        # doesn't race a process-compose still holding the dir.
         for _ in range(20):
             time.sleep(0.15)
             still = niri_json("windows") or []
@@ -99,28 +105,14 @@ def main() -> int:
             stdin=subprocess.DEVNULL, start_new_session=True,
         )
 
-    # 3. Remove the git worktree (and branch, if merged) via `wt`.
-    #    Skipped for main — there's no per-feature worktree to remove,
-    #    and `wt remove daphen/main` would nuke the main worktree.
-    if not is_main and wt_path.is_dir():
-        rc = subprocess.run(
-            ["wt", "remove", branch],
-            cwd=str(LOVABLE_DIR),
-            capture_output=True, text=True,
-        )
-        if rc.returncode != 0:
-            print(rc.stdout, end="", file=sys.stderr)
-            print(rc.stderr, end="", file=sys.stderr)
-            return rc.returncode
-
-    # 4. Unname the workspace so niri can garbage-collect it. Without
+    # 3. Unname the workspace so niri can garbage-collect it. Without
     #    this it lingers as an empty named workspace forever.
     subprocess.run(
         ["niri", "msg", "action", "unset-workspace-name", workspace],
         capture_output=True, timeout=2,
     )
 
-    # 5. Clear active-stack state if it pointed here.
+    # 4. Clear active-stack state if it pointed here.
     active_file = HOME / ".local/state/wt-stacks/ws/active"
     try:
         if active_file.read_text().strip() == workspace:
@@ -128,7 +120,7 @@ def main() -> int:
     except Exception:
         pass
 
-    print(f"closed worktree '{name}'")
+    print(f"closed lovable-{name} session (worktree dir kept on disk)")
     return 0
 
 

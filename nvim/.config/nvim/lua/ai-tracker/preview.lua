@@ -939,6 +939,13 @@ function M.ask_about_chunk()
 	end)
 end
 
+--- Return the cached niri workspace id for this nvim, or nil if niri isn't
+--- available / the lookup hasn't completed yet.
+---@return integer?
+function M.workspace_id()
+	return _cached_workspace_id
+end
+
 --- Is the preview gate currently enabled?
 ---@return boolean
 function M.is_enabled()

@@ -82,7 +82,12 @@ end
 
 local function path_in_current_project(path)
   local root = current_project_root()
-  return root ~= nil and path ~= nil and vim.startswith(path, root)
+  if not root or not path then return false end
+  if not vim.startswith(path, root) then return false end
+  -- Make sure /a/b doesn't match /a/b-foo as "in project". Either path == root,
+  -- or the next char is a path separator.
+  local next_char = path:sub(#root + 1, #root + 1)
+  return next_char == "" or next_char == "/"
 end
 
 -- Memoized git common dir per directory. The "common dir" is the shared
@@ -396,16 +401,35 @@ function M.handle_batch(entries)
     end
   end
 
-  -- Live-follow: switch the current window to the latest AI edit *in this
-  -- nvim's project*. Strict prefix match — files in other worktrees of the
-  -- same repo are intentionally ignored so one-nvim-per-worktree setups
-  -- don't bleed edits across each other.
+  -- Live-follow rule:
+  --   1. File is in our exact project_root (prefix match). Always follow,
+  --      because it's literally a file in our worktree.
+  --   2. File is in a different worktree of the same repo, AND the edit
+  --      came from a Claude in our same niri workspace. Follow — that's
+  --      the "main observer in workspace W watches its workspace's Claude
+  --      working across worktrees" pattern.
+  --   3. Otherwise skip.
+  -- If either side doesn't know its niri workspace, the cross-worktree
+  -- branch is suppressed (we don't have enough info to scope safely).
   if M.config.live_follow and not in_insert_mode() then
+    local our_ws
+    local preview_ok, preview = pcall(require, "ai-tracker.preview")
+    if preview_ok and preview.workspace_id then our_ws = preview.workspace_id() end
+
     local follow
     for _, e in ipairs(entries) do
-      if e.file_path and path_in_current_project(e.file_path) then
-        if not follow or (e.timestamp or "") > (follow.timestamp or "") then
-          follow = e
+      if e.file_path then
+        local in_project = path_in_current_project(e.file_path)
+        local cross_worktree_match = (
+          our_ws ~= nil
+          and e.niri_workspace_id ~= nil
+          and e.niri_workspace_id == our_ws
+          and path_in_same_repo(e.file_path)
+        )
+        if in_project or cross_worktree_match then
+          if not follow or (e.timestamp or "") > (follow.timestamp or "") then
+            follow = e
+          end
         end
       end
     end

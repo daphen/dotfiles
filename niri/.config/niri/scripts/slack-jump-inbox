@@ -23,8 +23,18 @@ slack_id=$(makoctl list -j 2>/dev/null \
 
 if [ -n "$slack_id" ]; then
     makoctl invoke -n "$slack_id" 2>/dev/null || true
-    # Slack opens itself; no further focus step needed.
     makoctl dismiss -n "$slack_id" 2>/dev/null || true
+    # Slack's default action switches its sidebar workspace + channel
+    # via DBus and usually raises the window via xdg_activation. If
+    # that didn't move focus (focus-stealing prevention, or Slack on
+    # a different niri workspace), fall back to niri-jump-or-exec.
+    # Only fall back when Slack ISN'T already focused, so we don't
+    # accidentally cycle to a second Slack window if multiple exist.
+    sleep 0.05
+    focused_app=$(niri msg --json focused-window 2>/dev/null | jq -r '.app_id // empty' 2>/dev/null)
+    if [ "$focused_app" != "Slack" ]; then
+        "$DIR/niri-jump-or-exec" Slack slack || true
+    fi
 else
     "$DIR/niri-jump-or-exec" Slack slack || true
 fi

@@ -233,7 +233,7 @@ layout {
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#999999"
+        inactive-color "#3A3A3A"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -258,7 +258,7 @@ layout {
 
         width 4
         active-color "#FF570D"
-        inactive-color "#999999"
+        inactive-color "#3A3A3A"
 
         // Color of the border around windows that request your attention.
         urgent-color "#9b0000"
@@ -537,7 +537,7 @@ window-rule {
 }
 
 // Endcord (Discord TUI) - same sizing as kitty. Launched via Super+C as
-// `kitty --class endcord -e endcord`, so its app-id is "endcord" (not
+// `$HOME/.config/niri/scripts/launch-endcord`, so its app-id is "endcord" (not
 // "kitty") which keeps it out of the Super+d "general terminal" cycle
 // (ws-focus filters by app_id == "kitty").
 window-rule {
@@ -612,7 +612,7 @@ binds {
     Super+Alt+S allow-when-locked=true hotkey-overlay-title=null { spawn-sh "pkill orca || exec orca"; }
 
     // Jump-or-exec keybinds for quick app access
-    Super+c { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec endcord 'kitty --class endcord -e endcord'"; }
+    Super+c { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec endcord $HOME/.config/niri/scripts/launch-endcord"; }
     Super+e { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-yazi"; }
     // Press in response to any chat-app mako notification. Reads the
     // top notification's app_name and dispatches to the right handler:

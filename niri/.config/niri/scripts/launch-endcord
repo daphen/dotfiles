@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Launch endcord in a kitty window with the tuning we want:
+#   - smaller font than the global default (13 → 11)
+#   - asymmetric padding (vertical < horizontal) to compensate for
+#     kitty's cell-fit slack, which is ~2.5x larger on the vertical
+#     axis because cells are tall and narrow. With 14 14 it looks
+#     visibly more padded top/bottom than left/right; bumping
+#     horizontal to 18 brings the visual balance closer.
+#
+# A wrapper script (rather than `niri-jump-or-exec '...'`) is needed
+# because that helper word-splits its $COMMAND, which mangles the
+# `"14 18"` form of window_padding_width.
+exec kitty \
+    --class endcord \
+    -o font_size=12 \
+    -o window_padding_width="14 18" \
+    -e endcord

@@ -17,7 +17,7 @@ set -e
 
 DIR=$(dirname "$0")
 
-"$DIR/niri-jump-or-exec" endcord 'kitty --class endcord -e endcord' || true
+"$DIR/niri-jump-or-exec" endcord "$DIR/launch-endcord" || true
 
 # Give niri a tick to actually transfer keyboard focus to kitty.
 sleep 0.08

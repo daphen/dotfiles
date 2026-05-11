@@ -105,6 +105,59 @@ def main() -> int:
             stdin=subprocess.DEVNULL, start_new_session=True,
         )
 
+    # 2b. Reap orphan dev workers whose parent already exited and got
+    #     reparented to PID 1. Common with Next.js compile workers —
+    #     when `pnpm dev` restarts, its worker_threads / child_process
+    #     spawns aren't always reaped and survive `devenv kill`
+    #     indefinitely, pinning a core forever. Scope strictly to PIDs
+    #     whose cwd is inside this worktree so we never touch unrelated
+    #     processes.
+    if not is_main and wt_path.is_dir():
+        wt_str = str(wt_path)
+        for proc in Path("/proc").iterdir():
+            if not proc.name.isdigit():
+                continue
+            pid = int(proc.name)
+            try:
+                # Only orphaned processes (PPID == 1 = systemd).
+                ppid_line = (proc / "status").read_text().splitlines()
+                ppid = next(
+                    (int(l.split()[1]) for l in ppid_line if l.startswith("PPid:")),
+                    None,
+                )
+                if ppid != 1:
+                    continue
+                cwd = os.readlink(proc / "cwd")
+            except (OSError, FileNotFoundError, PermissionError):
+                continue
+            if cwd == wt_str or cwd.startswith(wt_str + "/"):
+                try:
+                    os.kill(pid, 15)  # SIGTERM first
+                except ProcessLookupError:
+                    pass
+        # Escalate any survivors to SIGKILL after a short grace.
+        time.sleep(0.4)
+        for proc in Path("/proc").iterdir():
+            if not proc.name.isdigit():
+                continue
+            pid = int(proc.name)
+            try:
+                ppid_line = (proc / "status").read_text().splitlines()
+                ppid = next(
+                    (int(l.split()[1]) for l in ppid_line if l.startswith("PPid:")),
+                    None,
+                )
+                if ppid != 1:
+                    continue
+                cwd = os.readlink(proc / "cwd")
+            except (OSError, FileNotFoundError, PermissionError):
+                continue
+            if cwd == wt_str or cwd.startswith(wt_str + "/"):
+                try:
+                    os.kill(pid, 9)
+                except ProcessLookupError:
+                    pass
+
     # 3. Unname the workspace so niri can garbage-collect it. Without
     #    this it lingers as an empty named workspace forever.
     subprocess.run(

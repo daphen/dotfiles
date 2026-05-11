@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+"""
+reap-orphan-dev-workers [--dry-run]
+
+Find and kill node-style dev workers that have been orphaned (reparented
+to PID 1 = systemd) and whose cwd is inside a lovable worktree dir.
+
+Background:
+  Next.js spawns compile workers via worker_threads / child_process.
+  When the parent `pnpm dev` exits or hot-reloads, those workers don't
+  always die — they reparent to systemd and keep burning CPU forever,
+  invisible to `devenv kill` / process-compose.
+
+Heuristic for "is this an orphan dev worker to reap":
+  - PPID == 1 (reparented to init)
+  - cwd is under ~/work/lovable* (lovable monorepo or any worktree)
+  - comm matches a dev-worker name (next-server / esbuild / tsc / etc.)
+
+Use --dry-run to preview without killing.
+"""
+from __future__ import annotations
+import os
+import sys
+import time
+from pathlib import Path
+
+WORK_ROOT = Path(os.environ["HOME"]) / "work"
+
+# Commands we treat as dev workers; conservative so we don't reap
+# anything the user actually wants. Extend as needed.
+WORKER_COMM = {
+    "next-server",
+    "next-server (v1",   # truncated form ps/comm shows
+    "next-server (v16",
+    "node",              # generic node — gated further by cwd + age below
+    "esbuild",
+    "tsc",
+    "vite",
+    "webpack",
+}
+
+# Minimum elapsed seconds before we kill a generic `node` orphan. Avoid
+# racing brand-new workers that just haven't been adopted yet.
+NODE_MIN_AGE_S = 60
+
+
+def proc_field(pid: int, field: str) -> str | None:
+    try:
+        for line in Path(f"/proc/{pid}/status").read_text().splitlines():
+            if line.startswith(f"{field}:"):
+                return line.split(None, 1)[1].strip()
+    except OSError:
+        return None
+    return None
+
+
+def proc_ppid(pid: int) -> int | None:
+    v = proc_field(pid, "PPid")
+    return int(v) if v is not None else None
+
+
+def proc_cwd(pid: int) -> str | None:
+    try:
+        return os.readlink(f"/proc/{pid}/cwd")
+    except OSError:
+        return None
+
+
+def proc_comm(pid: int) -> str | None:
+    try:
+        return Path(f"/proc/{pid}/comm").read_text().strip()
+    except OSError:
+        return None
+
+
+def proc_age_s(pid: int) -> float:
+    try:
+        clk_tck = os.sysconf("SC_CLK_TCK")
+        boot_s = Path("/proc/uptime").read_text().split()[0]
+        # /proc/<pid>/stat field 22 is starttime in jiffies since boot.
+        stat = Path(f"/proc/{pid}/stat").read_text()
+        # The comm field may contain spaces inside parens; split on ') '.
+        after_comm = stat.split(") ", 1)[1].split()
+        starttime_jiffies = int(after_comm[19])
+        return float(boot_s) - (starttime_jiffies / clk_tck)
+    except (OSError, IndexError, ValueError):
+        return 0
+
+
+def is_worktree_cwd(cwd: str) -> bool:
+    try:
+        Path(cwd).relative_to(WORK_ROOT)
+        return True
+    except ValueError:
+        return False
+
+
+def find_candidates() -> list[int]:
+    out = []
+    for proc in Path("/proc").iterdir():
+        if not proc.name.isdigit():
+            continue
+        pid = int(proc.name)
+        if proc_ppid(pid) != 1:
+            continue
+        comm = proc_comm(pid) or ""
+        if comm not in WORKER_COMM and not any(comm.startswith(c) for c in WORKER_COMM):
+            continue
+        cwd = proc_cwd(pid)
+        if cwd is None or not is_worktree_cwd(cwd):
+            continue
+        if comm == "node" and proc_age_s(pid) < NODE_MIN_AGE_S:
+            continue
+        out.append(pid)
+    return out
+
+
+def main() -> int:
+    dry = "--dry-run" in sys.argv
+    pids = find_candidates()
+    if not pids:
+        print("no orphan dev workers found")
+        return 0
+    for pid in pids:
+        comm = proc_comm(pid) or "?"
+        cwd = proc_cwd(pid) or "?"
+        age = int(proc_age_s(pid))
+        print(f"  pid={pid} comm={comm!r} age={age}s cwd={cwd}")
+    if dry:
+        print(f"--dry-run: would kill {len(pids)} process(es)")
+        return 0
+    print(f"sending SIGTERM to {len(pids)} process(es)…")
+    for pid in pids:
+        try:
+            os.kill(pid, 15)
+        except ProcessLookupError:
+            pass
+    time.sleep(0.4)
+    survivors = [pid for pid in pids if os.path.exists(f"/proc/{pid}")]
+    if survivors:
+        print(f"sending SIGKILL to {len(survivors)} survivor(s)…")
+        for pid in survivors:
+            try:
+                os.kill(pid, 9)
+            except ProcessLookupError:
+                pass
+    print("done")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Single-keybind notification responder. Looks at the topmost mako
+# notification (or, if none is visible, the most-recent history entry)
+# to decide which chat app to focus + jump to unread.
+#
+# Each mako notification carries an `app_name` set by notify-send's
+# --app-name; we dispatch on that.
+set -e
+
+DIR=$(dirname "$0")
+
+pick_app() {
+    # Visible notifications first (top of stack is what the user is
+    # currently looking at).
+    app=$(makoctl list -j 2>/dev/null | jq -r '.[0].app_name // empty' 2>/dev/null)
+    if [ -z "$app" ]; then
+        # Fall through to the most recent history entry — handles the
+        # case where the notification already expired before the user
+        # got to press the keybind.
+        app=$(makoctl history -j 2>/dev/null | jq -r '.[0].app_name // empty' 2>/dev/null)
+    fi
+    printf '%s' "$app"
+}
+
+app=$(pick_app)
+
+case "$app" in
+    endcord)
+        exec "$DIR/endcord-jump-inbox"
+        ;;
+    Slack|slack)
+        exec "$DIR/slack-jump-inbox"
+        ;;
+    *)
+        # No matching notification — default to endcord (the more
+        # frequent notifier in this setup). Override here if that
+        # changes.
+        exec "$DIR/endcord-jump-inbox"
+        ;;
+esac

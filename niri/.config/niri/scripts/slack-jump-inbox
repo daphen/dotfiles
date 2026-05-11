@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Focus Slack and open the exact channel that just notified.
+#
+# Slack registers a default action on every notification it sends. Mako
+# can invoke that action via DBus, and Slack — being a long-running
+# process listening on the bus — responds by opening the right channel
+# and focusing its window. So we just hand off to mako rather than
+# trying to navigate inside Slack via simulated keys.
+#
+# Why not Alt+Shift+Down? That cycles through unread channels in
+# *sidebar order*, not by recency — wrong channel if multiple are
+# unread. The DBus default-action path is exact.
+#
+# Fallback: if no live notification (already dismissed/expired), focus
+# Slack via jump-or-exec and let the user navigate.
+set -e
+
+DIR=$(dirname "$0")
+
+# Try the topmost Slack notification's default action first.
+slack_id=$(makoctl list -j 2>/dev/null \
+    | jq -r 'map(select(.app_name == "Slack")) | .[0].id // empty' 2>/dev/null)
+
+if [ -n "$slack_id" ]; then
+    makoctl invoke -n "$slack_id" 2>/dev/null || true
+    # Slack opens itself; no further focus step needed.
+    makoctl dismiss -n "$slack_id" 2>/dev/null || true
+else
+    "$DIR/niri-jump-or-exec" Slack slack || true
+fi

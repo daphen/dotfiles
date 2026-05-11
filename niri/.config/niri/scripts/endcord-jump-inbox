@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Focus endcord and jump to the latest unread channel.
+# Intended for a single notification-response keybind: press once after
+# seeing a mako notification (or any time) to land on whatever is unread.
+#
+# Sequence:
+#   1. Use the standard jump-or-exec to focus/launch endcord
+#   2. Wait briefly for the focus to actually land on the kitty window
+#   3. Send Escape (exits vim INSERT mode if active — otherwise harmless)
+#   4. Send N — endcord's jump_latest_unread keybind in vim NORMAL mode
+#   5. Dismiss the topmost mako notification (no-op if none)
+#
+# Note: only works while endcord is in vim_mode = true (config default
+# for this setup). If you switch vim_mode off, replace `N` with whatever
+# the standard-mode binding for jump_latest_unread is (default: F16).
+set -e
+
+DIR=$(dirname "$0")
+
+"$DIR/niri-jump-or-exec" endcord 'kitty --class endcord -e endcord' || true
+
+# Give niri a tick to actually transfer keyboard focus to kitty.
+sleep 0.08
+
+# Esc → ensure NORMAL mode. N → jump_latest_unread.
+wtype -k Escape || true
+wtype N || true
+
+# Clear the notification we were responding to.
+makoctl dismiss 2>/dev/null || true

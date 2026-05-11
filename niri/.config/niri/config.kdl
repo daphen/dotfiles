@@ -233,7 +233,7 @@ layout {
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#3A3A3A"
+        inactive-color "#999999"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -258,7 +258,7 @@ layout {
 
         width 4
         active-color "#FF570D"
-        inactive-color "#3A3A3A"
+        inactive-color "#999999"
 
         // Color of the border around windows that request your attention.
         urgent-color "#9b0000"
@@ -429,6 +429,8 @@ window-rule {
     match app-id=r#"^imv$"#
     match app-id=r#"^mpv$"#
     open-floating true
+    default-column-width { fixed 2400; }
+    default-window-height { fixed 1200; }
 }
 
 // Example: block out two password managers from screen capture.
@@ -612,6 +614,11 @@ binds {
     // Jump-or-exec keybinds for quick app access
     Super+c { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec endcord 'kitty --class endcord -e endcord'"; }
     Super+e { spawn-sh "$HOME/.config/niri/scripts/spawn-terminal-with-yazi"; }
+    // Press in response to any chat-app mako notification. Reads the
+    // top notification's app_name and dispatches to the right handler:
+    // endcord → focus + N; Slack → focus + Alt+Shift+Down. Defaults
+    // to endcord if no notification is visible.
+    Super+i { spawn-sh "$HOME/.config/niri/scripts/inbox-jump"; }
     // Super+Ctrl+g: resume an existing claude session (fzf picker)
     // Super+Shift+g: start a NEW claude session, picking a working dir via zoxide+fzf
     Super+Ctrl+g { spawn-sh "kitty --class lovable_picker $HOME/.config/niri/scripts/spawn-claude-session-picker"; }
@@ -781,7 +788,7 @@ binds {
     Super+Ctrl+J { spawn "rofimoji" "--action" "copy" "type" "--selector" "rofi"; }  // Open emoji picker (copy + auto-type)
     Super+Ctrl+B { spawn "rofi-bluetooth"; }  // Open bluetooth menu
     Super+Ctrl+P { spawn "/home/daphen/.config/niri/scripts/rofi-asus-profile"; }  // Switch ASUS performance profile
-    Super+Ctrl+A { spawn "/home/daphen/.config/niri/scripts/toggle-airpods"; }  // Toggle AirPods connection
+    Super+Ctrl+A { spawn "/home/daphen/.config/niri/scripts/toggle-headphones"; }  // Toggle whichever headphones are on (Px8 or AirPods)
 
     // Dismiss all notifications
     Super+Escape { spawn "makoctl" "dismiss" "--all"; }

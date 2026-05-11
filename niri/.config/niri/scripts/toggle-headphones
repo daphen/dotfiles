@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Toggle whichever Bluetooth headphone pair is currently on.
+# If one is already connected, disconnect it. Otherwise, try each in order
+# (Px8 first, then AirPods) with a short timeout — the one that's powered on
+# will respond, the other will fail fast.
+
+set -u
+
+declare -a DEVICES=(
+    "EC:66:D1:CC:EC:2E|Px8 S2"
+    "20:F4:D4:22:2D:3A|AirPods Pro #3"
+)
+
+is_connected() {
+    bluetoothctl info "$1" 2>/dev/null | grep -q "Connected: yes"
+}
+
+for entry in "${DEVICES[@]}"; do
+    mac="${entry%|*}"
+    name="${entry#*|}"
+    if is_connected "$mac"; then
+        bluetoothctl disconnect "$mac" >/dev/null
+        notify-send "Bluetooth" "Disconnected $name" -t 2000
+        exit 0
+    fi
+done
+
+notify-send "Bluetooth" "Looking for headphones…" -t 2000
+
+for entry in "${DEVICES[@]}"; do
+    mac="${entry%|*}"
+    name="${entry#*|}"
+    if timeout 6 bluetoothctl connect "$mac" >/dev/null 2>&1; then
+        notify-send "Bluetooth" "Connected $name" -t 2000
+        exit 0
+    fi
+done
+
+notify-send -u critical "Bluetooth" "No headphones available" -t 3000
+exit 1

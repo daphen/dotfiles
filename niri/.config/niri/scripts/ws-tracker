@@ -37,6 +37,13 @@ REORDER_SCRIPT = Path(os.environ["HOME"]) / ".config/niri/scripts/ws-reorder"
 # closed worktrees are filtered out at read time anyway.
 RECENCY_LIMIT = 50
 
+# Niri shuffles workspaces to a surviving output when one disappears
+# and doesn't always shuffle them back on reconnect. We pin lovable-*
+# workspaces to this output and move them back on reconnect (detected
+# by the output set gaining the preferred output between two events).
+# Override via env var if you ever attach a different external.
+PREFERRED_LOVABLE_OUTPUT = os.environ.get("NIRI_LOVABLE_OUTPUT", "DP-2")
+
 WS_FOCUSED_RE = re.compile(r"^Workspace focused:\s+(\d+)")
 # Trigger an exclusion-list refresh on any of these.
 RELEVANT_EVENT_RE = re.compile(
@@ -177,6 +184,34 @@ def move_deps_to_active() -> None:
     return
 
 
+def output_set() -> set[str]:
+    """Set of output names currently hosting at least one workspace."""
+    return {
+        w.get("output")
+        for w in (niri_json("workspaces") or [])
+        if w.get("output")
+    }
+
+
+def reclaim_preferred_output() -> None:
+    """Move every lovable-* workspace back to PREFERRED_LOVABLE_OUTPUT.
+    Safe no-op when the preferred output isn't connected or when the
+    workspaces are already there."""
+    workspaces = niri_json("workspaces") or []
+    if not any(w.get("output") == PREFERRED_LOVABLE_OUTPUT for w in workspaces):
+        return
+    for w in workspaces:
+        name = w.get("name") or ""
+        if not name.startswith("lovable-"):
+            continue
+        if w.get("output") == PREFERRED_LOVABLE_OUTPUT:
+            continue
+        niri_action(
+            "move-workspace-to-monitor",
+            "--reference", name, PREFERRED_LOVABLE_OUTPUT,
+        )
+
+
 def daemon() -> int:
     # Startup: pick up currently focused stack workspace if any.
     fw = niri_json("focused-window")
@@ -187,6 +222,12 @@ def daemon() -> int:
 
     update_excluded()
     reorder()
+    # Track outputs across events so we can detect a reconnect: when
+    # the preferred output transitions absent → present, snap lovable-*
+    # workspaces back to it.
+    known_outputs = output_set()
+    if PREFERRED_LOVABLE_OUTPUT in known_outputs:
+        reclaim_preferred_output()
 
     proc = subprocess.Popen(
         ["niri", "msg", "event-stream"],
@@ -215,6 +256,15 @@ def daemon() -> int:
         # Window/workspace life-cycle events: just refresh the exclusion
         # set. Cheap (one niri msg per event), no animation triggers.
         update_excluded()
+
+        # Output-reconnect reclaim: only fires when the preferred output
+        # appears in the set after being absent. Catches monitor
+        # plug-back-in without fighting manual cross-output moves.
+        new_outputs = output_set()
+        if (PREFERRED_LOVABLE_OUTPUT in new_outputs
+                and PREFERRED_LOVABLE_OUTPUT not in known_outputs):
+            reclaim_preferred_output()
+        known_outputs = new_outputs
 
     # event-stream returned EOF (niri restarted, IPC dropped, etc.).
     # Caller should reconnect.

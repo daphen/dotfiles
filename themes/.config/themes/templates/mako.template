@@ -45,3 +45,13 @@ layer=overlay
 # are suppressed.
 [mode=do-not-disturb]
 invisible=1
+
+# Hide Claude Code's default "Claude is waiting for your input"
+# notification. Claude Code sends notifications via kitty's OSC 99
+# protocol (not notify-send) — kitty forwards them to mako, so
+# app-name shows as "kitty" and summary as "Claude Code".
+# The Notification hook at ~/.claude/hooks/notify-with-context.sh
+# fires its own enriched version (summary "Claude · <project>")
+# that doesn't match this rule, so only the custom one shows.
+[app-name=kitty summary="Claude Code"]
+invisible=1

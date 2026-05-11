@@ -37,6 +37,16 @@
           }
         ]
       }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/daphen/.claude/hooks/notify-with-context.sh"
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {

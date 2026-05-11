@@ -31,6 +31,14 @@ case "$app" in
     Slack|slack)
         exec "$DIR/slack-jump-inbox"
         ;;
+    kitty)
+        # Any TUI app using kitty's OSC notify protocol — most often
+        # Claude Code ("Claude is waiting for your input"), but kitty
+        # registers the default action regardless. Invoking it tells
+        # kitty to focus the originating terminal window, so we don't
+        # need to know which Claude/session it was.
+        exec "$DIR/kitty-osc-jump"
+        ;;
     *)
         # No matching notification — default to endcord (the more
         # frequent notifier in this setup). Override here if that

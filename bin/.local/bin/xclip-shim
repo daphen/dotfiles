@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# xclip shim. On Wayland, clipboard READS get routed through wl-paste —
+# works around niri's Wayland↔X11 selection mediation getting wedged
+# after suspend/wake (xclip exits 0 with empty stdout, so apps that
+# only check exit code, like Claude Code's image-paste, see an empty
+# clipboard).
+#
+# All other invocations (writes, primary-selection ops, anything off
+# Wayland) pass through to the real xclip binary.
+
+set -u
+
+real_xclip=/etc/profiles/per-user/daphen/bin/xclip
+[ -x "$real_xclip" ] || real_xclip=/run/current-system/sw/bin/xclip
+[ -x "$real_xclip" ] || real_xclip=$(command -v -p xclip 2>/dev/null || true)
+
+on_wayland=false
+[ -n "${WAYLAND_DISPLAY:-}" ] && on_wayland=true
+
+# Parse the arg flavours xclip accepts. We only care about:
+#   selection / target / direction (-o for read, -i for write).
+selection=primary   # xclip default
+target=""
+mode=in             # xclip default is input
+passthrough=("$@")
+args=("$@")
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -selection|--selection)
+            selection="${2:-primary}"; shift 2 || break ;;
+        -selection=*|--selection=*)
+            selection="${1#*=}"; shift ;;
+        -t|--target|-target)
+            target="${2:-}"; shift 2 || break ;;
+        -t=*|--target=*|-target=*)
+            target="${1#*=}"; shift ;;
+        -o|--output|-out)
+            mode=out; shift ;;
+        -i|--input|-in)
+            mode=in; shift ;;
+        *)
+            shift ;;
+    esac
+done
+
+# Only intercept clipboard reads on Wayland.
+if [ "$on_wayland" = true ] && [ "$mode" = out ] && [ "$selection" = clipboard ]; then
+    case "$target" in
+        ""|STRING|UTF8_STRING|TEXT|text/plain*)
+            exec wl-paste ;;
+        TARGETS)
+            exec wl-paste --list-types ;;
+        *)
+            exec wl-paste --type "$target" ;;
+    esac
+fi
+
+# Fall through to the real xclip with the original args.
+exec "$real_xclip" "${passthrough[@]}"

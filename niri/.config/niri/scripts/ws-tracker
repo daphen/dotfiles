@@ -39,10 +39,11 @@ RECENCY_LIMIT = 50
 
 # Niri shuffles workspaces to a surviving output when one disappears
 # and doesn't always shuffle them back on reconnect. We pin lovable-*
-# workspaces to this output and move them back on reconnect (detected
-# by the output set gaining the preferred output between two events).
-# Override via env var if you ever attach a different external.
-PREFERRED_LOVABLE_OUTPUT = os.environ.get("NIRI_LOVABLE_OUTPUT", "DP-2")
+# workspaces to the first available "external" output (anything not
+# the laptop built-in eDP-1) and move them back on reconnect (detected
+# by the output set gaining ANY new non-laptop output between events).
+# Override the laptop name via env var on a different machine.
+LAPTOP_OUTPUT = os.environ.get("NIRI_LAPTOP_OUTPUT", "eDP-1")
 
 WS_FOCUSED_RE = re.compile(r"^Workspace focused:\s+(\d+)")
 # Trigger an exclusion-list refresh on any of these.
@@ -193,22 +194,34 @@ def output_set() -> set[str]:
     }
 
 
+def pick_external_output(workspaces: list) -> str | None:
+    """Return the first non-laptop output currently connected, or None
+    if only the laptop is connected (i.e. nothing to reclaim TO)."""
+    seen = []
+    for w in workspaces:
+        out = w.get("output")
+        if out and out != LAPTOP_OUTPUT and out not in seen:
+            seen.append(out)
+    return seen[0] if seen else None
+
+
 def reclaim_preferred_output() -> None:
-    """Move every lovable-* workspace back to PREFERRED_LOVABLE_OUTPUT.
-    Safe no-op when the preferred output isn't connected or when the
-    workspaces are already there."""
+    """Move every lovable-* workspace to the first connected non-laptop
+    output. Safe no-op when only the laptop is connected, or when all
+    lovable-* are already on the external."""
     workspaces = niri_json("workspaces") or []
-    if not any(w.get("output") == PREFERRED_LOVABLE_OUTPUT for w in workspaces):
+    target = pick_external_output(workspaces)
+    if target is None:
         return
     for w in workspaces:
         name = w.get("name") or ""
         if not name.startswith("lovable-"):
             continue
-        if w.get("output") == PREFERRED_LOVABLE_OUTPUT:
+        if w.get("output") == target:
             continue
         niri_action(
             "move-workspace-to-monitor",
-            "--reference", name, PREFERRED_LOVABLE_OUTPUT,
+            "--reference", name, target,
         )
 
 
@@ -223,10 +236,10 @@ def daemon() -> int:
     update_excluded()
     reorder()
     # Track outputs across events so we can detect a reconnect: when
-    # the preferred output transitions absent → present, snap lovable-*
-    # workspaces back to it.
+    # any non-laptop output transitions from absent → present, snap
+    # lovable-* workspaces over to it.
     known_outputs = output_set()
-    if PREFERRED_LOVABLE_OUTPUT in known_outputs:
+    if any(o != LAPTOP_OUTPUT for o in known_outputs):
         reclaim_preferred_output()
 
     proc = subprocess.Popen(
@@ -257,12 +270,14 @@ def daemon() -> int:
         # set. Cheap (one niri msg per event), no animation triggers.
         update_excluded()
 
-        # Output-reconnect reclaim: only fires when the preferred output
-        # appears in the set after being absent. Catches monitor
-        # plug-back-in without fighting manual cross-output moves.
+        # Output-reconnect reclaim: fires when ANY new non-laptop
+        # output appears in the set (i.e. an external just got plugged
+        # in, whichever port/model it is). Catches monitor plug-back-in
+        # without fighting manual cross-output moves.
         new_outputs = output_set()
-        if (PREFERRED_LOVABLE_OUTPUT in new_outputs
-                and PREFERRED_LOVABLE_OUTPUT not in known_outputs):
+        new_externals = {o for o in new_outputs
+                         if o != LAPTOP_OUTPUT and o not in known_outputs}
+        if new_externals:
             reclaim_preferred_output()
         known_outputs = new_outputs
 

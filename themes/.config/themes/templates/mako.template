@@ -42,9 +42,12 @@ layer=overlay
 
 # Do-not-disturb mode — toggled with Super+Shift+Ctrl+D
 # (`makoctl mode -t do-not-disturb`). When active, all notifications
-# are suppressed.
+# are auto-dismissed instantly. `invisible=1` would seem like the
+# natural choice but in mako 1.11 it only suppresses group-overflow
+# members, not regular notifications; `default-timeout=1` actually
+# auto-dismisses (still in history, just imperceptibly brief).
 [mode=do-not-disturb]
-invisible=1
+default-timeout=1
 
 # Hide Claude Code's default "Claude is waiting for your input"
 # notification. Claude Code sends notifications via kitty's OSC 99
@@ -53,5 +56,12 @@ invisible=1
 # The Notification hook at ~/.claude/hooks/notify-with-context.sh
 # fires its own enriched version (summary "Claude · <project>")
 # that doesn't match this rule, so only the custom one shows.
-[app-name=kitty summary="Claude Code"]
-invisible=1
+#
+# Three mako 1.11 gotchas this rule sidesteps:
+#   1. `summary` is exact-match (regex moved to `summary~`).
+#   2. `invisible=1` is group-overflow only — use default-timeout=1
+#      for actual suppression.
+#   3. The criteria parser breaks when a quoted-value criterion
+#      follows an unquoted one — backslash-escape the space instead.
+[app-name=kitty summary=Claude\ Code]
+default-timeout=1

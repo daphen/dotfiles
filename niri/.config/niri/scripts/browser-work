@@ -40,6 +40,7 @@ print(' '.join(str(w['id']) for w in windows if w.get('app_id') in ('$BROWSER_CL
 "$BROWSER_BIN" \
     "${BROWSER_FLAGS[@]}" \
     --user-data-dir="$BROWSER_USER_DATA_WORK" \
+    --profile-directory="$BROWSER_PROFILE" \
     --class="$BROWSER_CLASS_WORK" &
 
 # Poll for the new browser window (up to 5s)

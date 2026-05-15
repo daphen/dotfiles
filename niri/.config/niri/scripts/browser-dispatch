@@ -80,12 +80,14 @@ if [[ "$PROFILE" == "work" ]]; then
     exec "$BROWSER_BIN" \
         "${BROWSER_FLAGS[@]}" \
         --user-data-dir="$BROWSER_USER_DATA_WORK" \
+        --profile-directory="$BROWSER_PROFILE" \
         --class="$BROWSER_CLASS_WORK" \
         $NEW_WINDOW "$URL" >/dev/null 2>&1
 else
     exec "$BROWSER_BIN" \
         "${BROWSER_FLAGS[@]}" \
         --user-data-dir="$BROWSER_USER_DATA_PERSONAL" \
+        --profile-directory="$BROWSER_PROFILE" \
         --class="$BROWSER_CLASS_PERSONAL" \
         $NEW_WINDOW "$URL" >/dev/null 2>&1
 fi

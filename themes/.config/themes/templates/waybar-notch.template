@@ -74,6 +74,19 @@ window#waybar {
     padding: 0 5px;
 }
 
+/* Pin a min-width per varying-content module so neighbors don't slide
+ * when the value's character count changes (e.g. cpu 9% → 10% pushed
+ * everything to its right). Widths are sized for the worst case of
+ * each format string (3-digit %, 2-digit temperature, etc.). */
+#cpu        { min-width: 56px; }
+#memory     { min-width: 56px; }
+#pulseaudio { min-width: 64px; }
+#battery    { min-width: 64px; }
+#custom-weather { min-width: 70px; }
+#clock      { min-width: 64px; }
+#clock.date { min-width: 110px; }
+#network    { min-width: 100px; }
+
 /* The minimap sits dead center with significant left/right margin so the
  * left and right module groups feel like distinct "islands" inside the
  * notch rather than a continuous strip. ─────────────────────────────────── */

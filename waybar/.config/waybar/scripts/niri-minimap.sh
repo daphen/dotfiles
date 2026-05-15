@@ -95,14 +95,17 @@ def window_sort_key(w: dict) -> tuple[int, int, int, int]:
 
 
 def is_hidden_workspace(ws: dict, active: str | None) -> bool:
-    """Workspaces that should be filtered out of the minimap row:
-    inactive lovable stacks (only the active one is reachable via
-    Super+J/K). lovable-main is always shown — it's a permanent
-    workspace, not a per-feature stack."""
+    """Workspaces that should be filtered out of the minimap row.
+    Mirrors ws-focus-workspace-up's filter exactly: any `lovable-*`
+    other than the currently-active stack is hidden. That includes
+    `lovable-main`, which is only reachable via Super+Ctrl+M from
+    within an active worktree — not via Super+J/K — so showing it
+    in the minimap was misleading.
+    """
     name = ws.get("name") or ""
     if not name.startswith("lovable-"):
         return False
-    if name in ("lovable", "lovable-deps", "lovable-main"):
+    if name in ("lovable", "lovable-deps"):
         return False
     return name != active
 

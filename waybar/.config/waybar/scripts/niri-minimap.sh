@@ -11,13 +11,19 @@ Visualization: per-window bar minimap across every niri workspace.
   ·  placeholder for an empty *focused* workspace
 Empty unfocused workspaces are hidden.
 
-Color palette: bars sit directly on the (dark) wallpaper, so colors
-are always pulled from the *dark* theme block of colors.json,
-regardless of which theme mode is active. Falls back to hardcoded
-defaults if the file is missing.
-  semantic.cursor       → focused window (orange)
-  foreground.primary    → every other window (light, same on focused
-                          and unfocused workspaces alike)
+Color palette: bars used to sit directly on the wallpaper (always
+dark for our setup), but the new notch waybar theme has a solid
+*light-mode* background in light mode. So we now pick the palette
+block matching the active theme mode (read from
+~/.config/themes/.current-theme), which gives high-contrast bars
+against whatever surface the minimap currently sits on. Active
+focus colour stays semantic.cursor (orange) in both modes — it's
+the only colour cue that should pop, so we want it consistent.
+
+  semantic.cursor       → focused window (orange, both modes)
+  foreground.primary    → every other window — mode-dependent: light
+                          (#EDEDED-ish) in dark mode, dark
+                          (#2D4A3D-ish) in light mode
 """
 from __future__ import annotations
 import json
@@ -32,6 +38,7 @@ from pathlib import Path
 
 HOME = Path(os.environ["HOME"])
 COLORS_FILE = HOME / ".config/themes/colors.json"
+CURRENT_THEME_FILE = HOME / ".config/theme_mode"
 ACTIVE_FILE = HOME / ".local/state/wt-stacks/ws/active"
 
 RELEVANT_EVENT_RE = re.compile(
@@ -48,14 +55,28 @@ RELEVANT_EVENT_RE = re.compile(
 )
 
 
-def read_theme_colors() -> tuple[str, str]:
-    """Always returns the dark-mode palette so bars stay readable on
-    the wallpaper regardless of active theme."""
+def current_theme_mode() -> str:
+    """Read the active theme mode from theme-manager's state file.
+    Defaults to "dark" if missing or unreadable."""
     try:
-        c = json.loads(COLORS_FILE.read_text())["themes"]["dark"]
+        m = CURRENT_THEME_FILE.read_text().strip()
+        return m if m in ("dark", "light") else "dark"
+    except OSError:
+        return "dark"
+
+
+def read_theme_colors() -> tuple[str, str]:
+    """Pull (active, normal) bar colours from the palette block that
+    matches the active theme mode. Active stays semantic.cursor
+    (orange) in both modes; normal flips light → dark when the system
+    switches to light mode so bars stay visible on the light notch."""
+    mode = current_theme_mode()
+    try:
+        c = json.loads(COLORS_FILE.read_text())["themes"][mode]
         return (c["semantic"]["cursor"], c["foreground"]["primary"])
     except (OSError, KeyError, json.JSONDecodeError):
-        return ("#FF570D", "#EDEDED")
+        # Fallbacks: dark mode → light text, light mode → dark text.
+        return ("#FF570D", "#EDEDED" if mode == "dark" else "#2D4A3D")
 
 
 def niri_json(*args: str):
@@ -158,15 +179,18 @@ def emit(line: str) -> None:
 
 
 def daemon() -> int:
-    # Bar colors are locked to dark-mode and don't follow theme switches,
-    # so we read them once at startup.
+    # Re-read the palette every render so theme-manager dark↔light
+    # toggles propagate without restarting the daemon. The .current-theme
+    # file is tiny and cached by the kernel; reading it per event is
+    # essentially free.
     colors = read_theme_colors()
     last_render = render(*colors)
     emit(last_render)
 
     # SIGUSR1 → write a byte to a pipe → wakes select() so we re-render.
     # Used by niri keybinds for layout actions that don't emit events
-    # (move-column-left/right, move-window-up/down, etc.).
+    # (move-column-left/right, move-window-up/down, etc.) and by
+    # theme-manager after a mode toggle so colours update instantly.
     sig_r, sig_w = os.pipe()
     os.set_blocking(sig_r, False)
     os.set_blocking(sig_w, False)
@@ -184,7 +208,7 @@ def daemon() -> int:
 
     def maybe_emit():
         nonlocal last_render
-        out = render(*colors)
+        out = render(*read_theme_colors())
         if out != last_render:
             emit(out)
             last_render = out

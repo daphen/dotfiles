@@ -32,7 +32,7 @@ def render() -> str:
     workspaces = niri_json("workspaces") or []
     fw = next((w for w in workspaces if w.get("is_focused")), None)
     fname = (fw.get("name") if fw else "") or ""
-    if (not fname.startswith("lovable-")) or fname in ("lovable", "lovable-deps"):
+    if (not fname.startswith("lovable-")) or fname in ("lovable", "lovable-deps", "lovable-main"):
         return json.dumps({"text": "", "class": "empty", "tooltip": ""})
     stack_name = fname.removeprefix("lovable-")
 
@@ -44,7 +44,7 @@ def render() -> str:
         (w.get("name") or "").removeprefix("lovable-")
         for w in workspaces
         if (w.get("name") or "").startswith("lovable-")
-        and w.get("name") not in ("lovable", "lovable-deps")
+        and w.get("name") not in ("lovable", "lovable-deps", "lovable-main")
         and not w.get("is_focused")
     )
     tooltip_lines = [f"focused worktree: {stack_name}"]

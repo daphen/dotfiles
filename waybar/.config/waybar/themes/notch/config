@@ -1,0 +1,127 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 32,
+  "spacing": 8,
+
+  "// layout": "Notch theme. modules-center holds the entire notch contents (GTK auto-centers); modules-right holds only the floating worktree pill at the screen's far edge.",
+  "modules-left": [],
+  "modules-center": [
+    "clock#date",
+    "custom/weather",
+    "cpu",
+    "memory",
+    "custom/niri-minimap",
+    "custom/dnd",
+    "network",
+    "pulseaudio",
+    "battery",
+    "clock"
+  ],
+  "modules-right": ["custom/lovable-worktree"],
+
+  "clock#date": {
+    "format": "󰃭 {:%a %b %d}",
+    "tooltip": false
+  },
+
+  "clock": {
+    "format": "󰥔 {:%H:%M}",
+    "format-alt": "󰥔 {:%Y-%m-%d %H:%M}",
+    "tooltip-format": "<tt>{calendar}</tt>",
+    "calendar": {
+      "mode": "month",
+      "format": {
+        "months": "<span color='#ffead3'><b>{}</b></span>",
+        "days": "<span color='#ecc6d9'><b>{}</b></span>",
+        "weekdays": "<span color='#a6e3a1'><b>{}</b></span>",
+        "today": "<span color='#f38ba8'><b><u>{}</u></b></span>"
+      }
+    }
+  },
+
+  "battery": {
+    "bat": "BAT1",
+    "adapter": "ACAD",
+    "states": { "warning": 30, "critical": 15 },
+    "format": "{icon} {capacity}%",
+    "format-charging": "󰂄 {capacity}%",
+    "format-plugged": "󰚥 {capacity}%",
+    "format-alt": "{icon} {capacity}% {time}",
+    "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
+  },
+
+  "custom/weather": {
+    "format": "{}",
+    "interval": 900,
+    "exec": "~/.config/waybar/scripts/weather.sh",
+    "return-type": ""
+  },
+
+  "network": {
+    "format-wifi": "󱐋 {essid}",
+    "format-ethernet": "󱐋 {ifname}",
+    "format-disconnected": "󱐋 Disconnected",
+    "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-wifi": "󰖨 {essid} ({signalStrength}%)\n{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-ethernet": "󰈀 {ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-disconnected": "Disconnected",
+    "on-click": "networkmanager_dmenu"
+  },
+
+  "cpu": {
+    "interval": 2,
+    "format": "󰻠 {usage}%",
+    "tooltip": true
+  },
+
+  "memory": {
+    "interval": 5,
+    "format": "󰍛 {percentage}%",
+    "tooltip-format": "RAM: {used:0.1f} / {total:0.1f} GiB ({percentage}%)\nSwap: {swapUsed:0.1f} / {swapTotal:0.1f} GiB",
+    "tooltip": true,
+    "states": { "warning": 75, "critical": 90 }
+  },
+
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-bluetooth": "󰂯 {volume}%",
+    "format-muted": "󰝟 {volume}%",
+    "format-icons": {
+      "headphone": "󰋋",
+      "hands-free": "󰋎",
+      "headset": "󰋎",
+      "phone": "󰏲",
+      "portable": "󰦢",
+      "car": "󰄋",
+      "default": ["󰕿", "󰖀", "󰕾"]
+    },
+    "scroll-step": 5,
+    "on-click": "~/.config/waybar/scripts/audio-menu.sh",
+    "on-click-middle": "pavucontrol",
+    "on-click-right": "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+  },
+
+  "custom/niri-minimap": {
+    "exec": "~/.config/waybar/scripts/niri-minimap.sh",
+    "return-type": "json",
+    "format": "{}",
+    "tooltip": true
+  },
+
+  "custom/lovable-worktree": {
+    "exec": "~/.config/waybar/scripts/lovable-worktree.sh",
+    "return-type": "json",
+    "format": "{}",
+    "tooltip": true
+  },
+
+  "custom/dnd": {
+    "exec": "~/.config/waybar/scripts/dnd-status.sh",
+    "return-type": "json",
+    "interval": 2,
+    "format": "{}",
+    "tooltip": true,
+    "on-click": "makoctl mode -t do-not-disturb"
+  }
+}

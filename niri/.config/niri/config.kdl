@@ -339,7 +339,9 @@ blur {
 // See the binds section below for more spawn examples.
 
 // This line starts waybar
-spawn-at-startup "waybar"
+// waybar via theme switcher — picks the last-used theme from
+// ~/.local/state/waybar-theme. Cycle themes with Super+Ctrl+Shift+B.
+spawn-sh-at-startup "$HOME/.config/niri/scripts/waybar-theme"
 
 // Auto-restore wallpaper on startup with waypaper
 spawn-at-startup "waypaper" "--restore"
@@ -807,6 +809,7 @@ binds {
     Super+Ctrl+V { spawn "kitty" "--class" "clipse" "-o" "initial_window_width=1000" "-o" "initial_window_height=750" "clipse"; }  // Open clipboard history (clipse in floating terminal)
     Super+Ctrl+J { spawn "rofimoji" "--action" "copy" "type" "--selector" "rofi"; }  // Open emoji picker (copy + auto-type)
     Super+Ctrl+B { spawn "rofi-bluetooth"; }  // Open bluetooth menu
+    Super+Ctrl+Shift+B { spawn-sh "$HOME/.config/niri/scripts/waybar-theme --cycle"; }  // Cycle waybar theme
     Super+Ctrl+P { spawn "/home/daphen/.config/niri/scripts/rofi-asus-profile"; }  // Switch ASUS performance profile
     Super+Ctrl+A { spawn "/home/daphen/.config/niri/scripts/toggle-headphones"; }  // Toggle whichever headphones are on (Px8 or AirPods)
 

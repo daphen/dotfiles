@@ -1,0 +1,117 @@
+/* Notch theme — centered hanging notch + floating worktree pill on the right.
+ *
+ * Generated from themes/templates/waybar-notch.template — do not hand-edit;
+ * any edits get overwritten by theme-manager on the next theme apply. Tweak
+ * the template instead.
+ *
+ * Architecture:
+ *   - window#waybar background is transparent across the whole top edge.
+ *   - .modules-center gets a solid background + rounded BOTTOM corners,
+ *     so it visually "hangs" from the top of the screen as one coherent
+ *     notch surface. All notch modules are listed in modules-center.
+ *   - .modules-right holds just custom/lovable-worktree, GTK end-anchors
+ *     it so it ends up on the screen's far right as its own pill.
+ *   - #custom-niri-minimap gets large horizontal margins so the left
+ *     module group, the minimap, and the right module group sit visibly
+ *     separated within the notch.
+ */
+
+* {
+    font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font Mono", monospace;
+    font-size: 12px;
+    font-weight: 500;
+    min-height: 0;
+    border: none;
+}
+
+window#waybar {
+    background: transparent;
+    color: {{foreground.primary}};
+}
+
+/* The notch itself ────────────────────────────────────────────────────────── */
+
+.modules-center {
+    background: alpha({{background.primary}}, 0.95);
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0 24px;
+    /* No top radius — the notch attaches flush to the screen edge. */
+}
+
+/* The floating worktree pill on the far right ────────────────────────────── */
+
+/* No background on the container itself — when the worktree script
+ * decides we're NOT on a worktree stack workspace, it emits class=empty
+ * on the module and the module's own pill collapses to transparent.
+ * Putting the background on .modules-right would leave a phantom pill
+ * floating on chat / lovable-main / etc. */
+.modules-right {
+    margin: 0;
+}
+
+/* Module-level styling — transparent backgrounds inside the notch
+ * container; individual modules just get text padding. ───────────────────── */
+
+#clock,
+#clock.date,
+#battery,
+#custom-weather,
+#network,
+#cpu,
+#memory,
+#pulseaudio,
+#custom-niri-minimap,
+#custom-lovable-worktree,
+#custom-dnd {
+    background: transparent;
+    color: {{foreground.primary}};
+    padding: 0 8px;
+}
+
+/* The minimap sits dead center with significant left/right margin so the
+ * left and right module groups feel like distinct "islands" inside the
+ * notch rather than a continuous strip. ─────────────────────────────────── */
+
+#custom-niri-minimap {
+    margin: 0 80px;
+    padding: 0 12px;
+}
+
+/* Subtle accents ─────────────────────────────────────────────────────────── */
+
+#custom-weather { color: {{accent.yellow}}; }
+
+#battery.warning  { color: {{accent.orange}}; }
+#battery.critical { color: {{accent.red}}; }
+#battery.charging,
+#battery.plugged  { color: {{accent.green}}; }
+
+#cpu.warning, #memory.warning   { color: {{accent.orange}}; }
+#cpu.critical, #memory.critical { color: {{accent.red}}; }
+
+#custom-dnd { color: {{foreground.secondary}}; }
+
+/* Worktree pill — the lovable heart icon is layered as a background-image
+ * on the left side; left padding leaves room for it. The pill is collapsed
+ * to transparent / zero-size when the lovable-worktree.sh script emits
+ * class=empty (we're not on a per-feature worktree stack). */
+#custom-lovable-worktree {
+    background: alpha({{background.primary}}, 0.95);
+    color: {{foreground.primary}};
+    border-radius: 12px;
+    margin: 6px 16px 0 0;
+    padding: 2px 14px 2px 30px;
+    background-image: url("/home/daphen/.local/share/icons/hicolor/512x512/apps/lovable.png");
+    background-repeat: no-repeat;
+    background-position: 8px center;
+    background-size: 16px 16px;
+}
+
+#custom-lovable-worktree.empty {
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+    background: transparent;
+    background-image: none;
+}

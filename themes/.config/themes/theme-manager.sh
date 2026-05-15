@@ -199,11 +199,30 @@ apply_tool_theme() {
                 cp "$generated_file" "$target_dir/style.css"
                 local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
                 if pgrep waybar > /dev/null; then
-                    killall -SIGUSR2 waybar
+                    pkill -USR2 -x .waybar-wrapped 2>/dev/null || pkill -USR2 -x waybar
                     log_success "Applied and reloaded Waybar theme ($label)"
                 else
                     log_success "Applied Waybar theme ($label, not running)"
                 fi
+            fi
+            ;;
+        "waybar-notch")
+            # The notch theme lives at ~/.config/waybar/themes/notch/.
+            # We resolve `waybar`'s target_dir then drop the alt theme
+            # alongside; this way home-manager's symlink chain doesn't
+            # need to know about the notch as a distinct app.
+            local target_dir is_managed
+            if get_tool_target "waybar"; then
+                mkdir -p "$target_dir/themes/notch"
+                cp "$generated_file" "$target_dir/themes/notch/style.css"
+                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
+                # SIGUSR2 reloads the running waybar's CSS in place — fires
+                # whether the notch theme is the active one or not (harmless
+                # for the default theme, which has its own style.css).
+                if pgrep waybar > /dev/null; then
+                    pkill -USR2 -x .waybar-wrapped 2>/dev/null || pkill -USR2 -x waybar
+                fi
+                log_success "Applied Waybar notch theme ($label)"
             fi
             ;;
         "fish")

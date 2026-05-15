@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Waybar theme switcher.
+#
+# Usage:
+#   waybar-theme              # start/restart waybar with the last-used theme
+#   waybar-theme <name>       # switch to <name> and restart
+#   waybar-theme --cycle      # cycle to the next available theme
+#   waybar-theme --list       # print available themes
+#
+# Themes live as a subdir each under ~/.config/waybar/themes/<name>/
+# containing `config` + `style.css`. The legacy "default" theme is the
+# unprefixed config + style.css at the waybar root (kept there so
+# theme-manager's regen of style.css still targets it).
+#
+# Active theme is persisted at ~/.local/state/waybar-theme so this
+# script can be invoked from niri's spawn-sh-at-startup without args
+# and resume the last-used theme on login.
+
+set -u
+
+WAYBAR_DIR="$HOME/.config/waybar"
+THEMES_DIR="$WAYBAR_DIR/themes"
+STATE_FILE="$HOME/.local/state/waybar-theme"
+
+mkdir -p "$(dirname "$STATE_FILE")"
+
+# Available themes: "default" (root-level config/style.css) plus every
+# subdir under themes/ that has both files.
+themes() {
+    echo default
+    [[ -d "$THEMES_DIR" ]] || return
+    for d in "$THEMES_DIR"/*/; do
+        name=$(basename "$d")
+        [[ -f "$d/config" && -f "$d/style.css" ]] && echo "$name"
+    done
+}
+
+paths_for() {
+    case "$1" in
+        default)  echo "$WAYBAR_DIR/config" "$WAYBAR_DIR/style.css" ;;
+        *)        echo "$THEMES_DIR/$1/config" "$THEMES_DIR/$1/style.css" ;;
+    esac
+}
+
+current_theme() {
+    if [[ -r "$STATE_FILE" ]]; then
+        cat "$STATE_FILE"
+    else
+        echo default
+    fi
+}
+
+case "${1:-}" in
+    --list)
+        themes
+        exit 0
+        ;;
+    --cycle)
+        cur=$(current_theme)
+        mapfile -t all < <(themes)
+        next=""
+        for i in "${!all[@]}"; do
+            if [[ "${all[$i]}" == "$cur" ]]; then
+                next="${all[$(( (i + 1) % ${#all[@]} ))]}"
+                break
+            fi
+        done
+        [[ -z "$next" ]] && next="${all[0]}"
+        target="$next"
+        ;;
+    "")
+        target=$(current_theme)
+        ;;
+    *)
+        target="$1"
+        ;;
+esac
+
+# Validate target.
+read -r conf style <<<"$(paths_for "$target")"
+if [[ ! -f "$conf" || ! -f "$style" ]]; then
+    echo "waybar-theme: unknown or incomplete theme: $target" >&2
+    echo "available:" >&2
+    themes >&2
+    exit 1
+fi
+
+# Stop any existing waybar(s), then relaunch with the chosen config.
+# NixOS wraps binaries: the real exec name is `.waybar-wrapped`, not
+# `waybar`. -x has to match either form; we send to both. Excluding
+# our own PID via --ns matches the shell's PID namespace and skips us.
+pkill -x waybar 2>/dev/null
+pkill -x .waybar-wrapped 2>/dev/null
+# Give the old instance ~250ms to release the layer-shell namespace
+# (otherwise the new one races and either both run or neither).
+sleep 0.25
+
+echo "$target" > "$STATE_FILE"
+
+setsid waybar --config "$conf" --style "$style" \
+    </dev/null >/tmp/waybar.log 2>&1 &
+disown

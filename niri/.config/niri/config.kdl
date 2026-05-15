@@ -323,8 +323,11 @@ layout {
 
 // Soft background blur. Tune `passes` and `offset` to taste —
 // higher = smoother/heavier; lower = subtler/cheaper.
+// passes 2 is niri's default and keeps amdgpu in a much lower DPM
+// state at idle (~28W → ~10W on the proart iGPU). passes 4 looked
+// fractionally smoother but was the largest single battery cost.
 blur {
-    passes 4
+    passes 2
     offset 4.5
     noise 0.02
     saturation 1.1
@@ -445,12 +448,16 @@ window-rule {
     // block-out-from "screencast"
 }
 
-// Default styling for all windows: rounded corners, soft transparency,
-// and border-around-window so the active border doesn't bleed through.
+// Default styling for all windows: rounded corners, the lightest
+// touch of transparency, and border-around-window so the active
+// border doesn't bleed through. Opacity dropped from 0.9 → 0.97
+// after halving blur passes — the softer blur made the previous
+// 10% transparency read as visual noise. 3% keeps a hint of the
+// glassy look without distracting from window contents.
 window-rule {
     geometry-corner-radius 10
     clip-to-geometry true
-    opacity 0.9
+    opacity 0.97
     draw-border-with-background false
 }
 
@@ -460,6 +467,19 @@ window-rule {
     background-effect {
         blur true
     }
+}
+
+// Opt out heavy fullscreen-tending apps from blur AND set them fully
+// opaque. Their contents are opaque anyway (web pages, chat panes);
+// the 3% transparency + blur was invisible cost. Setting opacity=1
+// also signals niri to skip the per-frame blur compositing entirely
+// for these windows.
+window-rule {
+    match app-id=r#"^(browser-personal|browser-work|Slack|vesktop)$"#
+    background-effect {
+        blur false
+    }
+    opacity 1.0
 }
 
 // Disable corner radius for eww bar (it handles its own corners)

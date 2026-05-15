@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Throttled wrapper around brightnessctl. Drops calls that arrive within
+# MIN_INTERVAL_MS of the previous one to avoid hammering amdgpu's DC
+# backlight code, which can wedge a fragile iGPU on the AMD OLED panel.
+
+set -u
+
+DELTA="$1"  # e.g. "5%+", "5%-"
+MIN_INTERVAL_MS=120
+STATE="/run/user/${UID}/brightness-throttle.last"
+
+now_ms() { echo $(($(date +%s%N) / 1000000)); }
+
+NOW=$(now_ms)
+LAST=$(cat "$STATE" 2>/dev/null || echo 0)
+
+if (( NOW - LAST < MIN_INTERVAL_MS )); then
+    exit 0
+fi
+
+echo "$NOW" > "$STATE"
+exec brightnessctl set "$DELTA"

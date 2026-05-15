@@ -12,6 +12,6 @@
 # `"14 18"` form of window_padding_width.
 exec kitty \
     --class endcord \
-    -o font_size=12 \
+    -o font_size=11 \
     -o window_padding_width="14 18" \
     -e endcord

@@ -233,7 +233,7 @@ layout {
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#3A3A3A"
+        inactive-color "#999999"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -258,7 +258,7 @@ layout {
 
         width 4
         active-color "#FF570D"
-        inactive-color "#3A3A3A"
+        inactive-color "#999999"
 
         // Color of the border around windows that request your attention.
         urgent-color "#9b0000"
@@ -673,8 +673,8 @@ binds {
     XF86AudioMute allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
     XF86AudioMicMute allow-when-locked=true { spawn-sh "$HOME/.config/niri/scripts/toggle-mic"; }
     XF86WebCam allow-when-locked=true { spawn-sh "$HOME/.config/niri/scripts/toggle-camera"; }
-    XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "set" "5%+"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "set" "5%-"; }
+    XF86MonBrightnessUp allow-when-locked=true { spawn "/home/daphen/.config/niri/scripts/brightness-throttled" "5%+"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "/home/daphen/.config/niri/scripts/brightness-throttled" "5%-"; }
     XF86KbdBrightnessUp allow-when-locked=true { spawn "asusctl" "leds" "next"; }
     XF86KbdBrightnessDown allow-when-locked=true { spawn "asusctl" "leds" "prev"; }
     XF86KbdLightOnOff allow-when-locked=true { spawn "asusctl" "leds" "next"; }
@@ -684,8 +684,8 @@ binds {
     F2  allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"; }
     F3  allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+"; }
     F4  allow-when-locked=true { spawn-sh "brightnessctl --device='*kbd_backlight' set 33%+"; }
-    F5  allow-when-locked=true { spawn "brightnessctl" "set" "5%-"; }
-    F6  allow-when-locked=true { spawn "brightnessctl" "set" "5%+"; }
+    F5  allow-when-locked=true { spawn "/home/daphen/.config/niri/scripts/brightness-throttled" "5%-"; }
+    F6  allow-when-locked=true { spawn "/home/daphen/.config/niri/scripts/brightness-throttled" "5%+"; }
     F8  allow-when-locked=true { spawn "rofimoji" "--action" "copy" "type" "--selector" "rofi"; }
     F9  allow-when-locked=true { spawn-sh "$HOME/.config/niri/scripts/toggle-mic"; }
     F10 allow-when-locked=true { spawn-sh "$HOME/.config/niri/scripts/toggle-camera"; }

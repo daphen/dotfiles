@@ -148,27 +148,28 @@ def render(c_active: str, c_normal: str) -> str:
         # All bars use the same | glyph; font_size varies per state
         # so heights differ. A negative `rise` lowers the larger
         # glyphs so their TOPS align with the inactive bars and the
-        # extra height extends DOWNWARD past them.
+        # extra height extends DOWNWARD past them — i.e. all bars are
+        # top-anchored, focused bars extend further DOWN. Sizes are a
+        # middle ground between the original 28/22/12 (too tall) and
+        # the 20/16/10 first-pass shrink (too small).
         parts: list[str] = []
         ws_focused = ws.get("is_focused")
         for w in ws_windows:
             if w.get("is_focused"):
-                size, rise, color = "28000", "-12000", c_active
+                size, rise, color = "24000", "-10000", c_active
             elif (not ws_focused) and ws.get("active_window_id") == w["id"]:
-                size, rise, color = "22000", "-7000", c_normal
+                size, rise, color = "18000", "-5000", c_normal
             else:
-                size, rise, color = "12000", "0", c_normal
+                size, rise, color = "11000", "0", c_normal
             parts.append(
                 f"<span size='{size}' rise='{rise}' color='{color}'>|</span>"
             )
         blocks.append("".join(parts))
 
     body = " ".join(blocks) if blocks else "·"
-    # Invisible 28pt + rise span anchors the line height to the tallest
-    # bar size, so the waybar container doesn't shrink when no focused
-    # bar is currently being rendered (e.g. focus on a floating window
-    # like rofi, or no focused window at all).
-    anchor = "<span size='28000' rise='-12000'>​</span>"
+    # Invisible anchor pins the line height to the tallest bar so the
+    # container doesn't shrink when no focused bar is being rendered.
+    anchor = "<span size='24000' rise='-10000'>​</span>"
     text = anchor + body
     tooltip = "\\n".join(tooltip_lines) or "no windows"
     return json.dumps({"text": text, "tooltip": tooltip, "markup": "pango"})

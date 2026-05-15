@@ -22,6 +22,7 @@ themes/.config/themes/node_modules/
 # Theme-manager generated output files (recreated by: theme-manager.sh switch dark)
 kitty/.config/kitty/theme.conf
 waybar/.config/waybar/style.css
+waybar/.config/waybar/themes/*/style.css
 mako/.config/mako/config
 qutebrowser/.config/qutebrowser/theme.py
 qutebrowser/.config/qutebrowser/userstyles.css

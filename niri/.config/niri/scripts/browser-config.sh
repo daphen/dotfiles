@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # Single source of truth for the daily browser. Sourced by
 # browser-personal, browser-work, browser-dispatch, chromium-launch,
-# and sync-bookmarks. To switch browsers — provided the new browser is
-# Chromium-derived and supports --profile-directory + --class — edit
-# only this file.
+# browser-work-new, and sync-bookmarks.
+#
+# Profiles run as separate processes via --user-data-dir so Chromium's
+# "first-launch wins" --class quirk doesn't apply: each profile has
+# its own master process and gets its own --class correctly. Side
+# benefits: theme/extension restarts only affect one profile, force-
+# quitting work doesn't kill personal, etc.
 #
 # Tested switches: Vivaldi ↔ Helium (both Chromium-based, identical
 # CLI). Brave/Chrome/Edge would also work. Firefox needs different
@@ -15,19 +19,35 @@ BROWSER_BIN="/etc/profiles/per-user/daphen/bin/helium"
 
 # Wayland app-id assigned via --class. KEPT STABLE across browser
 # switches (it's just a label) so niri window-rules and ws-focus's
-# BROWSER_WORK_CLASSES never need to change.
+# BROWSER_CLASSES never need to change.
 BROWSER_CLASS_PERSONAL="browser-personal"
 BROWSER_CLASS_WORK="browser-work"
 
-# Profile-directory names INSIDE the browser. Browser-specific. Most
-# Chromium derivatives use "Default" and "Profile 2" by default.
-BROWSER_PROFILE_PERSONAL="Default"
-BROWSER_PROFILE_WORK="Profile 2"
+# Per-profile data dirs. Each is its own Chromium "data root" with a
+# Default/ subdir inside. The pre-split layout had everything under
+# ~/.config/net.imput.helium/{Default, Profile 2} — that's preserved
+# only as a migration source.
+BROWSER_USER_DATA_PERSONAL="$HOME/.config/helium-personal"
+BROWSER_USER_DATA_WORK="$HOME/.config/helium-work"
 
-# Browser config root — where Bookmarks / Preferences live. Used by
-# sync-bookmarks. Browser-specific.
-BROWSER_CONFIG_ROOT="$HOME/.config/net.imput.helium"
+# Profile-directory name INSIDE each data-dir. Always "Default" now
+# that we have separate data-dirs per profile.
+BROWSER_PROFILE="Default"
+
+# sync-bookmarks compatibility: previously a single CONFIG_ROOT pointed
+# at the shared data-dir. Keep it pointing at the personal data-dir
+# since that's where the synced Bookmarks live (work profile doesn't
+# use the bookmark sync workflow).
+BROWSER_CONFIG_ROOT="$BROWSER_USER_DATA_PERSONAL"
 
 # Bare process name for `pgrep` (used by sync-bookmarks to detect a
 # running browser before overwriting Bookmarks). Browser-specific.
 BROWSER_PROCESS_NAME="helium"
+
+# Flags passed to every Helium invocation. Disable AsyncDns so the
+# browser uses glibc's resolver instead of its own — glibc honors the
+# unloaded-IPv6-module state and skips ::1; the built-in resolver
+# adds it via RFC 6761 and pays a Happy Eyeballs penalty per fetch.
+BROWSER_FLAGS=(
+    --disable-features=AsyncDns
+)

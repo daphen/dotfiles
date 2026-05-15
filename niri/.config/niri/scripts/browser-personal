@@ -37,7 +37,8 @@ print(' '.join(str(w['id']) for w in windows if w.get('app_id') in ('$BROWSER_CL
 # Launch personal profile. --class sets the Wayland app-id so window-rules
 # can distinguish personal vs work even though both come from the same binary.
 "$BROWSER_BIN" \
-    --profile-directory="$BROWSER_PROFILE_PERSONAL" \
+    "${BROWSER_FLAGS[@]}" \
+    --user-data-dir="$BROWSER_USER_DATA_PERSONAL" \
     --class="$BROWSER_CLASS_PERSONAL" &
 
 # Poll for the new browser window (up to 5s), excluding work profile

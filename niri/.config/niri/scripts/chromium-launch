@@ -8,5 +8,6 @@ set -u
 source "$(dirname "$0")/browser-config.sh"
 
 exec "$BROWSER_BIN" \
-    --profile-directory="$BROWSER_PROFILE_PERSONAL" \
+    "${BROWSER_FLAGS[@]}" \
+    --user-data-dir="$BROWSER_USER_DATA_PERSONAL" \
     --class="$BROWSER_CLASS_PERSONAL" "$@"

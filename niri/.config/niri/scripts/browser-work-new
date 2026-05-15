@@ -8,6 +8,7 @@ set -u
 source "$(dirname "$0")/browser-config.sh"
 
 exec "$BROWSER_BIN" \
-    --profile-directory="$BROWSER_PROFILE_WORK" \
+    "${BROWSER_FLAGS[@]}" \
+    --user-data-dir="$BROWSER_USER_DATA_WORK" \
     --class="$BROWSER_CLASS_WORK" \
     --new-window

@@ -34,7 +34,7 @@ _browser = read_browser_config()
 ENV_FILE = Path.home() / "personal/synced/.env"
 BOOKMARKS_FILE = (
     Path(_browser.get("BROWSER_CONFIG_ROOT", str(Path.home() / ".config/chromium")))
-    / _browser.get("BROWSER_PROFILE_PERSONAL", "Default")
+    / _browser.get("BROWSER_PROFILE", "Default")
     / "Bookmarks"
 )
 BROWSER_PROCESS = _browser.get("BROWSER_PROCESS_NAME", "chromium")

@@ -78,12 +78,14 @@ fi
 # launched us (corrupts endcord's curses-rendered screen).
 if [[ "$PROFILE" == "work" ]]; then
     exec "$BROWSER_BIN" \
-        --profile-directory="$BROWSER_PROFILE_WORK" \
+        "${BROWSER_FLAGS[@]}" \
+        --user-data-dir="$BROWSER_USER_DATA_WORK" \
         --class="$BROWSER_CLASS_WORK" \
         $NEW_WINDOW "$URL" >/dev/null 2>&1
 else
     exec "$BROWSER_BIN" \
-        --profile-directory="$BROWSER_PROFILE_PERSONAL" \
+        "${BROWSER_FLAGS[@]}" \
+        --user-data-dir="$BROWSER_USER_DATA_PERSONAL" \
         --class="$BROWSER_CLASS_PERSONAL" \
         $NEW_WINDOW "$URL" >/dev/null 2>&1
 fi

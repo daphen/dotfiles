@@ -225,6 +225,31 @@ def reclaim_preferred_output() -> None:
         )
 
 
+# Window classes whose default-window-height window-rule is
+# `proportion 1.0` (kitty / claude / lovable_deps in this config) —
+# these are the ones niri doesn't auto-relayout when a workspace
+# crosses outputs, so the windows end up shorter than the new
+# monitor. reset-window-height re-applies the proportion.
+RESIZABLE_CLASSES = {"kitty", "claude", "lovable_deps"}
+
+
+def reset_heights_on_output(output_name: str) -> None:
+    """Force every kitty-family window on `output_name` to re-fit the
+    output's height. Called when an external output (re)connects —
+    niri leaves the existing tile sizes from the old output in place,
+    which is what produces the "kitty windows shorter than the new
+    monitor" problem when plugging in an external."""
+    workspaces = niri_json("workspaces") or []
+    windows = niri_json("windows") or []
+    ws_ids = {w["id"] for w in workspaces if w.get("output") == output_name}
+    for win in windows:
+        if win.get("workspace_id") not in ws_ids:
+            continue
+        if win.get("app_id") not in RESIZABLE_CLASSES:
+            continue
+        niri_action("reset-window-height", "--id", str(win["id"]))
+
+
 def daemon() -> int:
     # Startup: pick up currently focused stack workspace if any.
     fw = niri_json("focused-window")
@@ -273,12 +298,18 @@ def daemon() -> int:
         # Output-reconnect reclaim: fires when ANY new non-laptop
         # output appears in the set (i.e. an external just got plugged
         # in, whichever port/model it is). Catches monitor plug-back-in
-        # without fighting manual cross-output moves.
+        # without fighting manual cross-output moves. We ALSO
+        # reset-window-height on every kitty-family window on the new
+        # output(s) — niri leaves stale tile sizes from the previous
+        # output when a workspace migrates, so kitty windows end up
+        # short of the new monitor's full height.
         new_outputs = output_set()
         new_externals = {o for o in new_outputs
                          if o != LAPTOP_OUTPUT and o not in known_outputs}
         if new_externals:
             reclaim_preferred_output()
+            for out in new_externals:
+                reset_heights_on_output(out)
         known_outputs = new_outputs
 
     # event-stream returned EOF (niri restarted, IPC dropped, etc.).

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Waybar center-module daemon. Subscribes to niri's event stream and
-prints a fresh JSON line whenever workspace/window state changes — no
-polling.
+Waybar center-module daemon. Subscribes to niri's JSON event stream
+and prints a fresh JSON line whenever workspace/window state changes —
+no polling, no subprocess calls in the render path.
 
 Visualization: per-window bar minimap across every niri workspace.
   █  the focused window
@@ -13,17 +13,24 @@ Empty unfocused workspaces are hidden.
 
 Color palette: bars used to sit directly on the wallpaper (always
 dark for our setup), but the new notch waybar theme has a solid
-*light-mode* background in light mode. So we now pick the palette
-block matching the active theme mode (read from
-~/.config/themes/.current-theme), which gives high-contrast bars
-against whatever surface the minimap currently sits on. Active
-focus colour stays semantic.cursor (orange) in both modes — it's
-the only colour cue that should pop, so we want it consistent.
+*light-mode* background in light mode. So we pick the palette block
+matching the active theme mode (read from ~/.config/theme_mode),
+giving high-contrast bars against whatever surface the minimap
+currently sits on. Active focus colour stays semantic.cursor
+(orange) in both modes — it's the only colour cue that should pop.
 
   semantic.cursor       → focused window (orange, both modes)
   foreground.primary    → every other window — mode-dependent: light
                           (#EDEDED-ish) in dark mode, dark
                           (#2D4A3D-ish) in light mode
+
+Architecture: niri's JSON event stream sends `WorkspacesChanged` and
+`WindowsChanged` as the FIRST two events on every new connection
+(full snapshots), then delta events for individual changes. We mirror
+the state in two dicts and update on each delta — no `niri msg`
+subprocess invocations per render. Result: render path is pure
+in-memory dict walks, sub-millisecond, indistinguishable from niri's
+own focus-border switch.
 """
 from __future__ import annotations
 import json
@@ -40,19 +47,6 @@ HOME = Path(os.environ["HOME"])
 COLORS_FILE = HOME / ".config/themes/colors.json"
 CURRENT_THEME_FILE = HOME / ".config/theme_mode"
 ACTIVE_FILE = HOME / ".local/state/wt-stacks/ws/active"
-
-RELEVANT_EVENT_RE = re.compile(
-    r"^("
-    r"Workspaces changed"
-    r"|Workspace activated"
-    r"|Workspace focused"
-    r"|Windows changed"
-    r"|Window opened"
-    r"|Window closed"
-    r"|Window changed"
-    r"|Window focus changed"
-    r")\b"
-)
 
 
 def current_theme_mode() -> str:
@@ -75,16 +69,7 @@ def read_theme_colors() -> tuple[str, str]:
         c = json.loads(COLORS_FILE.read_text())["themes"][mode]
         return (c["semantic"]["cursor"], c["foreground"]["primary"])
     except (OSError, KeyError, json.JSONDecodeError):
-        # Fallbacks: dark mode → light text, light mode → dark text.
         return ("#FF570D", "#EDEDED" if mode == "dark" else "#2D4A3D")
-
-
-def niri_json(*args: str):
-    out = subprocess.run(
-        ["niri", "msg", "--json", *args],
-        capture_output=True, text=True, timeout=2,
-    ).stdout
-    return json.loads(out) if out.strip() else None
 
 
 def window_sort_key(w: dict) -> tuple[int, int, int, int]:
@@ -117,26 +102,27 @@ def read_active_stack() -> str | None:
         return None
 
 
-def render(c_active: str, c_normal: str) -> str:
-    workspaces = niri_json("workspaces") or []
-    windows = niri_json("windows") or []
+def render(workspaces: dict, windows: dict,
+           c_active: str, c_normal: str) -> str:
+    """Build the waybar JSON line from in-memory state. No I/O on the
+    hot path — just dict iteration + string assembly."""
     active_stack = read_active_stack()
-    # Hide inactive lovable-<name> workspaces from the minimap so the
-    # row only shows the workspaces the user can actually navigate to
-    # via Super+J/K (which already filters them) plus normal workspaces.
     workspaces_sorted = sorted(
-        [w for w in workspaces if not is_hidden_workspace(w, active_stack)],
+        [w for w in workspaces.values()
+         if not is_hidden_workspace(w, active_stack)],
         key=lambda w: (w.get("output") or "", w["idx"]),
     )
+
+    # Group windows by workspace_id once.
+    windows_by_ws: dict[int, list[dict]] = {}
+    for w in windows.values():
+        windows_by_ws.setdefault(w.get("workspace_id"), []).append(w)
 
     blocks: list[str] = []
     tooltip_lines: list[str] = []
 
     for ws in workspaces_sorted:
-        ws_windows = sorted(
-            [w for w in windows if w.get("workspace_id") == ws["id"]],
-            key=window_sort_key,
-        )
+        ws_windows = sorted(windows_by_ws.get(ws["id"], []), key=window_sort_key)
         count = len(ws_windows)
 
         if count > 0:
@@ -151,10 +137,8 @@ def render(c_active: str, c_normal: str) -> str:
         # All bars use the same | glyph; font_size varies per state
         # so heights differ. A negative `rise` lowers the larger
         # glyphs so their TOPS align with the inactive bars and the
-        # extra height extends DOWNWARD past them — i.e. all bars are
-        # top-anchored, focused bars extend further DOWN. Sizes are a
-        # middle ground between the original 28/22/12 (too tall) and
-        # the 20/16/10 first-pass shrink (too small).
+        # extra height extends DOWNWARD past them — i.e. all bars
+        # are top-anchored, focused bars extend further DOWN.
         parts: list[str] = []
         ws_focused = ws.get("is_focused")
         for w in ws_windows:
@@ -178,22 +162,102 @@ def render(c_active: str, c_normal: str) -> str:
     return json.dumps({"text": text, "tooltip": tooltip, "markup": "pango"})
 
 
+# Events that should provoke a re-render after state update. Anything
+# else (keyboard layout, casts, overview state) is irrelevant to the
+# minimap.
+RELEVANT_EVENTS = frozenset({
+    "WorkspacesChanged",
+    "WindowsChanged",
+    "WorkspaceActivated",
+    "WorkspaceActiveWindowChanged",
+    "WindowOpenedOrChanged",
+    "WindowClosed",
+    "WindowFocusChanged",
+    "WindowLayoutsChanged",
+})
+
+
+def apply_event(name: str, data: dict,
+                workspaces: dict, windows: dict) -> None:
+    """Mutate the in-memory state caches in response to one niri event.
+    Field names below are exactly what niri emits in its JSON event
+    schema."""
+    if name == "WorkspacesChanged":
+        workspaces.clear()
+        for w in data.get("workspaces", []):
+            workspaces[w["id"]] = w
+
+    elif name == "WindowsChanged":
+        windows.clear()
+        for w in data.get("windows", []):
+            windows[w["id"]] = w
+
+    elif name == "WorkspaceActivated":
+        ws_id = data.get("id")
+        focused = data.get("focused", False)
+        target = workspaces.get(ws_id)
+        if target is None:
+            return
+        target_output = target.get("output")
+        # Within an output: only the activated workspace is `is_active`.
+        # Globally: if `focused` is true, this workspace becomes the
+        # focused one; all others lose is_focused.
+        for w in workspaces.values():
+            if w.get("output") == target_output:
+                w["is_active"] = (w["id"] == ws_id)
+            if focused:
+                w["is_focused"] = (w["id"] == ws_id)
+
+    elif name == "WorkspaceActiveWindowChanged":
+        ws_id = data.get("workspace_id")
+        if ws_id in workspaces:
+            workspaces[ws_id]["active_window_id"] = data.get("active_window_id")
+
+    elif name == "WindowOpenedOrChanged":
+        w = data.get("window")
+        if not w:
+            return
+        windows[w["id"]] = w
+        # If this window is now focused, propagate to others.
+        if w.get("is_focused"):
+            for other in windows.values():
+                if other["id"] != w["id"]:
+                    other["is_focused"] = False
+
+    elif name == "WindowClosed":
+        wid = data.get("id")
+        windows.pop(wid, None)
+
+    elif name == "WindowFocusChanged":
+        focused_id = data.get("id")
+        for w in windows.values():
+            w["is_focused"] = (w["id"] == focused_id)
+
+    elif name == "WindowLayoutsChanged":
+        # niri emits `WindowLayoutsChanged` with a `changes` list of
+        # [id, layout] pairs when scrolling / resizing reflows tiles.
+        # Layout drives `pos_in_scrolling_layout` which the sort uses.
+        for change in data.get("changes", []) or []:
+            try:
+                wid, layout = change[0], change[1]
+            except (KeyError, IndexError, TypeError):
+                continue
+            w = windows.get(wid)
+            if w is not None:
+                w["layout"] = layout
+
+
 def emit(line: str) -> None:
     print(line, flush=True)
 
 
 def daemon() -> int:
-    # Re-read the palette every render so theme-manager dark↔light
-    # toggles propagate without restarting the daemon. The .current-theme
-    # file is tiny and cached by the kernel; reading it per event is
-    # essentially free.
-    colors = read_theme_colors()
-    last_render = render(*colors)
-    emit(last_render)
+    workspaces: dict = {}
+    windows: dict = {}
 
-    # SIGUSR1 → write a byte to a pipe → wakes select() so we re-render.
-    # Used by niri keybinds for layout actions that don't emit events
-    # (move-column-left/right, move-window-up/down, etc.) and by
+    # SIGUSR1 → write a byte to a pipe → wakes select() so we
+    # re-render. Used by niri keybinds for layout actions that don't
+    # emit events (move-column-left/right, move-window-up/down) and by
     # theme-manager after a mode toggle so colours update instantly.
     sig_r, sig_w = os.pipe()
     os.set_blocking(sig_r, False)
@@ -204,15 +268,17 @@ def daemon() -> int:
     signal.signal(signal.SIGUSR1, _on_sigusr1)
 
     proc = subprocess.Popen(
-        ["niri", "msg", "event-stream"],
+        ["niri", "msg", "--json", "event-stream"],
         stdout=subprocess.PIPE, text=True, bufsize=1,
     )
     assert proc.stdout is not None
     nstdout = proc.stdout
 
+    last_render = ""
+
     def maybe_emit():
         nonlocal last_render
-        out = render(*read_theme_colors())
+        out = render(workspaces, windows, *read_theme_colors())
         if out != last_render:
             emit(out)
             last_render = out
@@ -227,7 +293,21 @@ def daemon() -> int:
             line = nstdout.readline()
             if not line:
                 return 0  # niri closed, let supervisor reconnect
-            if RELEVANT_EVENT_RE.match(line):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            # niri events are single-key dicts: {"EventName": {data}}
+            if not isinstance(event, dict) or len(event) != 1:
+                continue
+            name, data = next(iter(event.items()))
+            if not isinstance(data, dict):
+                continue
+            apply_event(name, data, workspaces, windows)
+            if name in RELEVANT_EVENTS:
                 maybe_emit()
 
 

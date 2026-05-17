@@ -222,6 +222,19 @@ apply_tool_theme() {
                 if pgrep waybar > /dev/null; then
                     pkill -USR2 -x .waybar-wrapped 2>/dev/null || pkill -USR2 -x waybar
                 fi
+                # SIGUSR1 nudges niri-minimap.sh to re-read theme_mode and
+                # re-render. Without this, the minimap keeps emitting bars
+                # in the OLD mode's foreground colour until the next niri
+                # event fires — visible as light bars on a light notch
+                # after a dark→light switch. Filter to python processes so
+                # we don't accidentally kill a shell that happens to have
+                # "niri-minimap.sh" in its cmdline (e.g. this script).
+                for _wt_mm_pid in $(pgrep -f 'niri-minimap\.sh' 2>/dev/null); do
+                    case "$(readlink /proc/$_wt_mm_pid/exe 2>/dev/null)" in
+                        */python*) kill -USR1 "$_wt_mm_pid" 2>/dev/null ;;
+                    esac
+                done
+                unset _wt_mm_pid
                 log_success "Applied Waybar notch theme ($label)"
             fi
             ;;

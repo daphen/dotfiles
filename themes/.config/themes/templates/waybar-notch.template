@@ -41,7 +41,14 @@ window#waybar {
      * (see below) to absorb workspace-count changes without
      * propagating to the container. */
     min-width: 900px;
-    /* No top radius — the notch attaches flush to the screen edge. */
+    /* No top radius — the notch attaches flush to the screen edge.
+     * Hairline border on the three visible edges (sides + bottom).
+     * No top: a 1px line at the absolute top of the screen reads as
+     * broken. Class selectors override the universal `border: none`
+     * by specificity. */
+    border-left:   1px solid alpha({{foreground.primary}}, 0.10);
+    border-right:  1px solid alpha({{foreground.primary}}, 0.10);
+    border-bottom: 1px solid alpha({{foreground.primary}}, 0.10);
 }
 
 /* The floating worktree pill on the far right ────────────────────────────── */
@@ -139,6 +146,11 @@ window#waybar {
     background-repeat: no-repeat;
     background-position: 12px center;
     background-size: 16px 16px;
+    /* Same hairline as the main notch, on the two visible edges
+     * (the pill is flush with the top + right screen edges, so only
+     * left + bottom get a border). */
+    border-left:   1px solid alpha({{foreground.primary}}, 0.10);
+    border-bottom: 1px solid alpha({{foreground.primary}}, 0.10);
 }
 
 #custom-lovable-worktree.empty {
@@ -147,4 +159,6 @@ window#waybar {
     min-width: 0;
     background: transparent;
     background-image: none;
+    /* Clear border too so the empty state stays invisible. */
+    border: none;
 }

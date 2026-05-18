@@ -258,6 +258,8 @@ layout {
 
         width 4
         active-color "#FF570D"
+        // Matches waybar-notch light theme hairline
+        // (foreground.primary @ 50% alpha).
         inactive-color "#999999"
 
         // Color of the border around windows that request your attention.

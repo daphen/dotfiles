@@ -22,7 +22,8 @@ mapfile -t names < <(niri msg --json workspaces 2>/dev/null \
     | jq -r '.[]
         | select(.name
                  and (.name | startswith("lovable-"))
-                 and .name != "lovable")
+                 and .name != "lovable"
+                 and .name != "lovable-main")
         | .name
         | sub("^lovable-"; "")')
 

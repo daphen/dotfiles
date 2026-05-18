@@ -639,6 +639,34 @@ apply_system_theme() {
     fi
 }
 
+# Apply the wallpaper paired with this theme mode. Reads
+# ~/.config/themes/wallpaper-{dark,light} which is expected to be a
+# symlink to the actual image. Missing/broken symlink = no-op (leaves
+# the current wallpaper alone). Set with:
+#   ln -sf /path/to/image ~/.config/themes/wallpaper-dark
+apply_wallpaper() {
+    local theme_mode=$1
+    local link="$HOME/.config/themes/wallpaper-$theme_mode"
+
+    if [[ ! -e "$link" ]]; then
+        log_warning "No wallpaper set for $theme_mode (symlink $link missing); leaving current wallpaper"
+        return
+    fi
+
+    local target
+    target=$(readlink -f "$link") || target="$link"
+    if [[ ! -f "$target" ]]; then
+        log_warning "Wallpaper symlink for $theme_mode points to nonexistent file: $target"
+        return
+    fi
+
+    if command -v waypaper &>/dev/null; then
+        waypaper --wallpaper "$target" &>/dev/null &
+    else
+        log_warning "waypaper not on PATH; cannot apply wallpaper"
+    fi
+}
+
 # Switch theme mode
 switch_theme() {
     local theme_mode=$1
@@ -659,6 +687,9 @@ switch_theme() {
 
     # Apply system-wide settings
     apply_system_theme "$theme_mode"
+
+    # Swap the paired wallpaper (symlink-driven; no-op if unset)
+    apply_wallpaper "$theme_mode"
 
     # Some Electron apps (Vesktop, Slack) detect the theme change live
     # but instantly revert to their cached value, so they need a full

@@ -46,9 +46,9 @@ window#waybar {
      * No top: a 1px line at the absolute top of the screen reads as
      * broken. Class selectors override the universal `border: none`
      * by specificity. */
-    border-left:   1px solid alpha({{foreground.primary}}, 0.10);
-    border-right:  1px solid alpha({{foreground.primary}}, 0.10);
-    border-bottom: 1px solid alpha({{foreground.primary}}, 0.10);
+    border-left:   1px solid alpha({{foreground.primary}}, 0.5);
+    border-right:  1px solid alpha({{foreground.primary}}, 0.5);
+    border-bottom: 1px solid alpha({{foreground.primary}}, 0.5);
 }
 
 /* The floating worktree pill on the far right ────────────────────────────── */
@@ -149,8 +149,8 @@ window#waybar {
     /* Same hairline as the main notch, on the two visible edges
      * (the pill is flush with the top + right screen edges, so only
      * left + bottom get a border). */
-    border-left:   1px solid alpha({{foreground.primary}}, 0.10);
-    border-bottom: 1px solid alpha({{foreground.primary}}, 0.10);
+    border-left:   1px solid alpha({{foreground.primary}}, 0.5);
+    border-bottom: 1px solid alpha({{foreground.primary}}, 0.5);
 }
 
 #custom-lovable-worktree.empty {

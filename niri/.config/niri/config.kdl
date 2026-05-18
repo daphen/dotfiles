@@ -490,6 +490,11 @@ layer-rule {
     geometry-corner-radius 0
 }
 
+layer-rule {
+    match namespace="^palette-daemon$"
+    geometry-corner-radius 14
+}
+
 // Make wallpaper static (doesn't scroll with workspaces)
 // Places swaybg in the backdrop layer so it stays fixed
 // Disabled for now — backdrop layer hides wallpaper from blur sampling.
@@ -663,6 +668,9 @@ binds {
     Super+w { spawn-sh "$HOME/.config/niri/scripts/ws-focus browser"; }
     Super+Shift+q { spawn-sh "/home/daphen/.config/niri/scripts/chromium-launch"; }
     Super+Shift+w { spawn-sh "$HOME/.config/niri/scripts/browser-work-new"; }
+
+    Super+f hotkey-overlay-title="Toggle Command Palette" { spawn-sh "$HOME/.config/niri/scripts/palette-toggle"; }
+    Super+Shift+m hotkey-overlay-title="Add Quickmark" { spawn "palette-ipc" "add-quickmark"; }
     Super+m { spawn-sh "$HOME/.config/niri/scripts/ws-focus devenv"; }
     // Super+Ctrl+M: focus the lovable-main workspace (always-on
     // home for deps + main-context claude + main browser). On first

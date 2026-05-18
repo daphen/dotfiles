@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Focus the most-recently-focused Helium window (if any) before toggling
+# the palette. Focusing Helium wakes its service worker via
+# chrome.windows.onFocusChanged, so the daemon has fresh tab state by
+# the time the palette renders. This replaces the SW keepalive alarm —
+# the user's gesture *is* the wake.
+#
+# Recency source: /tmp/niri-focus-tracker/app-<class> (last-focused
+# window-id per app-id) and /tmp/niri-focus-tracker/focus-times.json
+# (window-id → epoch). Maintained by ~/.config/niri/scripts/niri-focus-tracker.
+
+set -u
+
+target_id=$(python3 - <<'PY'
+import json
+from pathlib import Path
+
+FOCUS_DIR = Path("/tmp/niri-focus-tracker")
+times_path = FOCUS_DIR / "focus-times.json"
+
+times = {}
+if times_path.exists():
+    try:
+        times = json.loads(times_path.read_text())
+    except Exception:
+        pass
+
+candidates = []
+for cls in ("browser-personal", "browser-work"):
+    p = FOCUS_DIR / f"app-{cls}"
+    if not p.exists():
+        continue
+    try:
+        wid = p.read_text().strip()
+        if wid:
+            candidates.append((times.get(wid, 0), wid))
+    except Exception:
+        pass
+
+if candidates:
+    candidates.sort(reverse=True)
+    print(candidates[0][1])
+PY
+)
+
+if [[ -n "$target_id" ]]; then
+    currently=$(niri msg --json focused-window 2>/dev/null \
+        | python3 -c "import json,sys; d=json.load(sys.stdin) or {}; print(d.get('id',''))" \
+        2>/dev/null || echo "")
+    if [[ "$currently" != "$target_id" ]]; then
+        niri msg action focus-window --id "$target_id" 2>/dev/null || true
+    fi
+fi
+
+exec palette-ipc toggle

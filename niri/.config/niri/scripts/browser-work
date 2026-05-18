@@ -14,16 +14,40 @@ set -u
 source "$(dirname "$0")/browser-config.sh"
 
 WORK_ID_FILE="/tmp/${BROWSER_CLASS_WORK}-window-id"
+ACTIVE_FILE="$HOME/.local/state/wt-stacks/ws/active"
 
-# If we have a stored window ID that still exists, focus it
+# Reuse the stored work window only if it still exists AND lives on a
+# valid workspace — either the currently-active lovable stack, or a
+# non-lovable workspace (legacy / no-worktree case). Avoids yanking
+# niri to an inactive worktree when the user wanted a window here.
 if [[ -f "$WORK_ID_FILE" ]]; then
     stored_id=$(cat "$WORK_ID_FILE")
-    exists=$(niri msg --json windows | python3 -c "
-import json, sys
-windows = json.load(sys.stdin)
-print('yes' if any(str(w['id']) == '$stored_id' and w.get('app_id') in ('$BROWSER_CLASS_PERSONAL', '$BROWSER_CLASS_WORK') for w in windows) else 'no')
-" 2>/dev/null)
-    if [[ "$exists" == "yes" ]]; then
+    active_stack=$(cat "$ACTIVE_FILE" 2>/dev/null || true)
+    valid=$(STORED="$stored_id" ACTIVE="$active_stack" \
+        PERSONAL="$BROWSER_CLASS_PERSONAL" WORK="$BROWSER_CLASS_WORK" \
+        python3 -c '
+import json, os, subprocess, sys
+stored = int(os.environ["STORED"]) if os.environ["STORED"].isdigit() else None
+active = os.environ.get("ACTIVE") or None
+classes = (os.environ["PERSONAL"], os.environ["WORK"])
+windows = json.loads(subprocess.run(["niri", "msg", "--json", "windows"],
+                    capture_output=True, text=True).stdout)
+w = next((x for x in windows
+          if x.get("id") == stored and x.get("app_id") in classes), None)
+if w is None:
+    print("no"); sys.exit()
+workspaces = json.loads(subprocess.run(["niri", "msg", "--json", "workspaces"],
+                       capture_output=True, text=True).stdout)
+ws_name = next((s.get("name") for s in workspaces
+                if s.get("id") == w.get("workspace_id")), "") or ""
+if ws_name == active:
+    print("yes")
+elif ws_name.startswith("lovable-") and ws_name != "lovable":
+    print("no")  # an inactive lovable stack
+else:
+    print("yes")  # non-lovable workspace, free to focus
+' 2>/dev/null)
+    if [[ "$valid" == "yes" ]]; then
         niri msg action focus-window --id "$stored_id"
         exit 0
     fi

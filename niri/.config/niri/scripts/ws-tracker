@@ -6,12 +6,9 @@ Watches niri's event stream and maintains the workspace-stack state:
 
     ~/.local/state/wt-stacks/ws/active
         Most recently focused `lovable-<name>` workspace name. Single
-        source of truth for "which stack is active".
-
-    ~/.local/state/wt-stacks/ws/excluded
-        JSON list of window IDs currently sitting on inactive
-        `lovable-<name>` workspaces. Read by `ws-focus` to skip those
-        windows. Rebuilt on every workspace/window event.
+        source of truth for "which stack is active". ws-focus derives
+        the inactive-stack window set live from this + `niri msg
+        workspaces`, so we don't cache a window-id list here.
 
 Side effects on each `lovable-<name>` focus event:
   - Moves the lovable_deps singleton to the active workspace.
@@ -29,7 +26,6 @@ from pathlib import Path
 
 STATE_DIR = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws"
 ACTIVE_FILE = STATE_DIR / "active"
-EXCLUDED_FILE = STATE_DIR / "excluded"
 RECENCY_FILE = STATE_DIR / "recency"
 REORDER_SCRIPT = Path(os.environ["HOME"]) / ".config/niri/scripts/ws-reorder"
 
@@ -46,13 +42,9 @@ RECENCY_LIMIT = 50
 LAPTOP_OUTPUT = os.environ.get("NIRI_LAPTOP_OUTPUT", "eDP-1")
 
 WS_FOCUSED_RE = re.compile(r"^Workspace focused:\s+(\d+)")
-# Trigger an exclusion-list refresh on any of these.
 RELEVANT_EVENT_RE = re.compile(
     r"^("
     r"Workspace focused"
-    r"|Window opened"
-    r"|Window closed"
-    r"|Window changed"
     r"|Workspace activated"
     r"|Workspaces changed"
     r")\b"
@@ -120,39 +112,6 @@ def update_recency(name: str) -> None:
         tmp = RECENCY_FILE.with_suffix(".tmp")
         tmp.write_text(json.dumps(existing))
         tmp.replace(RECENCY_FILE)
-    except Exception:
-        pass
-
-
-def update_excluded() -> None:
-    """Recompute the set of window IDs that live on inactive
-    `lovable-<name>` workspaces and atomically write to EXCLUDED_FILE.
-
-    The legacy bare `lovable` workspace is NOT an inactive stack —
-    windows on it pass through the filter."""
-    active = read_active()
-    workspaces = niri_json("workspaces") or []
-    inactive_ws_ids: set[int] = set()
-    for ws in workspaces:
-        name = ws.get("name") or ""
-        if not name.startswith("lovable-"):
-            continue
-        if name == "lovable":
-            continue
-        if name == active:
-            continue
-        inactive_ws_ids.add(ws["id"])
-
-    excluded: list[int] = [
-        w["id"] for w in (niri_json("windows") or [])
-        if w.get("workspace_id") in inactive_ws_ids
-    ]
-
-    try:
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
-        tmp = EXCLUDED_FILE.with_suffix(".tmp")
-        tmp.write_text(json.dumps(sorted(excluded)))
-        tmp.replace(EXCLUDED_FILE)
     except Exception:
         pass
 
@@ -258,7 +217,6 @@ def daemon() -> int:
             write_active(name)
             update_recency(name)
 
-    update_excluded()
     reorder()
     # Track outputs across events so we can detect a reconnect: when
     # any non-laptop output transitions from absent → present, snap
@@ -281,19 +239,13 @@ def daemon() -> int:
         if m:
             ws_id = int(m.group(1))
             name = lovable_stack_name_by_id(ws_id)
-            if name is not None:
-                write_active(name)
-                update_recency(name)
-                move_deps_to_active()
-                reorder()
-            # Whether stack or not, refresh exclusion (active may have
-            # changed; window membership may have shifted).
-            update_excluded()
+            if name is None:
+                continue  # not a lovable workspace — nothing to do
+            write_active(name)
+            update_recency(name)
+            move_deps_to_active()
+            reorder()
             continue
-
-        # Window/workspace life-cycle events: just refresh the exclusion
-        # set. Cheap (one niri msg per event), no animation triggers.
-        update_excluded()
 
         # Output-reconnect reclaim: fires when ANY new non-laptop
         # output appears in the set (i.e. an external just got plugged

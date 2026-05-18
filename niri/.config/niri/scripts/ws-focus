@@ -2,10 +2,12 @@
 """
 ws-focus <role>
 
-Focus the most recently focused window matching <role> that is NOT in
-the global exclusion set (~/.local/state/wt-stacks/ws/excluded — kept
-up to date by ws-tracker, lists window IDs on inactive lovable-<name>
-workspaces).
+Focus the most recently focused window matching <role> that is NOT on
+an inactive `lovable-<name>` workspace. Inactive = any lovable stack
+that isn't the one named in ~/.local/state/wt-stacks/ws/active. The
+list of windows on those workspaces is computed live from `niri msg
+--json workspaces` + `windows`, not cached — niri is the source of
+truth.
 
 Behavior:
   - If the currently focused window matches the role, advance to the
@@ -45,7 +47,7 @@ import sys
 from pathlib import Path
 
 HOME = os.environ["HOME"]
-EXCLUDED_FILE = Path(HOME) / ".local/state/wt-stacks/ws/excluded"
+ACTIVE_FILE = Path(HOME) / ".local/state/wt-stacks/ws/active"
 # Authoritative recency overlay maintained by niri-focus-tracker. Niri's
 # own `focus_timestamp` doesn't reliably update on programmatic focus-window
 # calls, so we lean on the tracker which observes every focus event.
@@ -124,11 +126,28 @@ def recency(w: dict, overlay: dict[str, float]) -> float:
     return (ft.get("secs") or 0) + (ft.get("nanos") or 0) / 1e9
 
 
-def read_excluded() -> set[int]:
+def read_active_stack() -> str | None:
     try:
-        return set(json.loads(EXCLUDED_FILE.read_text()))
+        return ACTIVE_FILE.read_text().strip() or None
     except Exception:
-        return set()
+        return None
+
+
+def inactive_lovable_ws_ids(workspaces: list, active: str | None) -> set[int]:
+    """Workspace ids for every `lovable-<name>` stack that isn't the
+    currently-active one. The legacy bare `lovable` workspace is not a
+    stack — windows there pass through."""
+    out: set[int] = set()
+    for ws in workspaces:
+        name = ws.get("name") or ""
+        if not name.startswith("lovable-"):
+            continue
+        if name == "lovable":
+            continue
+        if name == active:
+            continue
+        out.add(ws["id"])
+    return out
 
 
 def is_claude(w: dict) -> bool:
@@ -207,14 +226,15 @@ def main() -> int:
     role = sys.argv[1]
 
     windows = niri_json("windows") or []
-    excluded = read_excluded()
+    workspaces = niri_json("workspaces") or []
+    excluded_ws = inactive_lovable_ws_ids(workspaces, read_active_stack())
     overlay = read_focus_times()
     personal_browser = read_personal_browser_id() if role == "browser" else None
 
     candidates = [
         w for w in windows
         if matches(w, role, personal_browser)
-        and w.get("id") not in excluded
+        and w.get("workspace_id") not in excluded_ws
     ]
 
     if not candidates:

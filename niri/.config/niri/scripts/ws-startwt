@@ -63,8 +63,14 @@ def main() -> int:
     )
     if not pick:
         return 0
-    branch = pick.split("\t", 1)[0]
-    name = branch.removeprefix("daphen/")
+    _branch, picked_path = pick.split("\t", 1)
+    # Derive the worktree short name from the on-disk dir, not the
+    # branch. Branches get renamed independently of the directory
+    # (e.g. after `git branch -m`) and ws-createwt reconstructs the
+    # dir path from this name — using a mismatched branch name lands
+    # us on a path that doesn't exist and ws-createwt then fails to
+    # `wt switch --create` against an already-checked-out branch.
+    name = Path(picked_path).name.removeprefix("lovable.daphen-")
 
     mode = fzf(
         ["new", "resume", "fork"],

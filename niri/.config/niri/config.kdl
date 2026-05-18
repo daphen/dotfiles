@@ -6,6 +6,8 @@
 cursor {
     xcursor-theme "Adwaita"
     xcursor-size 24
+    hide-when-typing
+    hide-after-inactive-ms 1500
 }
 
 // Input device configuration.

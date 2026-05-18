@@ -67,7 +67,8 @@
         "highlight_succ_dim": "#222B25",
         "highlight_err_dim": "#2A2218",
         "highlight_succ_word": "#4A6C50",
-        "highlight_err_word": "#5E4530"
+        "highlight_err_word": "#5E4530",
+        "hairpin_alpha": "0.15"
       },
       "terminal": {
         "black": "background.tertiary",
@@ -149,7 +150,8 @@
         "highlight_succ_dim": "#EAEFEC",
         "highlight_err_dim": "#F5E5DD",
         "highlight_succ_word": "#C5D5C9",
-        "highlight_err_word": "#DBB8AC"
+        "highlight_err_word": "#DBB8AC",
+        "hairpin_alpha": "0.5"
       },
       "terminal": {
         "black": "#1C1C1C",

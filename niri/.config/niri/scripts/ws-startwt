@@ -18,7 +18,8 @@ LOVABLE_DIR = Path(HOME) / "work" / "lovable"
 
 def list_worktrees() -> list[tuple[str, str]]:
     """Return [(branch, path)] for each worktree under ~/work/lovable,
-    excluding the primary tree."""
+    excluding the primary tree (~/work/lovable on `main` — reached via
+    Super+O instead)."""
     out = subprocess.run(
         ["git", "-C", str(LOVABLE_DIR), "worktree", "list", "--porcelain"],
         capture_output=True, text=True,
@@ -30,8 +31,9 @@ def list_worktrees() -> list[tuple[str, str]]:
             cur_path = line.split(" ", 1)[1]
         elif line.startswith("branch "):
             branch = line.split(" ", 1)[1].removeprefix("refs/heads/")
-            if not cur_path.endswith("/lovable"):
-                rows.append((branch, cur_path))
+            if cur_path.endswith("/lovable") or branch == "main":
+                continue
+            rows.append((branch, cur_path))
     return rows
 
 

@@ -2,12 +2,13 @@
 """
 ws-toggle-worktree
 
-Jump to the previously visited `lovable-<name>` workspace — like Ctrl+O
-in vim/neovim. Press once to go back, press again to return.
+Two-state toggle between `lovable-main` and the most-recent
+non-main `lovable-<name>` worktree. Different worktrees are reached
+via the picker (Super+Ctrl+T); Super+O just bounces between work
+context and the orchestrator.
 
 The recency list is maintained by ws-tracker (writes most-recently
-focused stack to the front on every Workspace focused event). We pick
-the second entry when currently on the first; otherwise the first.
+focused stack to the front on every Workspace focused event).
 """
 from __future__ import annotations
 import json
@@ -17,6 +18,7 @@ import sys
 from pathlib import Path
 
 RECENCY_FILE = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws/recency"
+MAIN_WS = "lovable-main"
 
 
 def niri_json(*args: str):
@@ -27,29 +29,32 @@ def niri_json(*args: str):
 
 
 def main() -> int:
-    try:
-        recent = json.loads(RECENCY_FILE.read_text())
-    except Exception:
-        recent = []
-    if not isinstance(recent, list) or not recent:
-        return 0
-
     workspaces = niri_json("workspaces") or []
     existing = {w.get("name") for w in workspaces if w.get("name")}
-    recent = [n for n in recent if isinstance(n, str) and n in existing]
-    if not recent:
-        return 0
-
     focused_name = next(
         (w.get("name") for w in workspaces if w.get("is_focused")), None
     )
-    # If we're on the most-recent, the toggle target is the next one
-    # down. Otherwise (off the lovable group entirely, or recency hasn't
-    # caught up yet) jump to the most-recent.
-    if focused_name == recent[0] and len(recent) > 1:
-        target = recent[1]
+
+    if focused_name == MAIN_WS:
+        try:
+            recent = json.loads(RECENCY_FILE.read_text())
+        except Exception:
+            recent = []
+        # Skip MAIN_WS and any vanished workspaces; first survivor wins.
+        target = next(
+            (n for n in recent
+             if isinstance(n, str)
+             and n != MAIN_WS
+             and n.startswith("lovable-")
+             and n in existing),
+            None,
+        )
+        if target is None:
+            return 0
     else:
-        target = recent[0]
+        if MAIN_WS not in existing:
+            return 0
+        target = MAIN_WS
 
     subprocess.run(
         ["niri", "msg", "action", "focus-workspace", target],

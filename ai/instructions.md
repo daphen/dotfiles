@@ -38,3 +38,7 @@ and claims a niri workspace.
 # Commits
 
 Never mention Claude, Claude Code, or Anthropic in commit messages. Do not add Co-Authored-By lines referencing Claude.
+
+# Comments
+
+Keep code comments short — ideally one line, no more than three. Don't write multi-paragraph explanations; if a thought needs more than three lines it belongs in a PR description or a doc, not the source.

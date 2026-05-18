@@ -36,6 +36,37 @@
             "command": "node /home/daphen/.claude/hooks/ai-tracker.js"
           }
         ]
+      },
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/daphen/.local/bin/wt-state-update"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/daphen/.local/bin/wt-state-update"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/daphen/.local/bin/wt-state-inject"
+          }
+        ]
       }
     ],
     "Notification": [

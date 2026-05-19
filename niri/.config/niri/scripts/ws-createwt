@@ -133,7 +133,12 @@ def main() -> int:
     branch = f"daphen/{name}"
     worktree_path = Path(HOME) / f"work/lovable.daphen-{name}"
     workspace = f"lovable-{name}"
-    preview_url = f"http://daphen-{name}.localhost:2015"
+    # Mirror Lovable's devenv sanitizeBranchForSubdomain: keep prefix +
+    # at most 3 description segments. `daphen/1149-publish-state-picker`
+    # registers as `daphen-1149-publish-state.localhost`.
+    name_segments = name.split("-")[:3]
+    subdomain = "daphen-" + "-".join(name_segments)
+    preview_url = f"http://{subdomain}.localhost:2015"
 
     # 1. Create or switch to the worktree (using `wt`)
     if not worktree_path.is_dir():

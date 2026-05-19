@@ -13,7 +13,7 @@
 set -uo pipefail
 
 SCRIPT_DIR="$HOME/.config/niri/scripts"
-LOVABLE_ICON="$HOME/.local/share/icons/hicolor/512x512/apps/lovable.png"
+LOVABLE_ICON="$HOME/.local/share/icons/hicolor/256x256/apps/lovable-square.png"
 RECENCY_FILE="$HOME/.local/state/wt-stacks/ws/recency"
 ACTIVE_FILE="$HOME/.local/state/wt-stacks/ws/active"
 
@@ -70,37 +70,38 @@ for n in "${names[@]}"; do
     fi
 done
 
-# Markup rows: active worktree gets bold + a small dot marker so it's
-# obvious which one we're already on.
+# Active worktree gets the orange accent so it reads as "you are here".
 rows=()
 for n in "${ordered[@]}"; do
     if [ "$n" = "$active_name" ]; then
-        rows+=("<b>$n</b>  ●")
+        rows+=("<span foreground='#FF570D'>$n</span>")
     else
         rows+=("$n")
     fi
 done
 
-# Custom `icon-prompt` child widget so the lovable.png shows next to
-# the prompt label without tiling. kb-custom-1 (Ctrl+W) → exit 10;
-# Ctrl+W is bound to kb-clear-line by default, so unbind it first.
+# Lovable heart next to the "worktree" prompt. `size:` constrains the
+# widget on both axes — width/height alone produced a tall sliver.
 ICON_THEME='
-inputbar { children: [ icon-prompt, prompt, entry ]; }
+inputbar { children: [ icon-prompt, entry ]; }
 icon-prompt {
-    expand: false;
+    expand:           false;
     background-image: url("'"$LOVABLE_ICON"'", both);
-    size: 1.4em;
-    margin: 0 0.5em 0 0;
+    size:             1.2em;
+    margin:           0 0.5em 0 0;
+}
+entry {
+    placeholder:      "worktrees";
 }
 '
 
 # -format i returns the index of the selected row in our input list,
 # which lets us look up the bare name without parsing markup.
 selected_idx=$(printf '%s\n' "${rows[@]}" | rofi -dmenu -i \
+    -sync \
     -format i \
     -markup-rows \
     -p "worktree" \
-    -theme-str "window { width: 30em; }" \
     -theme-str "$ICON_THEME" \
     -mesg "Enter: focus    Ctrl+W: close worktree" \
     -kb-clear-line "" \

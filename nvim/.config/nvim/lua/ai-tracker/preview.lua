@@ -137,6 +137,7 @@ end
 --- never blocks on the subprocess. Falls back to a sync call on older nvims
 --- without vim.system.
 local function refresh_workspace_id_async()
+	if vim.fn.executable("niri") ~= 1 then return end
 	if not vim.system then
 		local ws = niri_windows()
 		if ws then

@@ -693,6 +693,10 @@ binds {
     // Super+O: toggle to the previously visited worktree (vim ctrl-o style).
     Super+o       { spawn-sh "$HOME/.config/niri/scripts/ws-toggle-worktree"; }
 
+    // Super+B: rofi picker over your lovbox sandboxes (lovssh history).
+    // Same shape as Super+T (worktrees) but for remote dev sandboxes.
+    Super+b       { spawn-sh "$HOME/.config/niri/scripts/rofi-lovbox-jump"; }
+
     // Notes - tiled window like spotify/claude
     Super+n { spawn "/home/daphen/.config/niri/scripts/spawn-notes"; }
     Super+Shift+n { spawn "/home/daphen/.config/niri/scripts/spawn-new-note"; }

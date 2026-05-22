@@ -1,0 +1,442 @@
+#!/usr/bin/env python3
+"""
+ws-createlovbox <name> <project-url-or-claim>
+
+Spawns a niri stack for a REMOTE lovbox sandbox — mirror of
+ws-createwt's pattern, but with SSH-into-sandbox kitty windows
+instead of local devenv/claude/nvim ones.
+
+Workspace name: `lovable-<name>` (matches ws-createwt convention so the
+existing Super+T picker / rofi-ws-jump shows it alongside worktrees).
+
+Windows spawned:
+  1. kitty → lovssh + claude in ~/lovable
+  2. kitty → lovssh + nvim  in ~/lovable
+  3. browser → the Lovable project page (with preview)
+
+No worktree, no devenv-wt: the sandbox already has devenv running via
+its entrypoint, and there's no local checkout to anchor a worktree to.
+"""
+from __future__ import annotations
+import argparse
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+import urllib.request
+import urllib.error
+
+HOME = os.environ["HOME"]
+SANDCASTLE = "https://sandcastle.lovable.net"
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=3
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def niri_action(*args: str) -> int:
+    return subprocess.run(
+        ["niri", "msg", "action", *args], capture_output=True, timeout=3
+    ).returncode
+
+
+def workspace_id_by_name(name: str) -> int | None:
+    for ws in (niri_json("workspaces") or []):
+        if ws.get("name") == name:
+            return ws["id"]
+    return None
+
+
+def trailing_empty_unnamed_idx(output: str) -> int | None:
+    cands = [
+        w for w in (niri_json("workspaces") or [])
+        if w.get("output") == output
+        and w.get("name") is None
+        and w.get("active_window_id") is None
+    ]
+    cands.sort(key=lambda w: -w["idx"])
+    return cands[0]["idx"] if cands else None
+
+
+def focused_output() -> str | None:
+    fw = niri_json("focused-window")
+    if fw is None:
+        return None
+    ws_id = fw.get("workspace_id")
+    for w in (niri_json("workspaces") or []):
+        if w["id"] == ws_id:
+            return w.get("output")
+    return None
+
+
+def ensure_workspace(name: str) -> int:
+    wid = workspace_id_by_name(name)
+    if wid is not None:
+        niri_action("focus-workspace", name)
+        return wid
+
+    out = focused_output() or "DP-2"
+    idx = trailing_empty_unnamed_idx(out)
+    if idx is None:
+        niri_action("focus-workspace-down")
+        time.sleep(0.15)
+        idx = trailing_empty_unnamed_idx(out)
+    if idx is None:
+        return -1
+    niri_action("set-workspace-name", "--workspace", str(idx), name)
+    time.sleep(0.15)
+    niri_action("focus-workspace", name)
+    time.sleep(0.1)
+    return workspace_id_by_name(name) or -1
+
+
+def snapshot_window_ids() -> set[int]:
+    return {w["id"] for w in (niri_json("windows") or [])}
+
+
+def spawn_and_wait(cmd: list[str], timeout: float = 9.0) -> int | None:
+    before = snapshot_window_ids()
+    subprocess.Popen(
+        ["setsid", *cmd],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        time.sleep(0.15)
+        after = snapshot_window_ids()
+        new = after - before
+        if new:
+            return next(iter(new))
+    return None
+
+
+def extract_project_uuid(s: str) -> str | None:
+    m = re.search(
+        r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", s
+    )
+    return m.group(0) if m else None
+
+
+def deterministic_claim(project_id: str, purpose: str = "main") -> str:
+    """Mirror schedulerTemplateClaimName for purpose='main' / template
+    'lovable-on-lovable' — sha256(project_id\\0purpose\\0template)[:16]."""
+    digest = hashlib.sha256(
+        f"{project_id}\x00{purpose}\x00lovable-on-lovable".encode()
+    ).hexdigest()[:16]
+    base = "lovable" if purpose == "main" else f"lovable-{purpose}"
+    return f"{base}-{digest}"
+
+
+def sandbox_lookup(claim: str) -> dict | None:
+    """Search personal + shared lists for a sandbox by claim name."""
+    for qs in ("", "?access=shared"):
+        try:
+            with urllib.request.urlopen(
+                f"{SANDCASTLE}/api/v1/sandboxes{qs}", timeout=15
+            ) as r:
+                data = json.loads(r.read())
+        except Exception:
+            continue
+        for sb in (data or []):
+            if sb.get("name") == claim:
+                return sb
+    return None
+
+
+def post_create_sandbox(
+    claim: str, template: str = "lovable-on-lovable", access: str = "shared"
+) -> tuple[int, str]:
+    body = json.dumps({"name": claim, "template": template, "access": access}).encode()
+    req = urllib.request.Request(
+        f"{SANDCASTLE}/api/v1/sandboxes",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return r.status, r.read().decode()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode(errors="replace")
+    except Exception as e:
+        return 0, str(e)
+
+
+def ensure_sandbox(claim: str, template: str, polls: int = 60, interval: float = 3.0) -> str:
+    """Return one of: 'exists-ready', 'created-ready', 'create-failed:<msg>',
+    'timeout-not-ready'.
+    """
+    sb = sandbox_lookup(claim)
+    if sb and sb.get("status") == "Ready":
+        return "exists-ready"
+
+    if sb is None:
+        status, body = post_create_sandbox(claim, template=template)
+        if status not in (200, 201, 409):
+            return f"create-failed:HTTP {status} {body.strip()[:200]}"
+
+    for _ in range(polls):
+        sb = sandbox_lookup(claim)
+        if sb and sb.get("status") == "Ready":
+            return "created-ready" if sb.get("creation_time") else "exists-ready"
+        time.sleep(interval)
+    return "timeout-not-ready"
+
+
+# Default Lovable workspace ID for prod (matches `lov project create` defaults).
+DEFAULT_WORKSPACE_ID = "workspace_01jsya3zjre8c97tqsmq2xvkdt"
+
+
+def _gen_msg_id(prefix: str) -> str:
+    """Generate a ULID-shaped id with the given prefix. Format mirrors the
+    web client's id format (umsg_/aimsg_) — 26 lowercase Crockford-base32
+    chars after the underscore."""
+    import secrets
+    alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
+    return f"{prefix}_" + "".join(secrets.choice(alphabet) for _ in range(26))
+
+
+def create_lovable_project(prompt: str, sandbox_template: str, workspace_id: str) -> str | None:
+    """POST to api.lovable.dev to create a new Lovable project with the given
+    sandbox_template ('lovable-on-lovable' triggers LoL preview / agent mode).
+    Returns the new project's UUID, or None on failure. Reads the bearer token
+    from `lov auth login`'s token cache at ~/.lovable/auth/token_cache_prod.json.
+    """
+    token_path = os.path.expanduser("~/.lovable/auth/token_cache_prod.json")
+    # Force a token refresh via `lov auth status` — the cached id_token in
+    # token_cache_prod.json expires after ~1h; the refresh_token lives in the
+    # user's keychain and `lov` refreshes opportunistically when invoked.
+    lov_bin = os.path.expanduser("~/work/lovable/bin/lov")
+    if os.path.isfile(lov_bin):
+        subprocess.run([lov_bin, "auth", "status"], capture_output=True, timeout=15)
+    try:
+        with open(token_path) as f:
+            token = json.load(f)["id_token"]
+    except Exception as e:
+        print(f"Couldn't read lov auth token from {token_path}: {e}", file=sys.stderr)
+        print("Try `lov auth login` first.", file=sys.stderr)
+        return None
+
+    body = {
+        "description": prompt,
+        "tech_stack": "modern",
+        "visibility": "private",
+        "env_vars": {},
+        "sandbox_template": sandbox_template,
+        "metadata": {
+            "chat_mode_enabled": False,
+            "fullscreen_enabled": True,
+            "feature_flag_overrides": {"unify-design-systems": True},
+        },
+        "initial_message": {
+            "id": _gen_msg_id("umsg"),
+            "message": prompt,
+            "files": [],
+            "optimisticImageUrls": [],
+            "chat_only": False,
+            "agent_mode_enabled": False,
+            "ai_message_id": _gen_msg_id("aimsg"),
+        },
+    }
+    req = urllib.request.Request(
+        f"https://api.lovable.dev/workspaces/{workspace_id}/projects",
+        data=json.dumps(body).encode(),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            resp = json.loads(r.read())
+            # Field name varies — try project_id then id.
+            return resp.get("project_id") or resp.get("id")
+    except urllib.error.HTTPError as e:
+        msg = e.read().decode(errors="replace")[:400]
+        print(f"Project create POST returned HTTP {e.code}: {msg}", file=sys.stderr)
+        return None
+    except Exception as e:
+        print(f"Project create POST failed: {e}", file=sys.stderr)
+        return None
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("name", help="short workspace name (workspace becomes lovable-<name>)")
+    ap.add_argument(
+        "url_or_claim",
+        nargs="?",
+        default=None,
+        help="(optional) Lovable project URL/UUID, or claim name. Omit to "
+             "provision a brand-new scratch sandbox with no Lovable project "
+             "association (template lovable-devenv-pvc).",
+    )
+    ap.add_argument(
+        "--prompt", "-p",
+        help="Create a brand-new Lovable project with this prompt, in "
+             "lovable-on-lovable mode (LoL preview, agent edits the monorepo). "
+             "Talks directly to api.lovable.dev — uses `lov auth login`'s cached "
+             "bearer token. Overrides url_or_claim.",
+    )
+    ap.add_argument(
+        "--workspace", "-w",
+        default=DEFAULT_WORKSPACE_ID,
+        help=f"Workspace ID for project creation (default: {DEFAULT_WORKSPACE_ID}).",
+    )
+    args = ap.parse_args()
+
+    name = args.name
+    target = args.url_or_claim
+    workspace = f"lovable-{name}"
+
+    # --prompt mode: create a new Lovable project via the auth'd Lovable API,
+    # with sandbox_template=lovable-on-lovable so the project boots in LoL mode
+    # (preview = running lovable instance, agent edits ~/lovable monorepo).
+    # `lov project create` (the CLI) doesn't expose sandbox_template, so we
+    # talk to api.lovable.dev directly using `lov auth login`'s cached token.
+    if args.prompt:
+        if target is not None:
+            print("--prompt and a URL/claim arg are mutually exclusive", file=sys.stderr)
+            return 2
+        print(f"==> creating Lovable-on-Lovable project (workspace={args.workspace})")
+        print(f"    prompt: {args.prompt!r}")
+        new_uuid = create_lovable_project(
+            prompt=args.prompt,
+            sandbox_template="lovable-on-lovable",
+            workspace_id=args.workspace,
+        )
+        if not new_uuid:
+            return 1
+        target = f"https://lovable.dev/projects/{new_uuid}"
+        print(f"==> project created: {target}")
+
+    # Three input modes:
+    # - bare name (no URL/claim arg): scratch sandbox, no Lovable project,
+    #   no browser window. claim = "daphen-<name>", template lovable-devenv-pvc.
+    # - URL or UUID: lovable-on-lovable sandbox, deterministic claim, browser
+    #   opens the Lovable project URL.
+    # - claim name (e.g. lovable-d32914...): assume existing, no provision,
+    #   browser opens lovable.dev root (no way to recover the project URL).
+    project_url: str | None = None
+    if target is None:
+        claim = f"daphen-{name}"
+        ssh_input = claim
+        template = "lovable-devenv-pvc"
+    elif target.startswith("lovable-") and "-" in target[len("lovable-"):]:
+        claim = target
+        ssh_input = target
+        template = "lovable-on-lovable"
+        project_url = "https://lovable.dev"
+    else:
+        uuid = extract_project_uuid(target)
+        if uuid is None:
+            print(f"Couldn't parse '{target}' as URL, UUID, or claim", file=sys.stderr)
+            return 2
+        project_url = target if target.startswith("http") else f"https://lovable.dev/projects/{uuid}"
+        ssh_input = project_url
+        claim = deterministic_claim(uuid)
+        template = "lovable-on-lovable"
+
+    print(f"==> claim:     {claim}")
+    print(f"==> template:  {template}")
+    print(f"==> workspace: {workspace}")
+
+    # 1. Ensure the sandbox exists + is Ready. POSTs to sandcastle if
+    # missing; polls otherwise.
+    print(f"==> ensuring sandbox is Ready (template={template})…")
+    result = ensure_sandbox(claim, template=template)
+    if result == "exists-ready":
+        print("==> sandbox already running")
+    elif result == "created-ready":
+        print("==> sandbox provisioned and Ready")
+    elif result == "timeout-not-ready":
+        print(
+            "⚠ sandbox didn't reach Ready in 3 min. Continuing anyway — "
+            "the SSH windows will retry; you can also click "
+            f"'Build with Lovable on Lovable runtime' at {project_url} "
+            "if the API path didn't wire the project.",
+            file=sys.stderr,
+        )
+    elif result.startswith("create-failed:"):
+        print(
+            f"⚠ {result}. Click 'Build with Lovable on Lovable runtime' "
+            f"at {project_url} (one-time per project) and re-run.",
+            file=sys.stderr,
+        )
+        return 1
+
+    # 2. Auto-label the sandbox with the human name so `Super+B`'s picker
+    # shows "1252-components-md-silent-drop" instead of the short UUID
+    # short-hash. Lives at ~/.local/state/lovssh/names.json — same file
+    # `lov-name` writes — so a manual `lov-name <claim> <new-label>` later
+    # overrides this without conflict.
+    names_path = os.path.expanduser("~/.local/state/lovssh/names.json")
+    os.makedirs(os.path.dirname(names_path), exist_ok=True)
+    try:
+        with open(names_path) as fh:
+            names = json.load(fh)
+        if not isinstance(names, dict):
+            names = {}
+    except (FileNotFoundError, json.JSONDecodeError):
+        names = {}
+    if names.get(claim) != name:
+        names[claim] = name
+        with open(names_path, "w") as fh:
+            json.dump(names, fh, indent=2)
+        print(f"==> labeled {claim} → {name}")
+
+    # 3. Focus / create the workspace
+    print(f"==> focusing workspace {workspace}")
+    ensure_workspace(workspace)
+
+    # 2. Spawn the 3 stack windows.
+    # SSH-into-sandbox windows: kitty runs fish, fish runs lovssh, when
+    # lovssh's `exec nix run …` lands inside the sandbox the user is in
+    # the dev env. Inside that, we chain a command:
+    #   - claude window:  cd ~/lovable; claude
+    #   - nvim   window:  cd ~/lovable; nvim
+    #
+    # We can't easily chain commands AFTER lovssh's exec (it replaces the
+    # shell), so instead we have fish print a tip and the user runs the
+    # command themselves. Acceptable for now — could be wired tighter via
+    # an env var that the daphen-env wrapper reads at startup.
+    print("==> spawning lovssh + claude")
+    spawn_and_wait([
+        "kitty",
+        "--class", "claude",
+        "-e", "fish", "-c", f"echo 'After landing in the sandbox: cd ~/lovable && claude'; lovssh '{ssh_input}'",
+    ])
+
+    print("==> spawning lovssh + nvim")
+    spawn_and_wait([
+        "kitty",
+        "-e", "fish", "-c", f"echo 'After landing in the sandbox: cd ~/lovable && nvim'; lovssh '{ssh_input}'",
+    ])
+
+    if project_url:
+        print(f"==> spawning work browser → {project_url}")
+        spawn_and_wait([
+            "/home/daphen/.config/niri/scripts/browser-dispatch",
+            "--profile=work",
+            "--new-window",
+            project_url,
+        ])
+    else:
+        print("==> skipping browser (no project URL — scratch sandbox)")
+
+    print(f"==> lovbox stack '{name}' ready on workspace '{workspace}'")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

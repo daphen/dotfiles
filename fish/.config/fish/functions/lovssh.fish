@@ -9,10 +9,11 @@ function lovssh --description "SSH into the existing lovbox for a Lovable projec
 
     # Resolve claim name: accept claim directly, or extract UUID from URL.
     set -l claim
+    set -l project_id ""
     if string match -q 'lovable-*' -- "$input"
         set claim "$input"
     else
-        set -l project_id (string match -r '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' -- "$input")
+        set project_id (string match -r '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' -- "$input")
         if test -z "$project_id"
             echo "Could not extract a project UUID from: $input"
             return 1
@@ -70,6 +71,21 @@ function lovssh --description "SSH into the existing lovbox for a Lovable projec
     end
     echo "✓ SSH key registered."
 
+    # Log this visit so `rofi-lovbox-jump` can show your recently-used
+    # sandboxes as a "personal" filter on top of the team-wide list.
+    # Fire a fast non-blocking SSH to grab the current branch in ~/lovable
+    # so the picker can show it; capped at 5s so a slow sandbox doesn't
+    # delay the user's actual SSH session below.
+    set -l branch (timeout 5 ssh -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
+        -p 2222 "lovable@$direct_host" \
+        'git -C ~/lovable branch --show-current 2>/dev/null' 2>/dev/null; or true)
+    set -l history_file "$HOME/.local/state/lovssh/history.jsonl"
+    mkdir -p (dirname "$history_file")
+    set -l now (date -u +%Y-%m-%dT%H:%M:%SZ)
+    printf '{"timestamp":"%s","claim":"%s","project_id":"%s","input":"%s","branch":"%s"}\n' \
+        "$now" "$claim" "$project_id" "$input" "$branch" >> "$history_file"
+
     # Pass proart's current theme through to the sandbox so its starship/
     # nvim spin up matching the local terminal at connect time. Default to
     # "light" if proart's mode file is missing for some reason.
@@ -88,5 +104,5 @@ function lovssh --description "SSH into the existing lovbox for a Lovable projec
         -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o ConnectTimeout=10 \
-        "lovable@$direct_host" "echo '[lovssh] connected as '\$(whoami)'@'\$(hostname); mkdir -p ~/.config; echo '$proart_theme' > ~/.config/theme_mode; echo '[lovssh] theme: $proart_theme'; echo '[lovssh] launching dev env via nix run...'; exec nix run --refresh github:daphen/nixos-portable-config#daphen-env"
+        "lovable@$direct_host" "export TERM=xterm-256color; echo '[lovssh] connected as '\$(whoami)'@'\$(hostname); mkdir -p ~/.config; echo '$proart_theme' > ~/.config/theme_mode; echo '[lovssh] theme: $proart_theme'; echo '[lovssh] launching dev env via nix run...'; exec nix run --refresh --option require-sigs false github:daphen/nixos-portable-config#daphen-env"
 end

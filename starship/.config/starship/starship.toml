@@ -13,12 +13,12 @@ surface    = "#EDECE9"
 prompt     = "#E8EAED"
 fg         = "#2D4A3D"
 fg_muted   = "#6B6E7A"
-red        = "#A8333A"
+red        = "#7c3438"
 orange     = "#e16511"
-yellow     = "#69756C"
+yellow     = "#df9001"
 green      = "#5E7270"
-cyan       = "#397446"
-blue       = "#286983"
+cyan       = "#243560"
+blue       = "#396171"
 # purple and pink are #8A92A7 (muted gray-blue) — deliberately not used
 # for backgrounds since they don't read as distinct from cyan/blue.
 

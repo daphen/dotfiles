@@ -16,7 +16,7 @@
 
     background-color:   transparent;
     text-color:         @fg;
-    font:               "Instrument Serif 24";
+    font:               "Geist 20";
 }
 
 window {
@@ -55,13 +55,12 @@ prompt {
 entry {
     background-color:   transparent;
     text-color:         @fg;
-    placeholder:        "Search…";
+    placeholder:        " Search…";
     placeholder-color:  @fg-muted;
     cursor:             text;
     cursor-color:       @accent;
     cursor-width:       2px;
     blink:              false;
-    padding:            0 0 0 8px;
 }
 
 listview {

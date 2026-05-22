@@ -51,3 +51,12 @@ BROWSER_PROCESS_NAME="helium"
 BROWSER_FLAGS=(
     --disable-features=AsyncDns
 )
+
+# Point GLib at gsettings-desktop-schemas so Chromium's GTK theme code
+# (and the org.freedesktop.appearance portal route) can resolve
+# color-scheme on each launch. Needed until niri itself inherits this
+# via home-manager session vars (next login).
+if [ -z "${GSETTINGS_SCHEMA_DIR:-}" ]; then
+    _schema=$(echo /nix/store/*-gsettings-desktop-schemas-*/share/gsettings-schemas/gsettings-desktop-schemas-*/glib-2.0/schemas 2>/dev/null | tr ' ' '\n' | grep -v '*' | head -1)
+    [ -n "$_schema" ] && [ -d "$_schema" ] && export GSETTINGS_SCHEMA_DIR="$_schema"
+fi

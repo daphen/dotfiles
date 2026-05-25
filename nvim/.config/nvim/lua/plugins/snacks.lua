@@ -1,3 +1,38 @@
+-- Picker for files changed between the daphen work branch and the Lovable
+-- init commit. Used by both <leader>gC and <C-f>. Falls back to repo root
+-- if the init commit grep returns nothing.
+local function open_changed_files_picker()
+	local base = vim.fn.systemlist(
+		"git log --all --grep='\\[skip lovable\\] Initialize Lovable project' --format=%H"
+	)[1]
+	if not base or base == "" then
+		base = vim.fn.systemlist("git rev-list --max-parents=0 HEAD")[1]
+	end
+	local work = vim.fn.systemlist(
+		"git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads/daphen"
+	)[1] or "HEAD"
+	if not base or base == "" then
+		vim.notify("Couldn't infer base commit", vim.log.levels.ERROR)
+		return
+	end
+	local files = vim.fn.systemlist("git diff --name-only " .. base .. ".." .. work)
+	if #files == 0 then
+		vim.notify("No changes vs " .. base:sub(1, 8), vim.log.levels.INFO)
+		return
+	end
+	Snacks.picker.pick({
+		title = "Changed: " .. base:sub(1, 8) .. ".." .. work .. " (" .. #files .. " files)",
+		finder = function()
+			return vim.tbl_map(function(f) return { text = f, file = f } end, files)
+		end,
+		format = "file",
+		confirm = function(picker, item)
+			picker:close()
+			if item and item.file then vim.cmd("edit " .. vim.fn.fnameescape(item.file)) end
+		end,
+	})
+end
+
 return {
 	"folke/snacks.nvim",
 	priority = 1000,
@@ -124,40 +159,8 @@ return {
 				Snacks.picker.git_log({ args = work and { work } or {} })
 			end, desc = "Git Commits (daphen branch)",
 		},
-		-- Changed files (work branch vs base). Same pinning trick: list
-		-- files modified between the Lovable init commit and the daphen
-		-- work branch, regardless of where HEAD is. Each file opens as
-		-- a normal buffer; gitsigns + hunk-nvim continue to sync.
-		{ "<leader>gC", function()
-				local base = vim.fn.systemlist(
-					"git log --all --grep='\\[skip lovable\\] Initialize Lovable project' --format=%H"
-				)[1]
-				if not base or base == "" then
-					base = vim.fn.systemlist("git rev-list --max-parents=0 HEAD")[1]
-				end
-				local work = vim.fn.systemlist(
-					"git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads/daphen"
-				)[1] or "HEAD"
-				if not base or base == "" then
-					vim.notify("Couldn't infer base commit", vim.log.levels.ERROR); return
-				end
-				local files = vim.fn.systemlist("git diff --name-only " .. base .. ".." .. work)
-				if #files == 0 then
-					vim.notify("No changes vs " .. base:sub(1, 8), vim.log.levels.INFO); return
-				end
-				Snacks.picker.pick({
-					title = "Changed: " .. base:sub(1, 8) .. ".." .. work .. " (" .. #files .. " files)",
-					finder = function()
-						return vim.tbl_map(function(f) return { text = f, file = f } end, files)
-					end,
-					format = "file",
-					confirm = function(picker, item)
-						picker:close()
-						if item and item.file then vim.cmd("edit " .. vim.fn.fnameescape(item.file)) end
-					end,
-				})
-			end, desc = "Changed files (daphen vs base)",
-		},
+		{ "<leader>gC", open_changed_files_picker, desc = "Changed files (daphen vs base)" },
+		{ "<C-f>", open_changed_files_picker, desc = "Changed files (daphen vs base)", mode = "n" },
 		{ "<leader>u", function() Snacks.picker.undo() end, desc = "Undo History" },
 		{ "<C-n>", function() Snacks.words.jump(vim.v.count1) end, desc = "Next Reference", mode = { "n", "t" } },
 		{ "<C-p>", function() Snacks.words.jump(-vim.v.count1) end, desc = "Prev Reference", mode = { "n", "t" } },

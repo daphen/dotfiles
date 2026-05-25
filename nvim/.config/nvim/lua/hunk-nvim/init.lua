@@ -94,6 +94,7 @@ local function try_attach()
 	if not detect_session() then return false end
 	state.enabled = true
 	attach_autocmds()
+	pcall(function() require("hunk-nvim.signs").setup({ repo_root = state.repo_root }) end)
 	return true
 end
 

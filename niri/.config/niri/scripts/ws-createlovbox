@@ -415,32 +415,43 @@ def main() -> int:
     #   - claude window:  cd ~/lovable; claude
     #   - nvim   window:  cd ~/lovable; nvim
     #
-    # We can't easily chain commands AFTER lovssh's exec (it replaces the
-    # shell), so instead we have fish print a tip and the user runs the
-    # command themselves. Acceptable for now — could be wired tighter via
-    # an env var that the daphen-env wrapper reads at startup.
+    # lovssh now cds to ~/lovable on landing, so the tips just name the
+    # next command. We can't chain commands AFTER lovssh's exec (it
+    # replaces the shell), so the user types `claude` / `nvim` / `hunkr`
+    # themselves. Could be wired tighter via an env var the daphen-env
+    # wrapper reads at startup, but one-keyword commands are tolerable.
+    #
+    # Small sleep between spawns: all three panes start `nix run` in
+    # parallel and race for the same SQLite eval-cache. The first to
+    # bind wins; the other two get a benign "database is busy" warning.
+    # 800ms is enough for the first nix-run to populate the cache, so
+    # the next two pick it up clean.
+    import time
+
     print("==> spawning lovssh + claude")
     spawn_and_wait([
         "kitty",
         "--class", "claude",
-        "-e", "fish", "-c", f"echo 'After landing in the sandbox: cd ~/lovable && claude'; lovssh '{ssh_input}'",
+        "-e", "fish", "-c", f"echo 'After landing: claude'; lovssh '{ssh_input}'",
     ])
+    time.sleep(0.8)
 
     print("==> spawning lovssh + nvim")
     spawn_and_wait([
         "kitty",
-        "-e", "fish", "-c", f"echo 'After landing in the sandbox: cd ~/lovable && nvim'; lovssh '{ssh_input}'",
+        "-e", "fish", "-c", f"echo 'After landing: nvim'; lovssh '{ssh_input}'",
     ])
+    time.sleep(0.8)
 
-    # hunkr — fish helper that auto-detects the named work branch + base
-    # commit and runs `hunk diff <base>..HEAD --watch`. Wraps the awkward
-    # incantation that comes from Lovable parking SSH on edit/edt-* and
-    # committing work to daphen/*. nvim drives the pane via cursor sync
-    # (hunk-nvim plugin, gated on HUNK_NVIM_ENABLE which daphen-env sets).
+    # hunkr — fish helper that auto-detects the named work branch
+    # (Lovable parks SSH on edit/edt-*; agent work lives on daphen/*),
+    # finds the base via the [skip lovable] init commit, and runs
+    # `hunk diff <base>..HEAD --watch`. nvim drives this pane via
+    # cursor sync (hunk-nvim plugin, HUNK_NVIM_ENABLE set by daphen-env).
     print("==> spawning lovssh + hunkr (review pane)")
     spawn_and_wait([
         "kitty",
-        "-e", "fish", "-c", f"echo 'After landing in the sandbox: hunkr'; lovssh '{ssh_input}'",
+        "-e", "fish", "-c", f"echo 'After landing: hunkr'; lovssh '{ssh_input}'",
     ])
 
     if project_url:

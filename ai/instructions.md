@@ -35,6 +35,19 @@ daphen/<name>`.
 Confirm with the user before invoking ws-createwt — it spawns 4 windows
 and claims a niri workspace.
 
+# Cross-environment prompts
+
+When composing a prompt that will be sent to a remote agent (LoL sandbox via
+`ws-createlovbox --prompt`, a separate Claude session, etc.), the receiving
+agent has no access to my filesystem, env vars, or shell state. References
+to local paths like `~/notes/foo.md` or `~/work/lovable/...` will dead-end
+on their side.
+
+Inline the relevant content directly in the prompt instead of pointing to
+local paths. Same goes for env vars, niri workspace state, browser context.
+If a referenced file is too large to inline, mention that explicitly and ask
+the user whether to scp it across or summarize.
+
 # Commits
 
 Never mention Claude, Claude Code, or Anthropic in commit messages. Do not add Co-Authored-By lines referencing Claude.

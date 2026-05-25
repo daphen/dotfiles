@@ -432,6 +432,17 @@ def main() -> int:
         "-e", "fish", "-c", f"echo 'After landing in the sandbox: cd ~/lovable && nvim'; lovssh '{ssh_input}'",
     ])
 
+    # hunk diff --watch — live review pane that nvim drives via cursor sync
+    # (hunk-nvim plugin uses HUNK_NVIM_ENABLE which daphen-env sets in the
+    # sandbox). First boot installs hunkdiff via npm in the background; if
+    # `hunk` isn't on PATH yet on first launch, the pane shows the install
+    # progress, retry the command after ~15s.
+    print("==> spawning lovssh + hunk diff --watch")
+    spawn_and_wait([
+        "kitty",
+        "-e", "fish", "-c", f"echo 'After landing in the sandbox: cd ~/lovable && hunk diff --watch'; lovssh '{ssh_input}'",
+    ])
+
     if project_url:
         print(f"==> spawning work browser → {project_url}")
         spawn_and_wait([

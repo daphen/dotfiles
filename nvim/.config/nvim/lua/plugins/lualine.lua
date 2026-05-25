@@ -82,7 +82,7 @@ return {
 				c = { fg = "#2D4A3D", bg = "NONE" },
 				x = { fg = "#2D4A3D", bg = "NONE" },
 				y = { fg = "#2D4A3D", bg = "NONE" },
-				z = { fg = "#ED333B", bg = "#F9F2DF" },
+				z = { fg = "#ED333B", bg = "#E8EAED" },
 			},
 		}
 

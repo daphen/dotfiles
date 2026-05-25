@@ -310,6 +310,16 @@ apply_tool_theme() {
             cp "$generated_file" "$pc_dir/theme.yaml"
             log_success "Applied process-compose theme (local)"
             ;;
+        "hunk")
+            # Hunk reads config from ~/.config/hunk/config.toml. It picks up
+            # the new theme on next launch — no live reload mechanism, so a
+            # running `hunk diff --watch` needs `q` + relaunch to repaint.
+            local hunk_dir="$HOME/.config/hunk"
+            mkdir -p "$hunk_dir"
+            cp "$generated_file" "$hunk_dir/config.toml"
+            log_success "Wrote hunk ${theme_mode} theme to config.toml"
+            ;;
+
         "claude-code")
             # Claude Code reads custom themes from ~/.claude/themes/<slug>.json.
             # We write a single dotfiles.json that's swapped between light/dark

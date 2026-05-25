@@ -1,0 +1,19 @@
+# Hunk diff viewer — palette-driven override (dark)
+# Generated from colors.json via theme-processor.
+# Hunk's customization surface is small (6 colors); the `base` theme provides
+# everything else (line numbers, diff add/remove tints, scrollbar, etc.).
+# Reference: github.com/modem-dev/hunk
+
+theme = "custom"
+
+[custom_theme]
+base       = "midnight"
+label      = "Daphen Dark"
+accent     = "{{semantic.cursor}}"
+panel      = "{{background.primary}}"
+noteBorder = "{{accent.cyan}}"
+
+[custom_theme.syntax]
+keyword = "{{semantic.keyword}}"
+string  = "{{semantic.string}}"
+comment = "{{semantic.comment}}"

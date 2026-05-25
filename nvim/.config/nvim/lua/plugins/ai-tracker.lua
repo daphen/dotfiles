@@ -13,9 +13,9 @@ return {
 		return vim.env.KITTY_SCROLLBACK_NVIM ~= "true"
 	end,
 
-	-- Load immediately at startup to show line highlights
-	lazy = false,
-	priority = 100, -- Load early but after theme
+	-- Fully deferred: loads only when one of the keys below is pressed or
+	-- one of the cmd entries is invoked.
+	lazy = true,
 
 	config = function()
 		require("ai-tracker").setup({
@@ -72,7 +72,7 @@ return {
 			desc = "Jump to first unread AI edit",
 		},
 		{
-			"<C-f>",
+			"<C-g>F",
 			function() require("ai-tracker").jump_to_latest() end,
 			desc = "Jump to latest AI edit",
 		},

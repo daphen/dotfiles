@@ -50,12 +50,18 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	group = vim.api.nvim_create_augroup("kickstart-highlight-yank", { clear = true }),
 	callback = function()
 		vim.highlight.on_yank({ timeout = 150 })
-		-- Also copy to primary selection for middle-click paste.
-		-- Guarded — wl-copy doesn't exist in LoL sandboxes; the OSC52
-		-- provider above handles the SSH case for register copies.
-		if vim.v.event.operator == "y" and has_wl_copy then
-			local content = vim.fn.getreg('"')
+		if vim.v.event.operator ~= "y" then return end
+		local content = vim.fn.getreg('"')
+		if has_wl_copy then
+			-- Local: pipe to wl-copy for middle-click paste
 			vim.fn.jobstart({ "wl-copy", "--primary", content }, { detach = true })
+		else
+			-- SSH / sandbox: emit OSC52 directly. Belt + suspenders next
+			-- to the vim.g.clipboard provider above — survives the case
+			-- where the provider was set too late (mid-session config
+			-- reload, etc.) and nvim's clipboard system locked in empty.
+			local b64 = vim.fn.system({ "base64", "-w0" }, content):gsub("%s+$", "")
+			io.write(string.format("\27]52;c;%s\07", b64))
 		end
 	end,
 })

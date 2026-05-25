@@ -14,15 +14,8 @@ opt.expandtab = true
 opt.autoindent = true
 opt.wrap = false
 
--- Sync clipboard between OS and Neovim.
-opt.clipboard = "unnamedplus"
-
--- Pick a clipboard provider that actually exists. Proart has wl-copy
--- (Wayland); the LoL sandbox doesn't. Fall back to OSC52 escape codes
--- when wl-copy is missing — kitty supports OSC52 natively, so yanks
--- in sandbox-nvim end up in proart's local clipboard via the SSH
--- terminal session. The `executable` check is more robust than
--- $SSH_TTY (which can be unset even when SSH'd in some setups).
+-- vim.g.clipboard must be set BEFORE opt.clipboard — nvim caches the
+-- provider lookup on first touch. wl-copy locally; OSC52 over SSH.
 local has_wl_copy = vim.fn.executable("wl-copy") == 1
 if not has_wl_copy then
   local ok, osc52 = pcall(require, "vim.ui.clipboard.osc52")
@@ -34,6 +27,8 @@ if not has_wl_copy then
     }
   end
 end
+
+opt.clipboard = "unnamedplus"
 
 opt.ignorecase = true
 opt.smartcase = true
@@ -50,18 +45,10 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	group = vim.api.nvim_create_augroup("kickstart-highlight-yank", { clear = true }),
 	callback = function()
 		vim.highlight.on_yank({ timeout = 150 })
-		if vim.v.event.operator ~= "y" then return end
-		local content = vim.fn.getreg('"')
-		if has_wl_copy then
-			-- Local: pipe to wl-copy for middle-click paste
+		-- Sync to wl-copy primary selection for middle-click paste.
+		if vim.v.event.operator == "y" and has_wl_copy then
+			local content = vim.fn.getreg('"')
 			vim.fn.jobstart({ "wl-copy", "--primary", content }, { detach = true })
-		else
-			-- SSH / sandbox: emit OSC52 directly. Belt + suspenders next
-			-- to the vim.g.clipboard provider above — survives the case
-			-- where the provider was set too late (mid-session config
-			-- reload, etc.) and nvim's clipboard system locked in empty.
-			local b64 = vim.fn.system({ "base64", "-w0" }, content):gsub("%s+$", "")
-			io.write(string.format("\27]52;c;%s\07", b64))
 		end
 	end,
 })

@@ -99,10 +99,25 @@ function lovssh --description "SSH into the existing lovbox for a Lovable projec
     #
     # Single-line + ';' because the lovbox sshd truncates multi-line
     # arguments. fish double-quotes interpolate $proart_theme.
+    # Reconnect loop: SSH returns 0 only on a clean `exit` from inside
+    # the sandbox; any disconnect (network blip, sandbox recycle, sshd
+    # timeout) returns non-zero, so we retry with a short backoff.
+    # ServerAliveInterval+CountMax keeps the connection alive across
+    # idle periods so the loop doesn't fire on every minor blip.
     echo "→ Connecting…"
-    ssh -A -p 2222 -t \
-        -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        -o ConnectTimeout=10 \
-        "lovable@$direct_host" "export TERM=xterm-256color; echo '[lovssh] connected as '\$(whoami)'@'\$(hostname); mkdir -p ~/.config; echo '$proart_theme' > ~/.config/theme_mode; echo '[lovssh] theme: $proart_theme'; cd ~/lovable 2>/dev/null; echo '[lovssh] launching dev env via nix run...'; exec nix run --refresh --option require-sigs false github:daphen/nixos-portable-config#daphen-env"
+    while true
+        ssh -A -p 2222 -t \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o ConnectTimeout=10 \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=5 \
+            "lovable@$direct_host" "export TERM=xterm-256color; echo '[lovssh] connected as '\$(whoami)'@'\$(hostname); mkdir -p ~/.config; echo '$proart_theme' > ~/.config/theme_mode; echo '[lovssh] theme: $proart_theme'; cd ~/lovable 2>/dev/null; echo '[lovssh] launching dev env via nix run...'; exec nix run --refresh --option require-sigs false github:daphen/nixos-portable-config#daphen-env"
+        set -l rc $status
+        if test $rc -eq 0
+            break
+        end
+        echo "[lovssh] disconnected (exit $rc) — reconnecting in 3s, ctrl-c to abort"
+        sleep 3
+    end
 end

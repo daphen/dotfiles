@@ -430,7 +430,7 @@ def main() -> int:
 
     print("==> spawning lovssh + claude")
     spawn_and_wait([
-        "kitty",
+        "kitty", "--hold",
         "--class", "claude",
         "-e", "fish", "-c", f"echo 'After landing: claude'; lovssh '{ssh_input}'",
     ])
@@ -438,7 +438,7 @@ def main() -> int:
 
     print("==> spawning lovssh + nvim")
     spawn_and_wait([
-        "kitty",
+        "kitty", "--hold",
         "-e", "fish", "-c", f"echo 'After landing: nvim'; lovssh '{ssh_input}'",
     ])
     time.sleep(0.8)
@@ -450,7 +450,7 @@ def main() -> int:
     # cursor sync (hunk-nvim plugin, HUNK_NVIM_ENABLE set by daphen-env).
     print("==> spawning lovssh + hunkr (review pane)")
     spawn_and_wait([
-        "kitty",
+        "kitty", "--hold",
         "-e", "fish", "-c", f"echo 'After landing: hunkr'; lovssh '{ssh_input}'",
     ])
 

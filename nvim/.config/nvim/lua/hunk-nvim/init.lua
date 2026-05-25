@@ -94,13 +94,16 @@ local function try_attach()
 	if not detect_session() then return false end
 	state.enabled = true
 	attach_autocmds()
-	pcall(function() require("hunk-nvim.signs").setup({ repo_root = state.repo_root }) end)
 	pcall(function() require("hunk-nvim.follow").setup({ repo_root = state.repo_root }) end)
 	return true
 end
 
 function M.setup(opts)
 	M.config = vim.tbl_extend("force", M.config, opts or {})
+
+	-- Signs work purely from git; no hunk daemon required. Self-gates on
+	-- being in a git repo with a reachable base commit.
+	pcall(function() require("hunk-nvim.signs").setup({}) end)
 
 	local v = vim.fn.getenv(M.config.enable_env)
 	if v == vim.NIL or v == "" or v == "0" then return end

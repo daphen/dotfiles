@@ -3,24 +3,6 @@ return {
 		"lewis6991/gitsigns.nvim",
 		event = { "BufReadPre", "BufNewFile" },
 		config = function()
-			-- In the LoL sandbox, HEAD is Lovable's edit/edt-* scratch branch;
-			-- gitsigns' default base hides everything already on daphen/*. Re-base
-			-- once to the [skip lovable] init commit so signs match <leader>gC.
-			local lovable_base_set = false
-			local function maybe_set_lovable_base(gs)
-				if lovable_base_set then return end
-				if vim.fn.getenv("HUNK_NVIM_ENABLE") ~= "1" then return end
-				local out = vim.fn.systemlist({
-					"git", "log", "--all",
-					"--grep=\\[skip lovable\\] Initialize Lovable project",
-					"--format=%H",
-				})
-				local sha = out[#out]
-				if not sha or sha == "" then return end
-				gs.change_base(sha, true)
-				lovable_base_set = true
-			end
-
 			require("gitsigns").setup({
 				signs = {
 					add = { text = "│" },
@@ -35,7 +17,6 @@ return {
 				-- <C-g>d in plugins/ai-tracker.lua).
 				on_attach = function(bufnr)
 					local gs = package.loaded.gitsigns
-					maybe_set_lovable_base(gs)
 
 					local function map(mode, l, r, opts)
 						opts = opts or {}

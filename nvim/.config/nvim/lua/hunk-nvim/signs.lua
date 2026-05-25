@@ -206,7 +206,7 @@ function M.setup(opts)
 	state.enabled = true
 
 	local group = vim.api.nvim_create_augroup("HunkSigns", { clear = true })
-	vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
+	vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave", "FocusGained" }, {
 		group = group,
 		callback = function(ev) debounced_refresh(ev.buf) end,
 	})

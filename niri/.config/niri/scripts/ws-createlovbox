@@ -197,12 +197,21 @@ DEFAULT_WORKSPACE_ID = "workspace_01jsya3zjre8c97tqsmq2xvkdt"
 
 
 def _gen_msg_id(prefix: str) -> str:
-    """Generate a ULID-shaped id with the given prefix. Format mirrors the
-    web client's id format (umsg_/aimsg_) — 26 lowercase Crockford-base32
-    chars after the underscore."""
-    import secrets
+    """Generate a TypeID-shaped id: <prefix>_<26-char-base32-uuid>.
+    Spec: github.com/jetify-com/typeid. The suffix is a 128-bit UUID
+    encoded in Crockford base32 — 26 chars × 5 bits = 130 bits, so
+    the first char must be 0-7 for the value to fit in 128 bits.
+    api.lovable.dev validates this strictly now (didn't used to);
+    a purely random 26-char string fails ~75% of the time on the
+    first-char constraint."""
+    import uuid
     alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
-    return f"{prefix}_" + "".join(secrets.choice(alphabet) for _ in range(26))
+    n = uuid.uuid4().int
+    chars = []
+    for _ in range(26):
+        chars.append(alphabet[n & 0x1F])
+        n >>= 5
+    return f"{prefix}_" + "".join(reversed(chars))
 
 
 def create_lovable_project(prompt: str, sandbox_template: str, workspace_id: str) -> str | None:

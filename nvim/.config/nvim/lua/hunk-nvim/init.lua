@@ -20,7 +20,7 @@ local M = {}
 
 M.config = {
 	enable_env = "HUNK_NVIM_ENABLE",
-	debounce_ms = 200,
+	debounce_ms = 30,
 	hunk_bin = "hunk",
 }
 

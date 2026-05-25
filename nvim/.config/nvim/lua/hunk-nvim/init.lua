@@ -59,6 +59,7 @@ local function detect_session()
 end
 
 local function navigate(relpath, line)
+	pcall(function() require("hunk-nvim.follow").notify_navigation() end)
 	vim.system({
 		M.config.hunk_bin, "session", "navigate",
 		"--repo", state.repo_root,
@@ -95,6 +96,7 @@ local function try_attach()
 	state.enabled = true
 	attach_autocmds()
 	pcall(function() require("hunk-nvim.signs").setup({ repo_root = state.repo_root }) end)
+	pcall(function() require("hunk-nvim.follow").setup({ repo_root = state.repo_root }) end)
 	return true
 end
 

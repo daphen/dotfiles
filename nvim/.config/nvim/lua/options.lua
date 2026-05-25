@@ -17,23 +17,22 @@ opt.wrap = false
 -- Sync clipboard between OS and Neovim.
 opt.clipboard = "unnamedplus"
 
--- OSC52 clipboard provider when SSH'd. Pipes yanks to the host
--- terminal's clipboard via terminal escape codes, so yanking in
--- an SSH'd nvim (e.g. inside a LoL sandbox) ends up in the local
--- proart clipboard. Kitty supports OSC52 natively. Only enable
--- when in an SSH session so local nvim keeps using wl-clipboard.
-if vim.env.SSH_TTY ~= nil and vim.env.SSH_TTY ~= "" then
-  vim.g.clipboard = {
-    name = "OSC52",
-    copy = {
-      ["+"] = require("vim.ui.clipboard.osc52").copy("+"),
-      ["*"] = require("vim.ui.clipboard.osc52").copy("*"),
-    },
-    paste = {
-      ["+"] = require("vim.ui.clipboard.osc52").paste("+"),
-      ["*"] = require("vim.ui.clipboard.osc52").paste("*"),
-    },
-  }
+-- Pick a clipboard provider that actually exists. Proart has wl-copy
+-- (Wayland); the LoL sandbox doesn't. Fall back to OSC52 escape codes
+-- when wl-copy is missing — kitty supports OSC52 natively, so yanks
+-- in sandbox-nvim end up in proart's local clipboard via the SSH
+-- terminal session. The `executable` check is more robust than
+-- $SSH_TTY (which can be unset even when SSH'd in some setups).
+local has_wl_copy = vim.fn.executable("wl-copy") == 1
+if not has_wl_copy then
+  local ok, osc52 = pcall(require, "vim.ui.clipboard.osc52")
+  if ok then
+    vim.g.clipboard = {
+      name = "OSC52",
+      copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
+      paste = { ["+"] = osc52.paste("+"), ["*"] = osc52.paste("*") },
+    }
+  end
 end
 
 opt.ignorecase = true
@@ -51,8 +50,10 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	group = vim.api.nvim_create_augroup("kickstart-highlight-yank", { clear = true }),
 	callback = function()
 		vim.highlight.on_yank({ timeout = 150 })
-		-- Also copy to primary selection for middle-click paste
-		if vim.v.event.operator == "y" then
+		-- Also copy to primary selection for middle-click paste.
+		-- Guarded — wl-copy doesn't exist in LoL sandboxes; the OSC52
+		-- provider above handles the SSH case for register copies.
+		if vim.v.event.operator == "y" and has_wl_copy then
 			local content = vim.fn.getreg('"')
 			vim.fn.jobstart({ "wl-copy", "--primary", content }, { detach = true })
 		end

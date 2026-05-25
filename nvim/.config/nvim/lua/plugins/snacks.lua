@@ -112,10 +112,10 @@ return {
 		{ "<leader>fs", function() Snacks.picker.lsp_symbols() end, desc = "LSP Symbols" },
 		{ "<leader>gs", function() Snacks.picker.git_status() end, desc = "Git Status" },
 		{ "<leader>gc", function() Snacks.picker.git_log() end, desc = "Git Commits" },
-		-- Changed files vs branch base. Snacks doesn't ship a picker for a
-		-- commit range, so we build one: find the base (Lovable init commit
-		-- if present, else root) and list `git diff --name-only base..HEAD`
-		-- in a picker. Enter opens as a normal buffer with gitsigns gutter.
+		-- Changed files vs branch base. Snacks.picker.git_diff accepts a
+		-- `base` ref; we auto-detect the Lovable init commit (same logic
+		-- as the hunkr fish function) so this works without args. Falls
+		-- back to the branch root commit if there's no Lovable init.
 		{ "<leader>gC", function()
 				local base = vim.fn.systemlist(
 					"git log --all --grep='\\[skip lovable\\] Initialize Lovable project' --format=%H"
@@ -123,29 +123,8 @@ return {
 				if not base or base == "" then
 					base = vim.fn.systemlist("git rev-list --max-parents=0 HEAD")[1]
 				end
-				if not base or base == "" then
-					vim.notify("Couldn't infer base commit", vim.log.levels.ERROR)
-					return
-				end
-				local files = vim.fn.systemlist("git diff --name-only " .. base .. "..HEAD")
-				if #files == 0 then
-					vim.notify("No changes vs " .. base:sub(1, 8), vim.log.levels.INFO)
-					return
-				end
-				Snacks.picker.pick({
-					title = "Changed: " .. base:sub(1, 8) .. "..HEAD (" .. #files .. " files)",
-					finder = function()
-						return vim.tbl_map(function(f)
-							return { text = f, file = f }
-						end, files)
-					end,
-					format = "file",
-					confirm = function(picker, item)
-						picker:close()
-						if item and item.file then vim.cmd("edit " .. vim.fn.fnameescape(item.file)) end
-					end,
-				})
-			end, desc = "Changed files (branch vs base)",
+				Snacks.picker.git_diff({ base = base })
+			end, desc = "Changed files (vs branch base)",
 		},
 		{ "<leader>u", function() Snacks.picker.undo() end, desc = "Undo History" },
 		{ "<C-n>", function() Snacks.words.jump(vim.v.count1) end, desc = "Next Reference", mode = { "n", "t" } },

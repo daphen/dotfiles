@@ -17,6 +17,25 @@ opt.wrap = false
 -- Sync clipboard between OS and Neovim.
 opt.clipboard = "unnamedplus"
 
+-- OSC52 clipboard provider when SSH'd. Pipes yanks to the host
+-- terminal's clipboard via terminal escape codes, so yanking in
+-- an SSH'd nvim (e.g. inside a LoL sandbox) ends up in the local
+-- proart clipboard. Kitty supports OSC52 natively. Only enable
+-- when in an SSH session so local nvim keeps using wl-clipboard.
+if vim.env.SSH_TTY ~= nil and vim.env.SSH_TTY ~= "" then
+  vim.g.clipboard = {
+    name = "OSC52",
+    copy = {
+      ["+"] = require("vim.ui.clipboard.osc52").copy("+"),
+      ["*"] = require("vim.ui.clipboard.osc52").copy("*"),
+    },
+    paste = {
+      ["+"] = require("vim.ui.clipboard.osc52").paste("+"),
+      ["*"] = require("vim.ui.clipboard.osc52").paste("*"),
+    },
+  }
+end
+
 opt.ignorecase = true
 opt.smartcase = true
 

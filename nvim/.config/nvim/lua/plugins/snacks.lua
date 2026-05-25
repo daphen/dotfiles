@@ -111,7 +111,7 @@ return {
 		{ "<leader>fo", function() Snacks.picker.grep_buffers() end, desc = "Search Open Files" },
 		{ "<leader>fs", function() Snacks.picker.lsp_symbols() end, desc = "LSP Symbols" },
 		{ "<leader>gs", function() Snacks.picker.git_status() end, desc = "Git Status" },
-		{ "<leader>gc", function() Snacks.picker.git_commits() end, desc = "Git Commits" },
+		{ "<leader>gc", function() Snacks.picker.git_log() end, desc = "Git Commits" },
 		{ "<leader>u", function() Snacks.picker.undo() end, desc = "Undo History" },
 		{ "<C-n>", function() Snacks.words.jump(vim.v.count1) end, desc = "Next Reference", mode = { "n", "t" } },
 		{ "<C-p>", function() Snacks.words.jump(-vim.v.count1) end, desc = "Prev Reference", mode = { "n", "t" } },

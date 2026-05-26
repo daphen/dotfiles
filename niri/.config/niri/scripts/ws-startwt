@@ -20,6 +20,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 HOME = os.environ["HOME"]
@@ -130,6 +131,21 @@ def handle_sandbox_pick(name: str, claim: str) -> int:
     return subprocess.run(cmd).returncode
 
 
+def worktree_mtime(path: str) -> float:
+    try:
+        return os.stat(path).st_mtime
+    except OSError:
+        return 0.0
+
+
+def sandbox_unix(e: dict) -> float:
+    ts = e.get("timestamp") or ""
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+    except (ValueError, TypeError):
+        return 0.0
+
+
 def main() -> int:
     worktrees = list_worktrees()
     sandboxes = list_sandboxes()
@@ -138,20 +154,20 @@ def main() -> int:
         print("no worktrees or lovssh history found", file=sys.stderr)
         return 1
 
-    # Build display rows. Tab-separated so the leading "wt"/"ssh" tag,
-    # name, and target column align via column -t when used outside fzf,
-    # and fzf's tab-aware fuzzy match treats each as a search field.
-    display: list[str] = []
-    rows: list[tuple[str, str, str]] = []  # (kind, name, target)
+    # Build rows as (sort_key, kind, name, target, display) and sort
+    # newest first across both kinds, so a freshly-touched SSH sandbox
+    # outranks an old worktree and vice versa.
+    rows: list[tuple[float, str, str, str, str]] = []
     for branch, path in worktrees:
-        rows.append(("wt", branch, path))
-        display.append(f"wt\t{branch}\t{path}")
+        rows.append((worktree_mtime(path), "wt", branch, path, f"wt\t{branch}\t{path}"))
     for e in sandboxes:
         name = derive_sandbox_name(e)
         claim = e.get("claim", "?")
         when = (e.get("timestamp") or "")[:10]
-        rows.append(("ssh", name, claim))
-        display.append(f"ssh\t{name}\t{claim}  ({when})")
+        rows.append((sandbox_unix(e), "ssh", name, claim, f"ssh\t{name}\t{claim}  ({when})"))
+
+    rows.sort(key=lambda r: r[0], reverse=True)
+    display = [r[4] for r in rows]
 
     pick = fzf(
         display,
@@ -163,14 +179,14 @@ def main() -> int:
 
     kind, name_or_branch, _target = pick.split("\t", 2)
     matched = next(
-        (r for r in rows if r[0] == kind and r[1] == name_or_branch),
+        (r for r in rows if r[1] == kind and r[2] == name_or_branch),
         None,
     )
     if matched is None:
         print(f"couldn't match pick back to a row: {pick!r}", file=sys.stderr)
         return 1
 
-    _kind, name_or_branch, target = matched
+    _ts, _kind, name_or_branch, target, _disp = matched
     if kind == "wt":
         return handle_worktree_pick(name_or_branch, target)
     else:

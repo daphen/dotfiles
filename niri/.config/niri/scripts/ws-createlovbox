@@ -410,9 +410,10 @@ def main() -> int:
             json.dump(names, fh, indent=2)
         print(f"==> labeled {claim} → {name}")
 
-    # 3. Focus / create the workspace (unless --here keeps the current one)
+    # 3. Focus / create the workspace, OR rename the current one with --here
     if args.here:
-        print("==> --here: spawning on currently-focused workspace")
+        print(f"==> --here: renaming current workspace to '{workspace}'")
+        niri_action("set-workspace-name", workspace)
     else:
         print(f"==> focusing workspace {workspace}")
         ensure_workspace(workspace)

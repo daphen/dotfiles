@@ -302,6 +302,12 @@ def main() -> int:
         default=DEFAULT_WORKSPACE_ID,
         help=f"Workspace ID for project creation (default: {DEFAULT_WORKSPACE_ID}).",
     )
+    ap.add_argument(
+        "--here",
+        action="store_true",
+        help="Spawn the stack on the currently-focused niri workspace "
+             "instead of creating/focusing a new lovable-<name> workspace.",
+    )
     args = ap.parse_args()
 
     name = args.name
@@ -404,9 +410,12 @@ def main() -> int:
             json.dump(names, fh, indent=2)
         print(f"==> labeled {claim} → {name}")
 
-    # 3. Focus / create the workspace
-    print(f"==> focusing workspace {workspace}")
-    ensure_workspace(workspace)
+    # 3. Focus / create the workspace (unless --here keeps the current one)
+    if args.here:
+        print("==> --here: spawning on currently-focused workspace")
+    else:
+        print(f"==> focusing workspace {workspace}")
+        ensure_workspace(workspace)
 
     # 2. Spawn the 3 stack windows.
     # SSH-into-sandbox windows: kitty runs fish, fish runs lovssh, when
@@ -465,7 +474,10 @@ def main() -> int:
     else:
         print("==> skipping browser (no project URL — scratch sandbox)")
 
-    print(f"==> lovbox stack '{name}' ready on workspace '{workspace}'")
+    if args.here:
+        print(f"==> lovbox stack '{name}' ready on current workspace")
+    else:
+        print(f"==> lovbox stack '{name}' ready on workspace '{workspace}'")
     return 0
 
 

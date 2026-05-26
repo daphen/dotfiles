@@ -347,7 +347,10 @@ def main() -> int:
         claim = f"daphen-{name}"
         ssh_input = claim
         template = "lovable-devenv-pvc"
-    elif target.startswith("lovable-") and "-" in target[len("lovable-"):]:
+    elif target.startswith("lovable-"):
+        # Real lovable-on-lovable claims are `lovable-<16hex>` (deterministic
+        # from project_id). Any other `lovable-*` is a user-named scratch
+        # sandbox — same handler either way: assume existing, skip provision.
         claim = target
         ssh_input = target
         template = "lovable-on-lovable"

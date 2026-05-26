@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+"""
+ws-startlovbox — fzf picker over lovssh history, then ws-createlovbox.
+
+LoL counterpart to ws-startwt. Reads ~/.local/state/lovssh/history.jsonl,
+dedupes by claim (most-recent entry wins), shows branch + claim + last
+seen, then re-creates the 4-window stack on a fresh niri workspace
+tagged lovable-<name>.
+
+Pass --here to spawn on the currently-focused workspace instead
+(useful for "I already have the workspace set up, just respawn the
+apps that died with my session").
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+HIST = Path(HOME) / ".local" / "state" / "lovssh" / "history.jsonl"
+
+
+def read_history() -> list[dict]:
+    """Return entries deduped by claim, most recent first."""
+    if not HIST.is_file():
+        return []
+    by_claim: dict[str, dict] = {}
+    for line in HIST.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            e = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        claim = e.get("claim")
+        if not claim:
+            continue
+        prev = by_claim.get(claim)
+        if prev is None or e.get("timestamp", "") > prev.get("timestamp", ""):
+            by_claim[claim] = e
+    return sorted(by_claim.values(), key=lambda e: e.get("timestamp", ""), reverse=True)
+
+
+def derive_name(e: dict) -> str:
+    """Pick the most identifiable short name for ws-createlovbox.
+    Prefer daphen branch suffix, fall back to non-ephemeral HEAD, then claim."""
+    db = e.get("daphen_branch") or ""
+    if db.startswith("daphen/"):
+        return db.removeprefix("daphen/")
+    if db:
+        return db
+    head = e.get("branch") or ""
+    if head and not head.startswith("edit/edt-"):
+        return head
+    claim = e.get("claim") or ""
+    return claim.removeprefix("lovable-") or "scratch"
+
+
+def fzf(lines: list[str], prompt: str, header: str = "") -> str | None:
+    if not lines:
+        return None
+    args = ["fzf", "--prompt", prompt, "--height=60%", "--reverse", "--no-sort"]
+    if header:
+        args += ["--header", header]
+    p = subprocess.run(args, input="\n".join(lines), capture_output=True, text=True)
+    return p.stdout.strip() or None
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "--here",
+        action="store_true",
+        help="Spawn the stack on the currently-focused workspace (forwards "
+             "to ws-createlovbox --here) instead of creating a new one.",
+    )
+    args = ap.parse_args()
+
+    entries = read_history()
+    if not entries:
+        print(f"no lovssh history at {HIST}", file=sys.stderr)
+        return 1
+
+    display = [
+        f"{derive_name(e)}\t{e.get('claim', '?')}\t{(e.get('timestamp') or '?')[:10]}"
+        for e in entries
+    ]
+    header = (
+        "Resume an existing LoL sandbox (4-window stack"
+        + (" on current workspace)" if args.here else " on a new workspace)")
+    )
+    pick = fzf(display, "lovbox> ", header=header)
+    if not pick:
+        return 0
+    name, claim, _when = pick.split("\t", 2)
+
+    cmd = [str(Path(__file__).parent / "ws-createlovbox")]
+    if args.here:
+        cmd.append("--here")
+    cmd += [name, claim]
+    return subprocess.run(cmd).returncode
+
+
+if __name__ == "__main__":
+    sys.exit(main())

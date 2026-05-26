@@ -164,7 +164,12 @@ def main() -> int:
         name = derive_sandbox_name(e)
         claim = e.get("claim", "?")
         when = (e.get("timestamp") or "")[:10]
-        rows.append((sandbox_unix(e), "ssh", name, claim, f"ssh\t{name}\t{claim}  ({when})"))
+        # Pass URL form to ws-createlovbox when project_id is known so its
+        # browser pane lands on the actual project preview instead of the
+        # dashboard. Display still shows the claim for readability.
+        pid = e.get("project_id") or ""
+        target = f"https://lovable.dev/projects/{pid}" if pid else claim
+        rows.append((sandbox_unix(e), "ssh", name, target, f"ssh\t{name}\t{claim}  ({when})"))
 
     rows.sort(key=lambda r: r[0], reverse=True)
     display = [r[4] for r in rows]

@@ -86,10 +86,19 @@ def main() -> int:
         print(f"no lovssh history at {HIST}", file=sys.stderr)
         return 1
 
-    display = [
-        f"{derive_name(e)}\t{e.get('claim', '?')}\t{(e.get('timestamp') or '?')[:10]}"
-        for e in entries
-    ]
+    # Display shows claim for readability; the actual pick target is the
+    # project URL when project_id is known so ws-createlovbox's browser pane
+    # lands on the project preview, not the dashboard.
+    display: list[str] = []
+    targets: dict[str, str] = {}  # display-line → ws-createlovbox arg
+    for e in entries:
+        name = derive_name(e)
+        claim = e.get("claim", "?")
+        when = (e.get("timestamp") or "?")[:10]
+        pid = e.get("project_id") or ""
+        line = f"{name}\t{claim}\t{when}"
+        targets[line] = f"https://lovable.dev/projects/{pid}" if pid else claim
+        display.append(line)
     header = (
         "Resume an existing LoL sandbox (4-window stack"
         + (" on current workspace)" if args.here else " on a new workspace)")
@@ -97,12 +106,13 @@ def main() -> int:
     pick = fzf(display, "lovbox> ", header=header)
     if not pick:
         return 0
-    name, claim, _when = pick.split("\t", 2)
+    name, _claim, _when = pick.split("\t", 2)
+    target = targets.get(pick, _claim)
 
     cmd = [str(Path(__file__).parent / "ws-createlovbox")]
     if args.here:
         cmd.append("--here")
-    cmd += [name, claim]
+    cmd += [name, target]
     return subprocess.run(cmd).returncode
 
 

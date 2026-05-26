@@ -37,16 +37,55 @@ local function git_exec(args)
 	return out
 end
 
+-- Source-agnostic base resolution. Priority:
+--   1. Explicit override via HUNK_SIGNS_BASE env var or vim.g.hunk_signs_base
+--   2. Lovable user-project init commit (only when it's a true root — its
+--      [skip lovable] subject appears in test fixtures inside the monorepo
+--      itself, so we guard on parent-count to avoid false positives)
+--   3. merge-base with auto-detected trunk (origin/HEAD → main → master)
+--   4. HEAD — gitsigns-like "uncommitted changes only" as a last resort
 local function resolve_base()
+	-- 1. Explicit override
+	local override = vim.g.hunk_signs_base
+	if override and override ~= "" then return override end
+	local env = vim.fn.getenv("HUNK_SIGNS_BASE")
+	if env and env ~= vim.NIL and env ~= "" then return env end
+
+	-- 2. LoL true-root init commit
 	local lines = git_exec({
 		"git", "-C", state.repo_root, "log", "--all",
 		"--grep=\\[skip lovable\\] Initialize Lovable project", "--format=%H",
 	})
-	if lines and #lines > 0 then return lines[#lines] end
-	lines = git_exec({
-		"git", "-C", state.repo_root, "rev-list", "--max-parents=0", "HEAD",
+	if lines and #lines > 0 then
+		local candidate = lines[#lines]
+		local parents = git_exec({
+			"git", "-C", state.repo_root, "rev-parse", candidate .. "^@",
+		})
+		if not parents or #parents == 0 then return candidate end
+	end
+
+	-- 3. Branch fork point
+	local trunk
+	local origin_head = git_exec({
+		"git", "-C", state.repo_root,
+		"symbolic-ref", "--short", "refs/remotes/origin/HEAD",
 	})
-	return lines and lines[1] or nil
+	if origin_head and #origin_head > 0 then trunk = origin_head[1] end
+	if not trunk then
+		for _, candidate in ipairs({ "main", "master", "origin/main", "origin/master" }) do
+			if git_exec({ "git", "-C", state.repo_root, "rev-parse", "--verify", "--quiet", candidate }) then
+				trunk = candidate
+				break
+			end
+		end
+	end
+	if trunk then
+		local mb = git_exec({ "git", "-C", state.repo_root, "merge-base", "HEAD", trunk })
+		if mb and #mb > 0 then return mb[1] end
+	end
+
+	-- 4. Fall back to HEAD (gitsigns-like uncommitted-only view)
+	return "HEAD"
 end
 
 local function fetch_diff(relpath)

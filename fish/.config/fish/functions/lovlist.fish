@@ -25,10 +25,18 @@ function lovlist --description "List lovable-on-lovable sandboxes (your project 
     set -l history_file $HOME/.local/state/lovssh/history.jsonl
     set -l hist_map '{}'
     if test -f $history_file
+        # Prefer daphen_branch (the work-branch identifier — stable across
+        # Lovable's edit/edt-* per-prompt churn) over branch (HEAD at SSH
+        # time, often an ephemeral edit/edt-<uuid>).
         set hist_map (jq -s '
             group_by(.claim) | map({
                 key: .[0].claim,
-                value: (sort_by(.timestamp) | last | {branch, input, last_seen: .timestamp})
+                value: (sort_by(.timestamp) | last | {
+                    branch: (.daphen_branch // .branch // ""),
+                    head: (.branch // ""),
+                    input,
+                    last_seen: .timestamp
+                })
             }) | from_entries
         ' $history_file 2>/dev/null)
         if test -z "$hist_map"; set hist_map '{}'; end

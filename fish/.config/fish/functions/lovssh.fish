@@ -73,18 +73,25 @@ function lovssh --description "SSH into the existing lovbox for a Lovable projec
 
     # Log this visit so `rofi-lovbox-jump` can show your recently-used
     # sandboxes as a "personal" filter on top of the team-wide list.
-    # Fire a fast non-blocking SSH to grab the current branch in ~/lovable
-    # so the picker can show it; capped at 5s so a slow sandbox doesn't
-    # delay the user's actual SSH session below.
-    set -l branch (timeout 5 ssh -o StrictHostKeyChecking=no \
+    # Capture two refs from inside the sandbox in one round-trip:
+    #  - daphen_branch: the most-recently-touched daphen/* work branch
+    #    (the stable identifier for the ticket — same across edit/edt-*
+    #    per-prompt churn)
+    #  - branch: HEAD at the moment of SSH (often edit/edt-<uuid>,
+    #    useful for the per-session diff but not for identifying work)
+    # Capped at 5s so a slow sandbox doesn't delay the SSH session below.
+    set -l refs (timeout 5 ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
         -p 2222 "lovable@$direct_host" \
-        'git -C ~/lovable branch --show-current 2>/dev/null' 2>/dev/null; or true)
+        '(git -C ~/lovable for-each-ref --sort=-committerdate --format="%(refname:short)" refs/heads/daphen 2>/dev/null | head -1; git -C ~/lovable branch --show-current 2>/dev/null) | paste -sd "|"' \
+        2>/dev/null; or true)
+    set -l daphen_branch (string split '|' -- $refs)[1]
+    set -l branch (string split '|' -- $refs)[2]
     set -l history_file "$HOME/.local/state/lovssh/history.jsonl"
     mkdir -p (dirname "$history_file")
     set -l now (date -u +%Y-%m-%dT%H:%M:%SZ)
-    printf '{"timestamp":"%s","claim":"%s","project_id":"%s","input":"%s","branch":"%s"}\n' \
-        "$now" "$claim" "$project_id" "$input" "$branch" >> "$history_file"
+    printf '{"timestamp":"%s","claim":"%s","project_id":"%s","input":"%s","branch":"%s","daphen_branch":"%s"}\n' \
+        "$now" "$claim" "$project_id" "$input" "$branch" "$daphen_branch" >> "$history_file"
 
     # Pass proart's current theme through to the sandbox so its starship/
     # nvim spin up matching the local terminal at connect time. Default to

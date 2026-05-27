@@ -114,11 +114,13 @@ local function fetch_diff(relpath)
 end
 
 -- Parse a unified diff patch. Returns:
---   marks   = {[new_line_n] = "add"|"change"|"delete_below"|"topdelete"}
---   deletes = {[new_line_n] = {"deleted line content", ...}}
+--   marks       = {[new_line_n] = "add"|"change"|"delete_below"|"topdelete"}
+--   deletes     = {[new_line_n] = {"deleted line content", ...}}  -- pure deletes
+--   changes_old = {[new_line_n] = "old text"}                      -- old version
+--                                                                     for changes
 local function parse_patch(patch)
-	local marks, deletes = {}, {}
-	if not patch or patch == "" then return marks, deletes end
+	local marks, deletes, changes_old = {}, {}, {}
+	if not patch or patch == "" then return marks, deletes, changes_old end
 	local current_new = nil
 	local pending = {}
 
@@ -146,6 +148,9 @@ local function parse_patch(patch)
 			if first == "+" and line:sub(1, 3) ~= "+++" then
 				if #pending > 0 then
 					marks[current_new] = "change"
+					-- Pair the - with this +; remember the old text so we
+					-- can render it as a ghost line above the new content.
+					changes_old[current_new] = pending[1]
 					table.remove(pending, 1)
 				else
 					marks[current_new] = marks[current_new] or "add"
@@ -160,7 +165,7 @@ local function parse_patch(patch)
 		end
 	end
 	flush_pending()
-	return marks, deletes
+	return marks, deletes, changes_old
 end
 
 local function kind_to_sign(kind)
@@ -175,7 +180,7 @@ local function kind_to_linehl(kind)
 	if kind == "change" then return "GitSignsChangeLn" end
 end
 
-local function draw(bufnr, marks, deletes)
+local function draw(bufnr, marks, deletes, changes_old)
 	vim.api.nvim_buf_clear_namespace(bufnr, NS, 0, -1)
 	local line_count = vim.api.nvim_buf_line_count(bufnr)
 	for ln, kind in pairs(marks) do
@@ -187,13 +192,21 @@ local function draw(bufnr, marks, deletes)
 				line_hl_group = M.config.linehl and kind_to_linehl(kind) or nil,
 				invalidate = true,
 			}
-			if M.config.deleted_virt_lines and deletes[ln] and #deletes[ln] > 0 then
-				local virt = {}
-				for _, dl in ipairs(deletes[ln]) do
-					table.insert(virt, { { dl, "GitSignsDeleteLn" } })
+			if M.config.deleted_virt_lines then
+				if kind == "change" and changes_old and changes_old[ln] then
+					-- Show the old version of this changed line as a ghost
+					-- line above. The new (current) line stays in the buffer
+					-- below, so the rendered effect is before/after stacked.
+					opts.virt_lines = { { { changes_old[ln], "GitSignsDeleteVirtLn" } } }
+					opts.virt_lines_above = true
+				elseif deletes[ln] and #deletes[ln] > 0 then
+					local virt = {}
+					for _, dl in ipairs(deletes[ln]) do
+						table.insert(virt, { { dl, "GitSignsDeleteVirtLn" } })
+					end
+					opts.virt_lines = virt
+					opts.virt_lines_above = (kind == "topdelete")
 				end
-				opts.virt_lines = virt
-				opts.virt_lines_above = (kind == "topdelete")
 			end
 			pcall(vim.api.nvim_buf_set_extmark, bufnr, NS, ln - 1, 0, opts)
 		end
@@ -219,8 +232,8 @@ function M.refresh(bufnr)
 		vim.api.nvim_buf_clear_namespace(bufnr, NS, 0, -1)
 		return
 	end
-	local marks, deletes = parse_patch(patch)
-	draw(bufnr, marks, deletes)
+	local marks, deletes, changes_old = parse_patch(patch)
+	draw(bufnr, marks, deletes, changes_old)
 end
 
 local function debounced_refresh(bufnr)

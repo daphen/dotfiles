@@ -54,4 +54,18 @@ Never mention Claude, Claude Code, or Anthropic in commit messages. Do not add C
 
 # Comments
 
-Keep code comments short — ideally one line, no more than three. Don't write multi-paragraph explanations; if a thought needs more than three lines it belongs in a PR description or a doc, not the source.
+Default to writing **no comments**. Only add one when the WHY is non-obvious:
+a hidden constraint, a subtle invariant, a workaround for a specific bug, or
+behavior that would surprise a reader. If removing the comment wouldn't
+confuse a future reader, don't write it.
+
+Specifically don't write:
+- Comments that restate what well-named code does ("// Set the timeout to 30s")
+- Section dividers ("// --- Helpers ---")
+- Doc comments that just restate the function signature
+- Narration openers ("// This function handles authentication.")
+- References to the current task ("// Added for issue #123" — rots)
+- Chain-of-thought ("// We chose Map because…")
+- Multi-paragraph explanations — if needed, they belong in the PR or a doc
+
+When you DO write one, one line. Two lines max.

@@ -44,7 +44,17 @@ end
 --      itself, so we guard on parent-count to avoid false positives)
 --   3. merge-base with auto-detected trunk (origin/HEAD → main → master)
 --   4. HEAD — gitsigns-like "uncommitted changes only" as a last resort
-local function resolve_base()
+--
+-- Exposed as M.resolve_base so other callers (e.g. the snacks picker) can
+-- use the same base and stay in sync with the inline overlay.
+function M.resolve_base(repo_root)
+	repo_root = repo_root or state.repo_root
+	if not repo_root then
+		local out = vim.fn.systemlist({ "git", "-C", vim.fn.getcwd(), "rev-parse", "--show-toplevel" })
+		if vim.v.shell_error ~= 0 or #out == 0 then return nil end
+		repo_root = out[1]
+	end
+
 	-- 1. Explicit override
 	local override = vim.g.hunk_signs_base
 	if override and override ~= "" then return override end
@@ -55,13 +65,13 @@ local function resolve_base()
 	-- so orphan LoL init commits fetched from other sandboxes into the
 	-- monorepo don't masquerade as this branch's root.
 	local lines = git_exec({
-		"git", "-C", state.repo_root, "log",
+		"git", "-C", repo_root, "log",
 		"--grep=\\[skip lovable\\] Initialize Lovable project", "--format=%H", "HEAD",
 	})
 	if lines and #lines > 0 then
 		local candidate = lines[#lines]
 		local parents = git_exec({
-			"git", "-C", state.repo_root, "rev-parse", candidate .. "^@",
+			"git", "-C", repo_root, "rev-parse", candidate .. "^@",
 		})
 		if not parents or #parents == 0 then return candidate end
 	end
@@ -69,20 +79,20 @@ local function resolve_base()
 	-- 3. Branch fork point
 	local trunk
 	local origin_head = git_exec({
-		"git", "-C", state.repo_root,
+		"git", "-C", repo_root,
 		"symbolic-ref", "--short", "refs/remotes/origin/HEAD",
 	})
 	if origin_head and #origin_head > 0 then trunk = origin_head[1] end
 	if not trunk then
 		for _, candidate in ipairs({ "main", "master", "origin/main", "origin/master" }) do
-			if git_exec({ "git", "-C", state.repo_root, "rev-parse", "--verify", "--quiet", candidate }) then
+			if git_exec({ "git", "-C", repo_root, "rev-parse", "--verify", "--quiet", candidate }) then
 				trunk = candidate
 				break
 			end
 		end
 	end
 	if trunk then
-		local mb = git_exec({ "git", "-C", state.repo_root, "merge-base", "HEAD", trunk })
+		local mb = git_exec({ "git", "-C", repo_root, "merge-base", "HEAD", trunk })
 		if mb and #mb > 0 then return mb[1] end
 	end
 
@@ -273,7 +283,7 @@ function M.setup(opts)
 	if not out or #out == 0 then return end
 	state.repo_root = out[1]
 
-	state.base_sha = resolve_base()
+	state.base_sha = M.resolve_base(state.repo_root)
 	if not state.base_sha then return end
 	state.enabled = true
 

@@ -32,6 +32,7 @@ local c = {
   green = "{{light.accent.green}}",
   cyan = "{{light.accent.cyan}}",
   blue = "{{light.accent.blue}}",
+  sky = "{{light.accent.sky}}",
   purple = "{{light.accent.purple}}",
   pink = "{{light.accent.pink}}",
 
@@ -376,15 +377,15 @@ hl("MasonHighlightBlockBoldSecondary", {})
 -- lewis6991/gitsigns.nvim
 -- Aligned with new diff bg palette (sky blue add, orange change, peach delete):
 -- gutter signs use a saturated counterpart of the line bg's hue family.
--- Add uses a true sky-blue (matches the highlight_succ bg family) — accent.blue
+-- Add uses accent.sky (matches the highlight_succ bg family) — accent.blue
 -- is too steel/cold here.
-hl("GitSignsAdd", { fg = "#0284C7" })
+hl("GitSignsAdd", { fg = c.sky })
 hl("GitSignsChange", { fg = c.orange })
 hl("GitSignsDelete", { fg = c.red })
 hl("GitSignsChangedelete", { link = "GitSignsChange" })
 hl("GitSignsTopdelete", { link = "GitSignsDelete" })
 hl("GitSignsUntracked", { link = "NonText" })
-hl("GitSignsStagedAdd", { fg = "#0284C7" })
+hl("GitSignsStagedAdd", { fg = c.sky })
 hl("GitSignsStagedChange", { fg = c.orange })
 hl("GitSignsStagedDelete", { fg = c.red })
 hl("GitSignsStagedChangedelete", { link = "GitSignsStagedChange" })

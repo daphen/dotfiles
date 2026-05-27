@@ -32,6 +32,7 @@ local c = {
   green = "{{dark.accent.green}}",
   cyan = "{{dark.accent.cyan}}",
   blue = "{{dark.accent.blue}}",
+  sky = "{{dark.accent.sky}}",
   purple = "{{dark.accent.purple}}",
   pink = "{{dark.accent.pink}}",
 

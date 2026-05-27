@@ -35,6 +35,7 @@
         "green": "#97B5A6",
         "cyan": "#8A9AA6",
         "blue": "#CCD5E4",
+        "sky": "#7DD3FC",
         "purple": "#8A92A7",
         "pink": "#8A92A7"
       },
@@ -118,6 +119,7 @@
         "green": "#5E7270",
         "cyan": "#243560",
         "blue": "#396171",
+        "sky": "#0284C7",
         "purple": "#2a618d",
         "pink": "#516088"
       },

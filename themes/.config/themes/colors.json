@@ -145,7 +145,7 @@
         "highlight_medium": "#D5D8DD",
         "highlight_high": "#C2C6CC",
         "highlight_succ": "#E2EAE4",
-        "highlight_warn": "#d2d1cb",
+        "highlight_warn": "#F4DCC8",
         "highlight_err": "#EED8D0",
         "highlight_succ_dim": "#EAEFEC",
         "highlight_err_dim": "#F5E5DD",

@@ -396,6 +396,11 @@ hl("GitSignsChangeLnInline", { link = "Changed" })
 hl("GitSignsDeleteVirtLn", { link = "Removed" })
 hl("GitSignsDeleteVirtLnInLine", { link = "Removed" })
 hl("GitSignsVirtLnum", { link = "LineNr" })
+-- Whole-line linehl groups (used by hunk-nvim/signs.lua). bg-only so the
+-- buffer's syntax fg still shows through on changed lines.
+hl("GitSignsAddLn", { bg = c.highlight_succ })
+hl("GitSignsChangeLn", { bg = c.highlight_warn })
+hl("GitSignsDeleteLn", { bg = c.highlight_err })
 
 -- stevearc/aerial.nvim
 hl("AerialLine", { bg = c.bg_selection })

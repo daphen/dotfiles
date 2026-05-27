@@ -11,7 +11,7 @@ return {
 					topdelete = { text = "‾" },
 					changedelete = { text = "│" },
 				},
-				linehl = true,
+				linehl = false,
 				-- show_deleted was deprecated upstream; for inline view of
 				-- removed lines, use preview_hunk_inline() instead (bound to
 				-- <C-g>d in plugins/ai-tracker.lua).

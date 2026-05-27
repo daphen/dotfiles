@@ -17,7 +17,10 @@ two endpoints (base and working tree), no history traversal.
 local M = {}
 
 M.config = {
-	linehl = true,
+	-- Default to signs-only (gutter + virt_lines for deletions). Whole-line
+	-- bg tint can be turned on per-session with :HunkSignsToggleLinehl or
+	-- permanently via vim.g.hunk_signs_linehl = true in user config.
+	linehl = false,
 	deleted_virt_lines = true,
 	debounce_ms = 200,
 }
@@ -277,6 +280,10 @@ end
 function M.setup(opts)
 	if state.enabled then return end
 	opts = opts or {}
+	-- vim.g.hunk_signs_linehl / hunk_signs_deleted let users override defaults
+	-- without passing opts (handy when our config dir is read-only / managed).
+	if vim.g.hunk_signs_linehl ~= nil then opts.linehl = vim.g.hunk_signs_linehl end
+	if vim.g.hunk_signs_deleted ~= nil then opts.deleted_virt_lines = vim.g.hunk_signs_deleted end
 	M.config = vim.tbl_extend("force", M.config, opts)
 
 	local out = git_exec({ "git", "-C", vim.fn.getcwd(), "rev-parse", "--show-toplevel" })

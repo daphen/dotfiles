@@ -9,6 +9,19 @@ return {
 			{ "<C-g>o", function() require("gitsigns").toggle_linehl() end, desc = "Toggle linehl" },
 		},
 		config = function()
+			-- Compute diff base at config time so gitsigns starts with the
+			-- merge-base-with-trunk instead of its default (':0' staged index).
+			-- on_attach's change_base call had a race window we couldn't
+			-- close reliably; passing `base` in setup avoids it.
+			local base
+			local ok, signs = pcall(require, "hunk-nvim.signs")
+			if ok and signs.resolve_base then
+				local resolved = signs.resolve_base()
+				if resolved and resolved ~= "" and resolved ~= "HEAD" then
+					base = resolved
+				end
+			end
+
 			require("gitsigns").setup({
 				signs = {
 					add = { text = "▎" },
@@ -17,29 +30,10 @@ return {
 					topdelete = { text = "▔" },
 					changedelete = { text = "▎" },
 				},
+				base = base,
 				linehl = false,
-				-- show_deleted was deprecated upstream; for inline view of
-				-- removed lines, use preview_hunk_inline() instead (bound to
-				-- <C-g>d in plugins/ai-tracker.lua).
 				on_attach = function(bufnr)
 					local gs = require("gitsigns")
-
-					-- Align gitsigns' base with hunk-nvim/signs.lua. Without this,
-					-- gitsigns compares against HEAD and shows no hunks when the
-					-- branch's changes are already committed (working tree == HEAD).
-					-- signs.lua diffs against merge-base-with-trunk so signs light
-					-- up — gitsigns needs the same base for ]h/[h, stage, preview
-					-- to be useful in this scenario. Deferred via vim.schedule so
-					-- it runs after both plugins have finished initializing on
-					-- first-buffer load.
-					vim.schedule(function()
-						local ok, signs = pcall(require, "hunk-nvim.signs")
-						if not (ok and signs.resolve_base) then return end
-						local base = signs.resolve_base()
-						if base and base ~= "" and base ~= "HEAD" then
-							pcall(gs.change_base, base, true)
-						end
-					end)
 
 					local function map(mode, l, r, opts)
 						opts = opts or {}

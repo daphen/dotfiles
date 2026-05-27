@@ -51,10 +51,12 @@ local function resolve_base()
 	local env = vim.fn.getenv("HUNK_SIGNS_BASE")
 	if env and env ~= vim.NIL and env ~= "" then return env end
 
-	-- 2. LoL true-root init commit
+	-- 2. LoL true-root init commit. Search HEAD's ancestry only (no --all)
+	-- so orphan LoL init commits fetched from other sandboxes into the
+	-- monorepo don't masquerade as this branch's root.
 	local lines = git_exec({
-		"git", "-C", state.repo_root, "log", "--all",
-		"--grep=\\[skip lovable\\] Initialize Lovable project", "--format=%H",
+		"git", "-C", state.repo_root, "log",
+		"--grep=\\[skip lovable\\] Initialize Lovable project", "--format=%H", "HEAD",
 	})
 	if lines and #lines > 0 then
 		local candidate = lines[#lines]

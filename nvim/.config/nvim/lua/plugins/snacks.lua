@@ -5,8 +5,11 @@ local function open_changed_files_picker()
 	-- Source-agnostic base/work resolution, same priority chain as
 	-- hunk-nvim/signs.lua: LoL user-project init → branch fork point → root.
 	local base, work
+	-- Search HEAD's ancestry only (no --all): orphan LoL init commits fetched
+	-- from other sandboxes into a non-LoL repo would otherwise falsely trigger
+	-- LoL-user-project mode and pick an unrelated daphen/* as "work".
 	local init_candidate = vim.fn.systemlist(
-		"git log --all --grep='\\[skip lovable\\] Initialize Lovable project' --format=%H"
+		"git log --grep='\\[skip lovable\\] Initialize Lovable project' --format=%H HEAD"
 	)
 	if #init_candidate > 0 then
 		local candidate = init_candidate[#init_candidate]

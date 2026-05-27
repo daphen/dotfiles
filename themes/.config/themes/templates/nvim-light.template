@@ -374,14 +374,16 @@ hl("MasonHighlightBlockSecondary", {})
 hl("MasonHighlightBlockBoldSecondary", {})
 
 -- lewis6991/gitsigns.nvim
-hl("GitSignsAdd", { fg = c.green })
-hl("GitSignsChange", { fg = c.yellow })
+-- Aligned with new diff bg palette (sky blue add, orange change, peach delete):
+-- gutter signs use the saturated counterpart from the accent palette.
+hl("GitSignsAdd", { fg = c.blue })
+hl("GitSignsChange", { fg = c.orange })
 hl("GitSignsDelete", { fg = c.red })
 hl("GitSignsChangedelete", { link = "GitSignsChange" })
 hl("GitSignsTopdelete", { link = "GitSignsDelete" })
 hl("GitSignsUntracked", { link = "NonText" })
-hl("GitSignsStagedAdd", { fg = c.green })
-hl("GitSignsStagedChange", { fg = c.yellow })
+hl("GitSignsStagedAdd", { fg = c.blue })
+hl("GitSignsStagedChange", { fg = c.orange })
 hl("GitSignsStagedDelete", { fg = c.red })
 hl("GitSignsStagedChangedelete", { link = "GitSignsStagedChange" })
 hl("GitSignsStagedTopdelete", { link = "GitSignsStagedDelete" })

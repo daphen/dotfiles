@@ -164,10 +164,10 @@ local function parse_patch(patch)
 end
 
 local function kind_to_sign(kind)
-	if kind == "add" then return "│", "GitSignsAdd" end
-	if kind == "change" then return "│", "GitSignsChange" end
-	if kind == "delete_below" then return "_", "GitSignsDelete" end
-	if kind == "topdelete" then return "‾", "GitSignsDelete" end
+	if kind == "add" then return "▎", "GitSignsAdd" end
+	if kind == "change" then return "▎", "GitSignsChange" end
+	if kind == "delete_below" then return "▁", "GitSignsDelete" end
+	if kind == "topdelete" then return "▔", "GitSignsDelete" end
 end
 
 local function kind_to_linehl(kind)

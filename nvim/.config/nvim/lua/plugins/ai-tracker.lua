@@ -1,20 +1,19 @@
 return {
-	-- AI Changes Tracker
-	-- Tracks file changes made by AI coding assistants (OpenCode, Claude Code, etc.)
+	-- AI Changes Tracker — disabled. hunk-nvim/signs.lua + gitsigns now
+	-- cover the diff overlay surface this used to provide. Keeping the spec
+	-- in place so re-enabling is a one-line flip if I want to revisit.
+	enabled = false,
+
 	name = "ai-tracker",
 	dir = vim.fn.stdpath("config") .. "/lua/ai-tracker",
 	dependencies = {
 		"folke/snacks.nvim", -- Required for picker functionality
 	},
 
-	-- Skip in kitty-scrollback nvim instances — those are pagers, not editors,
-	-- and shouldn't react to AI edits at all.
 	cond = function()
 		return vim.env.KITTY_SCROLLBACK_NVIM ~= "true"
 	end,
 
-	-- Fully deferred: loads only when one of the keys below is pressed or
-	-- one of the cmd entries is invoked.
 	lazy = true,
 
 	config = function()

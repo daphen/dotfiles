@@ -2,14 +2,20 @@ return {
 	{
 		"lewis6991/gitsigns.nvim",
 		event = { "BufReadPre", "BufNewFile" },
+		keys = {
+			{ "<C-g>j", function() require("gitsigns").next_hunk() end, desc = "Next hunk" },
+			{ "<C-g>k", function() require("gitsigns").prev_hunk() end, desc = "Prev hunk" },
+			{ "<C-g>d", function() require("gitsigns").preview_hunk_inline() end, desc = "Preview hunk (inline)" },
+			{ "<C-g>o", function() require("gitsigns").toggle_linehl() end, desc = "Toggle linehl" },
+		},
 		config = function()
 			require("gitsigns").setup({
 				signs = {
-					add = { text = "│" },
-					change = { text = "│" },
-					delete = { text = "_" },
-					topdelete = { text = "‾" },
-					changedelete = { text = "│" },
+					add = { text = "▎" },
+					change = { text = "▎" },
+					delete = { text = "▁" },
+					topdelete = { text = "▔" },
+					changedelete = { text = "▎" },
 				},
 				linehl = false,
 				-- show_deleted was deprecated upstream; for inline view of

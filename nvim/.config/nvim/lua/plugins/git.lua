@@ -22,21 +22,24 @@ return {
 				-- removed lines, use preview_hunk_inline() instead (bound to
 				-- <C-g>d in plugins/ai-tracker.lua).
 				on_attach = function(bufnr)
-					local gs = package.loaded.gitsigns
+					local gs = require("gitsigns")
 
 					-- Align gitsigns' base with hunk-nvim/signs.lua. Without this,
 					-- gitsigns compares against HEAD and shows no hunks when the
 					-- branch's changes are already committed (working tree == HEAD).
 					-- signs.lua diffs against merge-base-with-trunk so signs light
 					-- up — gitsigns needs the same base for ]h/[h, stage, preview
-					-- to be useful in this scenario.
-					local ok, signs = pcall(require, "hunk-nvim.signs")
-					if ok and signs.resolve_base then
+					-- to be useful in this scenario. Deferred via vim.schedule so
+					-- it runs after both plugins have finished initializing on
+					-- first-buffer load.
+					vim.schedule(function()
+						local ok, signs = pcall(require, "hunk-nvim.signs")
+						if not (ok and signs.resolve_base) then return end
 						local base = signs.resolve_base()
 						if base and base ~= "" and base ~= "HEAD" then
 							pcall(gs.change_base, base, true)
 						end
-					end
+					end)
 
 					local function map(mode, l, r, opts)
 						opts = opts or {}

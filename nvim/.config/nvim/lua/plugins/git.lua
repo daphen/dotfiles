@@ -3,8 +3,12 @@ return {
 		"lewis6991/gitsigns.nvim",
 		event = { "BufReadPre", "BufNewFile" },
 		keys = {
-			{ "<C-g>j", function() require("gitsigns").next_hunk() end, desc = "Next hunk" },
-			{ "<C-g>k", function() require("gitsigns").prev_hunk() end, desc = "Prev hunk" },
+			-- Hunk navigation goes to hunk-nvim/signs.lua so it works
+			-- everywhere (proart + LoL sandboxes where gitsigns can't attach
+			-- due to broken/shallow git history). Signs visible = nav works.
+			{ "<C-g>j", function() require("hunk-nvim.signs").next_hunk() end, desc = "Next hunk" },
+			{ "<C-g>k", function() require("hunk-nvim.signs").prev_hunk() end, desc = "Prev hunk" },
+			-- Stay on gitsigns — these only matter on proart where gitsigns attaches.
 			{ "<C-g>d", function() require("gitsigns").preview_hunk_inline() end, desc = "Preview hunk (inline)" },
 			{ "<C-g>o", function() require("gitsigns").toggle_linehl() end, desc = "Toggle linehl" },
 		},

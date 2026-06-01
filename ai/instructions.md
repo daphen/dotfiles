@@ -38,18 +38,32 @@ and claims a niri workspace.
 ## Lovable-on-Lovable sandboxes (proart-only)
 
 For tasks that should run in a REMOTE Lovable sandbox instead of locally,
-use `~/.config/niri/scripts/ws-createlovbox <name> <project-url-or-claim>`.
+use `~/.config/niri/scripts/ws-createlovbox <name> [project-url-or-claim]`.
 
-ws-createlovbox:
+Three usage modes:
 
-1. Looks up or creates the sandbox via sandcastle.lovable.net.
-2. Spawns a 3-window stack on a `lovable-<name>` workspace (same
-   naming as ws-createwt, so the picker shows them together):
-   lovssh→claude in ~/lovable, lovssh→nvim in ~/lovable, work-profile
-   browser at the Lovable project page.
+```
+ws-createlovbox <name>                      # scratch sandbox, no project
+ws-createlovbox <name> <project-url>        # existing Lovable project
+ws-createlovbox <name> --prompt "<task>"    # new project via api.lovable.dev
+```
 
-No local worktree, no local devenv: the sandbox owns both. All edits
-happen remotely via SSH.
+`<name>` is the workspace short name — NO `daphen-` prefix. That prefix
+belongs to local branches/worktrees only; ws-createlovbox prepends
+`lovable-` itself. For Linear ticket EVERY-1186 about "Support private
+npm registries", the name is `1186-private-npm-registries`, the
+workspace becomes `lovable-1186-private-npm-registries`. Passing
+`daphen-1186-...` as the second arg makes lovssh try to resolve it as
+a claim/UUID and fail.
+
+For an internal monorepo task (just need a sandbox to ship feature
+work, no Lovable demo project), use mode 1 — scratch sandbox.
+
+Spawns a stack on a `lovable-<name>` workspace (same naming pattern as
+ws-createwt so pickers show them together): lovssh→claude in
+~/lovable, lovssh→nvim in ~/lovable, plus a work-profile browser if a
+project URL is associated. No local worktree, no local devenv — the
+sandbox owns both; edits happen remotely via SSH.
 
 For reviewing a GitHub PR locally (different again — fetches the PR,
 checks out on a `review/pr-<num>` branch, spawns the standard

@@ -311,6 +311,16 @@ def main() -> int:
     args = ap.parse_args()
 
     name = args.name
+    # The `daphen-` prefix is for local branches/worktrees (ws-createwt),
+    # not lovbox workspace names — passing it here would make lovssh try
+    # to resolve "daphen-..." as a claim/UUID and fail downstream.
+    if name.startswith("daphen-") or name.startswith("daphen/"):
+        print(
+            f"error: drop the 'daphen-' prefix from the name. "
+            f"Got '{name}', use '{name.replace('daphen-', '', 1).replace('daphen/', '', 1)}'.",
+            file=sys.stderr,
+        )
+        return 2
     target = args.url_or_claim
     workspace = f"lovable-{name}"
 

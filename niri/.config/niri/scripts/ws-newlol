@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+"""
+ws-newlol
+
+Opens the work-profile browser at lovable.dev so you can create a
+Lovable-on-Lovable project there. Project creation has to go through
+the web UI now — the api.lovable.dev path is Castle-gated and requires
+a Castle.js device-fingerprint token that only the browser can produce.
+
+Once the project exists, grab its URL and run:
+
+    ws-createlovbox <name> <project-url>
+
+…to claim the sandbox, spawn the niri stack (claude + nvim SSH windows
++ browser pinned to the project), and drop into the dev env.
+"""
+from __future__ import annotations
+import subprocess
+import sys
+
+LANDING_URL = "https://lovable.dev/"
+BROWSER_DISPATCH = "/home/daphen/.config/niri/scripts/browser-dispatch"
+
+
+def main() -> int:
+    subprocess.Popen(
+        [BROWSER_DISPATCH, "--profile=work", "--new-window", LANDING_URL],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    print(f"→ opened work browser at {LANDING_URL}", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("In the browser:", file=sys.stderr)
+    print("  1. Pick or create the Lovable workspace", file=sys.stderr)
+    print("  2. New Project → toggle Lovable-on-Lovable → submit", file=sys.stderr)
+    print("  3. Copy the project URL (https://lovable.dev/projects/<uuid>)", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("Then back here:", file=sys.stderr)
+    print("  ws-createlovbox <short-name> <project-url>", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

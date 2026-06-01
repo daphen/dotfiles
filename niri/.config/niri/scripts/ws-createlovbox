@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ws-createlovbox <name> <project-url-or-claim>
+ws-createlovbox <name> [project-url-or-claim]
 
 Spawns a niri stack for a REMOTE lovbox sandbox — mirror of
 ws-createwt's pattern, but with SSH-into-sandbox kitty windows
@@ -9,13 +9,22 @@ instead of local devenv/claude/nvim ones.
 Workspace name: `lovable-<name>` (matches ws-createwt convention so the
 existing Super+T picker / rofi-ws-jump shows it alongside worktrees).
 
+Three modes for the second arg:
+  • omitted              → scratch sandbox (template lovable-devenv-pvc),
+                           no Lovable project, no browser window.
+  • project URL / UUID   → Lovable-on-Lovable sandbox attached to that
+                           project. Browser opens to the project page.
+  • claim name           → existing sandbox, no provisioning, browser
+                           opens to lovable.dev root.
+
 Windows spawned:
   1. kitty → lovssh + claude in ~/lovable
   2. kitty → lovssh + nvim  in ~/lovable
-  3. browser → the Lovable project page (with preview)
+  3. browser → the Lovable project page (only when a URL is associated)
 
-No worktree, no devenv-wt: the sandbox already has devenv running via
-its entrypoint, and there's no local checkout to anchor a worktree to.
+To CREATE a new Lovable-on-Lovable project: use ws-newlol to open the
+web UI (project-create is Castle-gated and requires a browser-minted
+token). Then pass the resulting project URL to ws-createlovbox.
 """
 from __future__ import annotations
 import argparse
@@ -192,93 +201,6 @@ def ensure_sandbox(claim: str, template: str, polls: int = 60, interval: float =
     return "timeout-not-ready"
 
 
-# Default Lovable workspace ID for prod (matches `lov project create` defaults).
-DEFAULT_WORKSPACE_ID = "workspace_01jsya3zjre8c97tqsmq2xvkdt"
-
-
-def _gen_msg_id(prefix: str) -> str:
-    """Generate a TypeID-shaped id: <prefix>_<26-char-base32-uuid>.
-    Spec: github.com/jetify-com/typeid. The suffix is a 128-bit UUID
-    encoded in Crockford base32 — 26 chars × 5 bits = 130 bits, so
-    the first char must be 0-7 for the value to fit in 128 bits.
-    api.lovable.dev validates this strictly now (didn't used to);
-    a purely random 26-char string fails ~75% of the time on the
-    first-char constraint."""
-    import uuid
-    alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
-    n = uuid.uuid4().int
-    chars = []
-    for _ in range(26):
-        chars.append(alphabet[n & 0x1F])
-        n >>= 5
-    return f"{prefix}_" + "".join(reversed(chars))
-
-
-def create_lovable_project(prompt: str, sandbox_template: str, workspace_id: str) -> str | None:
-    """POST to api.lovable.dev to create a new Lovable project with the given
-    sandbox_template ('lovable-on-lovable' triggers LoL preview / agent mode).
-    Returns the new project's UUID, or None on failure. Reads the bearer token
-    from `lov auth login`'s token cache at ~/.lovable/auth/token_cache_prod.json.
-    """
-    token_path = os.path.expanduser("~/.lovable/auth/token_cache_prod.json")
-    # Force a token refresh via `lov auth status` — the cached id_token in
-    # token_cache_prod.json expires after ~1h; the refresh_token lives in the
-    # user's keychain and `lov` refreshes opportunistically when invoked.
-    lov_bin = os.path.expanduser("~/work/lovable/bin/lov")
-    if os.path.isfile(lov_bin):
-        subprocess.run([lov_bin, "auth", "status"], capture_output=True, timeout=15)
-    try:
-        with open(token_path) as f:
-            token = json.load(f)["id_token"]
-    except Exception as e:
-        print(f"Couldn't read lov auth token from {token_path}: {e}", file=sys.stderr)
-        print("Try `lov auth login` first.", file=sys.stderr)
-        return None
-
-    body = {
-        "description": prompt,
-        "tech_stack": "modern",
-        "visibility": "private",
-        "env_vars": {},
-        "sandbox_template": sandbox_template,
-        "metadata": {
-            "chat_mode_enabled": False,
-            "fullscreen_enabled": True,
-            "feature_flag_overrides": {"unify-design-systems": True},
-        },
-        "initial_message": {
-            "id": _gen_msg_id("umsg"),
-            "message": prompt,
-            "files": [],
-            "optimisticImageUrls": [],
-            "chat_only": False,
-            "agent_mode_enabled": False,
-            "ai_message_id": _gen_msg_id("aimsg"),
-        },
-    }
-    req = urllib.request.Request(
-        f"https://api.lovable.dev/workspaces/{workspace_id}/projects",
-        data=json.dumps(body).encode(),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            resp = json.loads(r.read())
-            # Field name varies — try project_id then id.
-            return resp.get("project_id") or resp.get("id")
-    except urllib.error.HTTPError as e:
-        msg = e.read().decode(errors="replace")[:400]
-        print(f"Project create POST returned HTTP {e.code}: {msg}", file=sys.stderr)
-        return None
-    except Exception as e:
-        print(f"Project create POST failed: {e}", file=sys.stderr)
-        return None
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("name", help="short workspace name (workspace becomes lovable-<name>)")
@@ -292,15 +214,7 @@ def main() -> int:
     )
     ap.add_argument(
         "--prompt", "-p",
-        help="Create a brand-new Lovable project with this prompt, in "
-             "lovable-on-lovable mode (LoL preview, agent edits the monorepo). "
-             "Talks directly to api.lovable.dev — uses `lov auth login`'s cached "
-             "bearer token. Overrides url_or_claim.",
-    )
-    ap.add_argument(
-        "--workspace", "-w",
-        default=DEFAULT_WORKSPACE_ID,
-        help=f"Workspace ID for project creation (default: {DEFAULT_WORKSPACE_ID}).",
+        help=argparse.SUPPRESS,
     )
     ap.add_argument(
         "--here",
@@ -324,26 +238,19 @@ def main() -> int:
     target = args.url_or_claim
     workspace = f"lovable-{name}"
 
-    # --prompt mode: create a new Lovable project via the auth'd Lovable API,
-    # with sandbox_template=lovable-on-lovable so the project boots in LoL mode
-    # (preview = running lovable instance, agent edits ~/lovable monorepo).
-    # `lov project create` (the CLI) doesn't expose sandbox_template, so we
-    # talk to api.lovable.dev directly using `lov auth login`'s cached token.
+    # --prompt mode is removed: api.lovable.dev's project-create is now
+    # Castle-gated and requires the X-Castle-Request-Token header that only
+    # Castle.js (browser-side SDK) can mint. Create the project in the web
+    # UI instead, then pass its URL here. See ws-newlol for the entry point.
     if args.prompt:
-        if target is not None:
-            print("--prompt and a URL/claim arg are mutually exclusive", file=sys.stderr)
-            return 2
-        print(f"==> creating Lovable-on-Lovable project (workspace={args.workspace})")
-        print(f"    prompt: {args.prompt!r}")
-        new_uuid = create_lovable_project(
-            prompt=args.prompt,
-            sandbox_template="lovable-on-lovable",
-            workspace_id=args.workspace,
+        print(
+            "ws-createlovbox --prompt has been removed.\n"
+            "  Project creation is Castle-gated and requires a browser-minted token.\n"
+            "  Use: ws-newlol  →  create the project in the web UI  →  copy URL.\n"
+            "  Then: ws-createlovbox <name> <project-url>",
+            file=sys.stderr,
         )
-        if not new_uuid:
-            return 1
-        target = f"https://lovable.dev/projects/{new_uuid}"
-        print(f"==> project created: {target}")
+        return 2
 
     # Three input modes:
     # - bare name (no URL/claim arg): scratch sandbox, no Lovable project,

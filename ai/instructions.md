@@ -38,15 +38,28 @@ and claims a niri workspace.
 ## Lovable-on-Lovable sandboxes (proart-only)
 
 For tasks that should run in a REMOTE Lovable sandbox instead of locally,
-use `~/.config/niri/scripts/ws-createlovbox <name> [project-url-or-claim]`.
-
-Three usage modes:
+the flow is two steps because **project creation is now Castle-gated**
+(requires a browser-minted `X-Castle-Request-Token` that CLI scripts
+can't produce):
 
 ```
-ws-createlovbox <name>                      # scratch sandbox, no project
-ws-createlovbox <name> <project-url>        # existing Lovable project
-ws-createlovbox <name> --prompt "<task>"    # new project via api.lovable.dev
+ws-newlol                              # opens lovable.dev in work browser
+# in the browser: workspace → New Project → toggle LoL → submit
+# copy the resulting URL
+ws-createlovbox <name> <project-url>   # claims the sandbox + spawns the stack
 ```
+
+`ws-createlovbox` itself has three modes for the second arg:
+
+```
+ws-createlovbox <name>                      # scratch sandbox, no project (mode 1)
+ws-createlovbox <name> <project-url>        # existing Lovable project (mode 2)
+ws-createlovbox <name> <claim-name>         # existing sandbox by claim (mode 3)
+```
+
+The previous `--prompt` mode is removed — it talked directly to
+`api.lovable.dev`'s project-create, which is now blocked by Castle for
+any non-browser caller. Trying it prints an error pointing at ws-newlol.
 
 `<name>` is the workspace short name — NO `daphen-` prefix. That prefix
 belongs to local branches/worktrees only; ws-createlovbox prepends
@@ -57,7 +70,8 @@ workspace becomes `lovable-1186-private-npm-registries`. Passing
 a claim/UUID and fail.
 
 For an internal monorepo task (just need a sandbox to ship feature
-work, no Lovable demo project), use mode 1 — scratch sandbox.
+work, no Lovable demo project), use mode 1 — scratch sandbox, skip
+ws-newlol entirely.
 
 Spawns a stack on a `lovable-<name>` workspace (same naming pattern as
 ws-createwt so pickers show them together): lovssh→claude in
@@ -71,12 +85,14 @@ checks out on a `review/pr-<num>` branch, spawns the standard
 
 Pick which script based on cues:
 
-- LoL / "lovbox" / sandbox / project URL given → ws-createlovbox
+- Want a NEW LoL project, no URL yet → ws-newlol (browser only)
+- LoL / "lovbox" / sandbox / project URL or claim given → ws-createlovbox
 - New worktree / Linear ticket / local feature work → ws-createwt
 - Reviewing someone else's PR → ws-createreview
 
 Confirm before invoking either: ws-createlovbox claims a paid sandbox,
-ws-createreview fetches+branches off main.
+ws-createreview fetches+branches off main. ws-newlol just opens a
+browser — no confirmation needed.
 
 **Never preemptively run `ws-close-stack` to "clean up" before creating
 a new workspace.** It closes every window on the focused workspace; if
@@ -88,11 +104,11 @@ teardown of a specific worktree's stack.
 
 # Cross-environment prompts
 
-When composing a prompt that will be sent to a remote agent (LoL sandbox via
-`ws-createlovbox --prompt`, a separate Claude session, etc.), the receiving
-agent has no access to my filesystem, env vars, or shell state. References
-to local paths like `~/notes/foo.md` or `~/work/lovable/...` will dead-end
-on their side.
+When composing a prompt that will be sent to a remote agent (LoL project
+chat in the lovable.dev web UI, a separate Claude session, an agent
+inside a lovbox SSH session, etc.), the receiving agent has no access to
+my filesystem, env vars, or shell state. References to local paths like
+`~/notes/foo.md` or `~/work/lovable/...` will dead-end on their side.
 
 Inline the relevant content directly in the prompt instead of pointing to
 local paths. Same goes for env vars, niri workspace state, browser context.

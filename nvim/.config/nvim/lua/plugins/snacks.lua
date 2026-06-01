@@ -1,32 +1,86 @@
--- Picker for files changed vs the same base hunk-nvim/signs.lua uses.
--- Default state: diff WORKING TREE against base (so uncommitted scratch
--- shows up too, matching what signs render inline). Used by both
--- <leader>gC and <C-f>.
+-- Picker for files changed vs hunk-nvim/signs.lua's base. <leader>gC and <C-f>.
 local function open_changed_files_picker()
 	local ok, signs = pcall(require, "hunk-nvim.signs")
 	if not ok or not signs.resolve_base then
 		vim.notify("hunk-nvim.signs unavailable", vim.log.levels.ERROR)
 		return
 	end
-	local base = signs.resolve_base()
+	local base
+	local tok, tracker = pcall(require, "ai-tracker")
+	if tok and tracker.resolve_base_cached then
+		local repo = vim.fn.systemlist({ "git", "-C", vim.fn.getcwd(), "rev-parse", "--show-toplevel" })[1]
+		if repo and repo ~= "" then base = tracker.resolve_base_cached(repo) end
+	end
+	if not base then base = signs.resolve_base() end
 	if not base or base == "" then
 		vim.notify("Couldn't infer base commit", vim.log.levels.ERROR)
 		return
 	end
-	-- No work-ref arg → git diffs the working tree against base. Identical
-	-- semantics to `git diff <base> -- <file>` used by signs.lua, so the
-	-- picker's file set and the buffer's inline hunks always agree.
 	local files = vim.fn.systemlist("git diff --name-only " .. base)
+	-- git diff doesn't show untracked files; query them separately.
+	local untracked = vim.fn.systemlist("git ls-files --others --exclude-standard")
+	local seen = {}
+	for _, f in ipairs(files) do seen[f] = true end
+	for _, f in ipairs(untracked) do
+		if not seen[f] then table.insert(files, f); seen[f] = true end
+	end
 	if #files == 0 then
 		vim.notify("No changes vs " .. base:sub(1, 8), vim.log.levels.INFO)
 		return
 	end
+	local uv = vim.loop or vim.uv
+	local repo_root = vim.fn.systemlist({ "git", "-C", vim.fn.getcwd(), "rev-parse", "--show-toplevel" })[1]
+	local mtime_of = {}
+	for _, f in ipairs(files) do
+		local st = uv.fs_stat((repo_root or ".") .. "/" .. f)
+		mtime_of[f] = st and (st.mtime.sec * 1000 + math.floor((st.mtime.nsec or 0) / 1e6)) or 0
+	end
+	table.sort(files, function(a, b) return mtime_of[a] > mtime_of[b] end)
 	Snacks.picker.pick({
 		title = "Changed: " .. base:sub(1, 8) .. "..working tree (" .. #files .. " files)",
+		layout = {
+			layout = {
+				backdrop = false,
+				width = 0.85,
+				height = 0.9,
+				box = "vertical",
+				border = "rounded",
+				title = "{title}",
+				title_pos = "center",
+				{ win = "preview", title = "{preview}", height = 0.7, border = "bottom" },
+				{ win = "input", height = 1, border = "bottom" },
+				{ win = "list", border = "none" },
+			},
+		},
 		finder = function()
 			return vim.tbl_map(function(f) return { text = f, file = f } end, files)
 		end,
-		format = "file",
+		-- Strip the default workspace-package prefix; show plain paths.
+		format = function(item)
+			return { { item.file or item.text or "", "SnacksPickerFile" } }
+		end,
+		preview = function(ctx)
+			ctx.preview:reset()
+			local item = ctx.item
+			if not item or not item.file or not repo_root then
+				ctx.preview:notify("No file to preview", "warn")
+				return false
+			end
+			local diff = vim.fn.systemlist({
+				"git", "-C", repo_root, "diff", base, "--", item.file,
+			})
+			local ft = "diff"
+			if vim.v.shell_error ~= 0 or #diff == 0 then
+				-- Untracked: fall back to file contents.
+				local ok2, lines = pcall(vim.fn.readfile, repo_root .. "/" .. item.file)
+				if ok2 then
+					diff = lines
+					ft = vim.filetype.match({ filename = item.file }) or ""
+				end
+			end
+			ctx.preview:set_lines(diff or {})
+			ctx.preview:highlight({ ft = ft })
+		end,
 		confirm = function(picker, item)
 			picker:close()
 			if item and item.file then vim.cmd("edit " .. vim.fn.fnameescape(item.file)) end

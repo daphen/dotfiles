@@ -201,7 +201,11 @@ def main() -> int:
     nvim_id = spawn_and_wait([
         "kitty",
         "--working-directory", str(worktree_path),
-        "-e", "bash", "-c", "nvim; exec fish",
+        # Launch nvim through `direnv exec` so it inherits the devenv's
+        # toolchain PATH (Go, Node, etc.). Without this, gopls/tsserver
+        # pick up system binaries which may be older than what go.work
+        # / pnpm-lock requires.
+        "-e", "bash", "-c", "direnv exec . nvim; exec fish",
     ])
 
     # Land focus on the new claude (col 3), so the user is at the prompt

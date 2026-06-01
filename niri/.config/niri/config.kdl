@@ -53,7 +53,7 @@ input {
 
     mouse {
         // off
-        // natural-scroll false
+        natural-scroll
         // accel-speed 0.2
         // accel-profile "flat"
         // scroll-method "no-scroll"
@@ -183,6 +183,12 @@ layout {
     //   together with the previously focused column.
     center-focused-column "on-overflow"
 
+    // Center a workspace when it has exactly one window — solo windows
+    // sit in the middle instead of left-aligned. For multi-window
+    // workspaces, niri has no native "center the whole stack" option,
+    // so they continue to left-align (or scroll-center on overflow).
+    always-center-single-column
+
     // You can customize the widths that "switch-preset-column-width" (Mod+R) toggles between.
     preset-column-widths {
         // Proportion sets the width as a fraction of the output width, taking gaps into account.
@@ -235,7 +241,7 @@ layout {
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#3A3A3A"
+        inactive-color "#999999"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -262,7 +268,7 @@ layout {
         active-color "#FF570D"
         // Matches waybar-notch light theme hairline
         // (foreground.primary @ 50% alpha).
-        inactive-color "#3A3A3A"
+        inactive-color "#999999"
 
         // Color of the border around windows that request your attention.
         urgent-color "#9b0000"

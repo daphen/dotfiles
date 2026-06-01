@@ -1,0 +1,242 @@
+#!/usr/bin/env python3
+"""
+ws-createreview <pr-num | github PR url>
+
+Fetch a PR, check out on a `review/pr-<num>` branch in a new worktree,
+spawn the standard 4-window stack on a `lovable-review-<num>-<slug>`
+workspace. Needs a real branch (not detached HEAD) because devenv wt
+derives the preview subdomain from the branch name.
+"""
+
+from __future__ import annotations
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+LOVABLE_DIR = Path(HOME) / "work" / "lovable"
+
+PR_URL_RE = re.compile(r"https?://github\.com/[^/]+/[^/]+/pull/(\d+)")
+
+
+# ---------------------------------------------------------------- niri helpers
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=3
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def niri_action(*args: str) -> int:
+    return subprocess.run(
+        ["niri", "msg", "action", *args], capture_output=True, timeout=3
+    ).returncode
+
+
+def workspace_id_by_name(name: str) -> int | None:
+    for ws in (niri_json("workspaces") or []):
+        if ws.get("name") == name:
+            return ws["id"]
+    return None
+
+
+def trailing_empty_unnamed_idx(output: str) -> int | None:
+    cands = [
+        w for w in (niri_json("workspaces") or [])
+        if w.get("output") == output
+        and w.get("name") is None
+        and w.get("active_window_id") is None
+    ]
+    cands.sort(key=lambda w: -w["idx"])
+    return cands[0]["idx"] if cands else None
+
+
+def focused_output() -> str | None:
+    fw = niri_json("focused-window")
+    if fw is None:
+        return None
+    ws_id = fw.get("workspace_id")
+    for w in (niri_json("workspaces") or []):
+        if w["id"] == ws_id:
+            return w.get("output")
+    return None
+
+
+def ensure_workspace(name: str) -> int:
+    wid = workspace_id_by_name(name)
+    if wid is not None:
+        niri_action("focus-workspace", name)
+        return wid
+    output = focused_output() or ""
+    idx = trailing_empty_unnamed_idx(output)
+    if idx is None:
+        niri_action("focus-workspace-down")
+        time.sleep(0.1)
+        idx = trailing_empty_unnamed_idx(output)
+    if idx is not None:
+        subprocess.run(
+            ["niri", "msg", "action", "set-workspace-name", name,
+             "--workspace", str(idx)],
+            capture_output=True, timeout=3,
+        )
+    niri_action("focus-workspace", name)
+    return workspace_id_by_name(name) or -1
+
+
+def snapshot_window_ids() -> set:
+    return {w["id"] for w in (niri_json("windows") or [])}
+
+
+def spawn_and_wait(cmd: list[str], timeout: float = 9.0) -> int | None:
+    before = snapshot_window_ids()
+    subprocess.Popen(
+        ["setsid", *cmd],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        time.sleep(0.15)
+        after = snapshot_window_ids()
+        new = after - before
+        if new:
+            return next(iter(new))
+    return None
+
+
+# ---------------------------------------------------------------- PR helpers
+
+def parse_pr(input_str: str) -> int:
+    if input_str.isdigit():
+        return int(input_str)
+    m = PR_URL_RE.search(input_str)
+    if m:
+        return int(m.group(1))
+    raise SystemExit(f"could not parse PR number from: {input_str!r}")
+
+
+def slugify(title: str, max_segments: int = 3) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9]+", "-", title.lower()).strip("-")
+    parts = [p for p in cleaned.split("-") if p][:max_segments]
+    return "-".join(parts) or "pr"
+
+
+def gh_pr_title(num: int) -> str:
+    try:
+        out = subprocess.run(
+            ["gh", "pr", "view", str(num), "--json", "title"],
+            capture_output=True, text=True, check=True,
+            cwd=str(LOVABLE_DIR),
+        )
+        return json.loads(out.stdout).get("title", "")
+    except (subprocess.CalledProcessError, json.JSONDecodeError, FileNotFoundError):
+        return ""
+
+
+def fetch_pr_head(num: int) -> str:
+    """`git fetch origin pull/<num>/head` and return the fetched SHA."""
+    subprocess.run(
+        ["git", "-C", str(LOVABLE_DIR), "fetch", "origin", f"pull/{num}/head"],
+        check=True,
+    )
+    return subprocess.run(
+        ["git", "-C", str(LOVABLE_DIR), "rev-parse", "FETCH_HEAD"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+
+
+# ---------------------------------------------------------------- main
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("pr", help="PR number or github.com PR URL")
+    args = ap.parse_args()
+
+    num = parse_pr(args.pr)
+    title = gh_pr_title(num)
+    slug = slugify(title)
+    name = f"review-{num}-{slug}"
+    worktree_path = Path(HOME) / f"work/lovable.{name}"
+    workspace = f"lovable-{name}"
+    branch = f"review/pr-{num}"
+    # Matches what devenv's sanitizeBranchForSubdomain produces.
+    subdomain = f"review-pr-{num}"
+    preview_url = f"http://{subdomain}.localhost:2015"
+
+    print(f"==> fetching PR #{num}")
+    sha = fetch_pr_head(num)
+    print(f"    PR HEAD: {sha[:12]}")
+
+    if not worktree_path.is_dir():
+        print(f"==> creating worktree {worktree_path.name} on branch {branch}")
+        # Pre-delete stale branch from a previous attempt (idempotent).
+        subprocess.run(
+            ["git", "-C", str(LOVABLE_DIR), "branch", "-D", branch],
+            capture_output=True,
+        )
+        rc = subprocess.run(
+            ["git", "-C", str(LOVABLE_DIR), "worktree", "add",
+             "-b", branch, str(worktree_path), sha],
+        ).returncode
+        if rc != 0:
+            print("git worktree add failed", file=sys.stderr)
+            return rc
+    else:
+        print(f"==> worktree already exists at {worktree_path.name}")
+
+    print(f"==> focusing workspace {workspace}")
+    ensure_workspace(workspace)
+
+    print("==> spawning devenv wt")
+    spawn_and_wait([
+        "kitty",
+        "--working-directory", str(worktree_path),
+        "-e", "bash", "-c", "direnv exec . devenv wt; exec fish",
+    ])
+
+    print(f"==> spawning work browser → {preview_url}")
+    spawn_and_wait([
+        "/home/daphen/.config/niri/scripts/browser-dispatch",
+        "--profile=work",
+        "--new-window",
+        preview_url,
+    ])
+
+    print("==> spawning claude")
+    spawn_and_wait([
+        "kitty",
+        "--class", "claude",
+        "--working-directory", str(worktree_path),
+        "-e", "claude",
+    ])
+
+    print("==> spawning nvim")
+    nvim_id = spawn_and_wait([
+        "kitty",
+        "--working-directory", str(worktree_path),
+        # direnv exec so LSPs pick up the devenv toolchain.
+        "-e", "bash", "-c", "direnv exec . nvim; exec fish",
+    ])
+
+    if nvim_id is not None:
+        target_ws_id = workspace_id_by_name(workspace)
+        for w in (niri_json("windows") or []):
+            if (w.get("app_id") == "claude"
+                    and w.get("workspace_id") == target_ws_id):
+                niri_action("focus-window", "--id", str(w["id"]))
+                break
+
+    print(f"==> review stack for PR #{num} ready on workspace '{workspace}'")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

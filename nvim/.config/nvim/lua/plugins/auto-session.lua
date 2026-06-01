@@ -7,6 +7,10 @@ return {
 		local auto_session = require("auto-session")
 
 		vim.opt.sessionoptions:remove("terminal")
+		-- Drop buffer list from sessions. Restoring 10+ files in a TS
+		-- monorepo triggers a serial LSP-attach storm (10s+ blank
+		-- screen). Layout/cwd/folds still restore.
+		vim.opt.sessionoptions:remove("buffers")
 
 		auto_session.setup({
 			auto_restore_enabled = true,

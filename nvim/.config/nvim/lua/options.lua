@@ -89,7 +89,7 @@ opt.updatetime = 300
 opt.autoread = true
 vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
 	pattern = "*",
-	command = "if mode() != 'c' | checktime | endif",
+	command = "if mode() != 'c' && empty(getcmdwintype()) | checktime | endif",
 })
 vim.api.nvim_create_autocmd("FileChangedShellPost", {
 	pattern = "*",

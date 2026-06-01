@@ -28,10 +28,30 @@ return {
 			local cmp_nvim_lsp = require("cmp_nvim_lsp")
 			local capabilities = cmp_nvim_lsp.default_capabilities()
 
+			-- nvim 0.11+ ignores lspconfig.setup's root_dir for eslint;
+			-- gate eslint here so it doesn't attach in oxlint/biome projects.
+			if vim.lsp.config then
+				vim.lsp.config("eslint", {
+					root_markers = {
+						".eslintrc",
+						".eslintrc.js",
+						".eslintrc.cjs",
+						".eslintrc.json",
+						".eslintrc.yml",
+						".eslintrc.yaml",
+						"eslint.config.js",
+						"eslint.config.cjs",
+						"eslint.config.mjs",
+						"eslint.config.ts",
+					},
+				})
+			end
+
 			require("mason-lspconfig").setup({
 				ensure_installed = {
 					"ts_ls",
 					"eslint",
+					"oxlint",
 					"html",
 					-- "cssls",  -- Disabled: Tailwind v4 uses unknown at-rules
 					"tailwindcss",
@@ -94,6 +114,20 @@ return {
 					["eslint"] = function()
 						lspconfig.eslint.setup({
 							capabilities = capabilities,
+							-- Only attach in projects with an actual eslint config —
+							-- default root_dir matches any package.json.
+							root_dir = require("lspconfig.util").root_pattern(
+								".eslintrc",
+								".eslintrc.js",
+								".eslintrc.cjs",
+								".eslintrc.json",
+								".eslintrc.yml",
+								".eslintrc.yaml",
+								"eslint.config.js",
+								"eslint.config.cjs",
+								"eslint.config.mjs",
+								"eslint.config.ts"
+							),
 							on_attach = function(client, bufnr)
 								-- Enable formatting via ESLint
 								vim.api.nvim_create_autocmd("BufWritePre", {

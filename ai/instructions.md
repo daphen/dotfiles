@@ -35,6 +35,35 @@ daphen/<name>`.
 Confirm with the user before invoking ws-createwt — it spawns 4 windows
 and claims a niri workspace.
 
+## Lovable-on-Lovable sandboxes (proart-only)
+
+For tasks that should run in a REMOTE Lovable sandbox instead of locally,
+use `~/.config/niri/scripts/ws-createlovbox <name> <project-url-or-claim>`.
+
+ws-createlovbox:
+
+1. Looks up or creates the sandbox via sandcastle.lovable.net.
+2. Spawns a 3-window stack on a `lovable-<name>` workspace (same
+   naming as ws-createwt, so the picker shows them together):
+   lovssh→claude in ~/lovable, lovssh→nvim in ~/lovable, work-profile
+   browser at the Lovable project page.
+
+No local worktree, no local devenv: the sandbox owns both. All edits
+happen remotely via SSH.
+
+For reviewing a GitHub PR locally (different again — fetches the PR,
+checks out on a `review/pr-<num>` branch, spawns the standard
+4-window devenv stack), use `ws-createreview <pr-url-or-number>`.
+
+Pick which script based on cues:
+
+- LoL / "lovbox" / sandbox / project URL given → ws-createlovbox
+- New worktree / Linear ticket / local feature work → ws-createwt
+- Reviewing someone else's PR → ws-createreview
+
+Confirm before invoking either: ws-createlovbox claims a paid sandbox,
+ws-createreview fetches+branches off main.
+
 # Cross-environment prompts
 
 When composing a prompt that will be sent to a remote agent (LoL sandbox via

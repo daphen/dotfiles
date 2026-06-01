@@ -42,6 +42,16 @@ def main() -> int:
         subprocess.run(["niri", "msg", "action", "close-window"], check=False)
         return 0
 
+    # Reserved persistent workspaces: never close-stack these. lovable-main is
+    # the user's primary workspace; closing its windows blows away persistent
+    # apps (browser, slack, music, etc.). Agents trying to "clean up before
+    # creating a new workspace" have triggered this — refuse instead.
+    RESERVED = {"lovable-main"}
+    if name in RESERVED:
+        print(f"ws-close-stack: refusing to close reserved workspace '{name}'",
+              file=sys.stderr)
+        return 2
+
     stack_name = name[len("lovable-"):]
     print(f"ws-close-stack: closing stack '{stack_name}' on workspace '{name}'", file=sys.stderr)
 

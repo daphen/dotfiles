@@ -78,6 +78,14 @@ Pick which script based on cues:
 Confirm before invoking either: ws-createlovbox claims a paid sandbox,
 ws-createreview fetches+branches off main.
 
+**Never preemptively run `ws-close-stack` to "clean up" before creating
+a new workspace.** It closes every window on the focused workspace; if
+that workspace happens to be `lovable-main` (the user's persistent
+primary), it wipes their browser, Slack, music etc. ws-close-stack
+itself now refuses to operate on `lovable-main`, but other reserved
+workspaces could exist. Only invoke when the user explicitly asks for
+teardown of a specific worktree's stack.
+
 # Cross-environment prompts
 
 When composing a prompt that will be sent to a remote agent (LoL sandbox via

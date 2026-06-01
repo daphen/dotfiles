@@ -205,8 +205,8 @@ return {
 		-- sandboxes, HEAD jumps between per-session edit/edt-* refs every
 		-- time you message the agent — using HEAD-relative pickers shows
 		-- only the empty edit branch. Pinning to the work-branch ref
-		-- (same approach as the hunkr fish function) keeps both pickers
-		-- showing the actual accumulated work regardless of HEAD.
+		-- keeps both pickers showing the actual accumulated work
+		-- regardless of HEAD.
 		{ "<leader>gc", function()
 				local work = vim.fn.systemlist(
 					"git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads/daphen"

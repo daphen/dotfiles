@@ -324,6 +324,11 @@ def main() -> int:
             names = {}
     except (FileNotFoundError, json.JSONDecodeError):
         names = {}
+    # Old entries pointing at the same short-name stay — the old sandbox may
+    # still be useful (e.g. broken L-on-L project but the sandbox itself is
+    # fine). bare-args lovssh disambiguates by picking the most-recent entry
+    # (see lovssh.fish: `tail -1`), so the latest wins for inference while
+    # explicit `lovssh <old-claim>` still works.
     if names.get(claim) != name:
         names[claim] = name
         with open(names_path, "w") as fh:

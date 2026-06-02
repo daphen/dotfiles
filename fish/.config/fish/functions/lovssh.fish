@@ -15,7 +15,10 @@ function lovssh --description "SSH into the existing lovbox for a Lovable projec
         set -l names_file "$HOME/.local/state/lovssh/names.json"
         if string match -q 'lovable-*' -- "$ws_name"; and test -f "$names_file"
             set -l short_name (string sub --start 9 -- "$ws_name")
-            set -l inferred (jq -r --arg n "$short_name" 'to_entries[] | select(.value == $n) | .key' "$names_file" 2>/dev/null | head -1)
+            # tail -1: when a short-name maps to multiple claims (old sandbox
+            # still labeled, new sandbox replacing it), pick the most-recently-
+            # added entry. The old one is still resolvable via explicit claim.
+            set -l inferred (jq -r --arg n "$short_name" 'to_entries[] | select(.value == $n) | .key' "$names_file" 2>/dev/null | tail -1)
             if test -n "$inferred"
                 set input "$inferred"
                 echo "→ inferred from workspace $ws_name: claim $inferred"
@@ -56,6 +59,20 @@ function lovssh --description "SSH into the existing lovbox for a Lovable projec
         echo "→ Project: $project_id"
     end
     echo "→ Claim:   $claim"
+
+    # Touch this claim's names.json entry so bare-args inference (which does
+    # `tail -1`) picks it up next time. Delete + re-insert moves the entry
+    # to the end of the dict. Only acts when the claim is already labeled —
+    # doesn't auto-create entries (that's ws-createlovbox's job).
+    set -l names_file "$HOME/.local/state/lovssh/names.json"
+    if test -f "$names_file"
+        set -l existing_name (jq -r --arg c "$claim" '.[$c] // empty' "$names_file" 2>/dev/null)
+        if test -n "$existing_name"
+            set -l tmp (mktemp)
+            jq --arg c "$claim" --arg n "$existing_name" 'del(.[$c]) | .[$c] = $n' "$names_file" > "$tmp"
+            and mv "$tmp" "$names_file"
+        end
+    end
 
     # Delegate sandbox provisioning + SSH-key injection + host discovery to the
     # lovbox CLI. It's Lovable-maintained, sources the direct cluster hostname

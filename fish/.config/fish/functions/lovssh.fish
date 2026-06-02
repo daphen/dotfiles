@@ -129,11 +129,23 @@ function lovssh --description "SSH into the existing lovbox for a Lovable projec
     # to later toggles via the in-sandbox toggle_theme function.
     set -l proart_theme (cat ~/.config/theme_mode 2>/dev/null; or echo light)
 
-    # Remote bootstrap: write theme, then exec daphen-env. First run builds the
-    # closure (~2 min); subsequent runs are instant. --refresh ignores the 1h
-    # flake registry cache so freshly-pushed dotfiles land immediately.
+    # Look up the human short-name for this claim so starship can display it
+    # in the prompt as "ssh <short>". Falls back to the claim hex if unmapped.
+    set -l sandbox_label "$claim"
+    set -l names_file "$HOME/.local/state/lovssh/names.json"
+    if test -f "$names_file"
+        set -l mapped (jq -r --arg c "$claim" '.[$c] // empty' "$names_file" 2>/dev/null)
+        if test -n "$mapped"
+            set sandbox_label "$mapped"
+        end
+    end
+
+    # Remote bootstrap: write theme, export SANDBOX_LABEL for the prompt,
+    # then exec daphen-env. First run builds the closure (~2 min); subsequent
+    # runs are instant. --refresh ignores the 1h flake registry cache so
+    # freshly-pushed dotfiles land immediately.
     # Single-line ';' chain because the lovbox sshd truncates multi-line args.
-    set -l remote_cmd "export TERM=xterm-256color; echo '[lovssh] connected as '\$(whoami)'@'\$(hostname); mkdir -p ~/.config; echo '$proart_theme' > ~/.config/theme_mode; echo '[lovssh] theme: $proart_theme'; cd ~/lovable 2>/dev/null; echo '[lovssh] launching dev env via nix run...'; exec nix run --refresh --option require-sigs false github:daphen/nixos-portable-config#daphen-env"
+    set -l remote_cmd "export TERM=xterm-256color SANDBOX_LABEL='$sandbox_label'; echo '[lovssh] connected as '\$(whoami)'@'\$(hostname); mkdir -p ~/.config; echo '$proart_theme' > ~/.config/theme_mode; echo '[lovssh] theme: $proart_theme'; cd ~/lovable 2>/dev/null; echo '[lovssh] launching dev env via nix run...'; exec nix run --refresh --option require-sigs false github:daphen/nixos-portable-config#daphen-env"
 
     # Try direct first (lower latency when DNS works), gateway on failure.
     # Exit 255 = SSH-level connection failure → try the next candidate.

@@ -27,6 +27,7 @@ blue       = "#396171"
 #                                                    ❯
 format = """
 [](fg:prompt)\
+${env_var.SANDBOX_LABEL}\
 $directory\
 $git_branch\
 $git_status\
@@ -63,6 +64,17 @@ read_only_style = "bg:prompt fg:red"
 symbol = ""
 style = "bg:prompt fg:green"
 format = "[$symbol $branch ]($style)"
+truncation_length = 24
+truncation_symbol = "…"
+
+# Sandbox label — set by lovssh to the short-name (e.g. 1186-private-npm-lol).
+# daphen-env (portable env) overrides this with a default of "ssh" so manual
+# SSH sessions still show something useful. Empty + no-default on proart, so
+# the module hides locally.
+[env_var.SANDBOX_LABEL]
+disabled = false
+style = "bg:prompt fg:fg_muted bold"
+format = "[  $env_value ]($style)"
 
 [git_status]
 style = "bg:prompt fg:red"

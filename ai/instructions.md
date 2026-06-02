@@ -22,10 +22,20 @@ ws-createwt:
    devenv-wt terminal, work-profile browser at the preview URL, claude
    session in the worktree, and an nvim/kitty.
 
-Naming: `<linear-issue-num>-<short-slug>`. Drop the team prefix
-(`every-`, `lov-`, etc.), lowercase, dashes only. For EVERY-1234 about
-"fix button overflow" → `1234-fix-button-overflow`. Linear matches the
-ticket ID anywhere in the branch.
+Naming has two distinct shapes — don't conflate them:
+
+- **Local short-name** (niri workspace, ws-* script arg, fish history,
+  rofi pickers) drops the team prefix: `1234-fix-button-overflow`. The
+  prefix adds noise in pickers and we already know it's a Lovable
+  ticket. ws-createwt creates a niri workspace `lovable-1234-fix-button-overflow`.
+- **Git branch name** (committed, pushed, referenced in PRs) KEEPS the
+  team prefix because Linear's auto-link requires the full ticket ID
+  (e.g. `every-1234`, not just `1234`) somewhere in the branch name.
+  The branch becomes `daphen/every-1234-fix-button-overflow`.
+
+So for EVERY-1234 about "fix button overflow":
+- niri workspace / script name: `1234-fix-button-overflow`
+- git branch: `daphen/every-1234-fix-button-overflow`
 
 For closing: `~/.config/niri/scripts/ws-close-worktree <name>` tears
 down the session (closes windows, devenv kill, unnames the workspace)

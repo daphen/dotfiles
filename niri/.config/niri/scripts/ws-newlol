@@ -1,44 +1,159 @@
 #!/usr/bin/env python3
 """
-ws-newlol
+ws-newlol <short-name>
 
-Opens the work-profile browser at lovable.dev so you can create a
-Lovable-on-Lovable project there. Project creation has to go through
-the web UI now — the api.lovable.dev path is Castle-gated and requires
-a Castle.js device-fingerprint token that only the browser can produce.
+Creates a niri workspace named `lovable-<short-name>` and opens the
+work-profile browser on it pointed at lovable.dev — ready to create a
+Lovable-on-Lovable project via the web UI (the only path past Castle's
+project-create gate).
 
-Once the project exists, grab its URL and run:
+Naming convention (matches ws-createwt / ws-createlovbox): drop the
+Linear team prefix, lowercase, dashes. For EVERY-1186 about "Support
+private npm registries" → `1186-private-npm-registries`.
 
-    ws-createlovbox <name> <project-url>
+Once the project exists, copy its URL and run:
 
-…to claim the sandbox, spawn the niri stack (claude + nvim SSH windows
-+ browser pinned to the project), and drop into the dev env.
+    ws-createlovbox <same-name> <project-url>
+
+…to attach the claude + nvim SSH windows on the same niri workspace.
 """
 from __future__ import annotations
+import argparse
+import json
+import re
 import subprocess
 import sys
+import time
 
-LANDING_URL = "https://lovable.dev/"
 BROWSER_DISPATCH = "/home/daphen/.config/niri/scripts/browser-dispatch"
+LANDING_URL = "https://lovable.dev/"
+
+
+def niri_json(*args: str):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=3
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def niri_action(*args: str) -> int:
+    return subprocess.run(
+        ["niri", "msg", "action", *args], capture_output=True, timeout=3
+    ).returncode
+
+
+def workspace_id_by_name(name: str) -> int | None:
+    for ws in (niri_json("workspaces") or []):
+        if ws.get("name") == name:
+            return ws["id"]
+    return None
+
+
+def trailing_empty_unnamed_idx(output: str) -> int | None:
+    cands = [
+        w for w in (niri_json("workspaces") or [])
+        if w.get("output") == output
+        and w.get("name") is None
+        and w.get("active_window_id") is None
+    ]
+    cands.sort(key=lambda w: -w["idx"])
+    return cands[0]["idx"] if cands else None
+
+
+def focused_output() -> str | None:
+    fw = niri_json("focused-window")
+    if fw is None:
+        # No focused window — pick the focused workspace's output.
+        for w in (niri_json("workspaces") or []):
+            if w.get("is_focused"):
+                return w.get("output")
+        return None
+    ws_id = fw.get("workspace_id")
+    for w in (niri_json("workspaces") or []):
+        if w["id"] == ws_id:
+            return w.get("output")
+    return None
+
+
+def ensure_workspace(name: str) -> int:
+    """Focus an existing `lovable-<name>` workspace, or claim+name a trailing
+    empty unnamed one on the focused output. Returns the workspace id or -1."""
+    wid = workspace_id_by_name(name)
+    if wid is not None:
+        niri_action("focus-workspace", name)
+        return wid
+
+    out = focused_output() or "DP-2"
+    idx = trailing_empty_unnamed_idx(out)
+    if idx is None:
+        niri_action("focus-workspace-down")
+        time.sleep(0.15)
+        idx = trailing_empty_unnamed_idx(out)
+    if idx is None:
+        return -1
+    niri_action("set-workspace-name", "--workspace", str(idx), name)
+    time.sleep(0.15)
+    niri_action("focus-workspace", name)
+    time.sleep(0.1)
+    return workspace_id_by_name(name) or -1
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(
+        description="Create a niri lovable workspace + open browser at lovable.dev"
+    )
+    ap.add_argument(
+        "name",
+        help="short workspace name (e.g. 1186-private-npm-registries). "
+             "The niri workspace becomes lovable-<name>.",
+    )
+    args = ap.parse_args()
+
+    name = args.name
+
+    if name.startswith("daphen-") or name.startswith("daphen/"):
+        print(
+            f"error: drop the 'daphen-' prefix. That prefix belongs to "
+            f"local branches/worktrees only. Got '{name}', use "
+            f"'{name.replace('daphen-', '', 1).replace('daphen/', '', 1)}'.",
+            file=sys.stderr,
+        )
+        return 2
+
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name):
+        print(
+            f"error: name must be lowercase alphanumeric with dashes only "
+            f"(e.g. '1186-private-npm-registries'). Got '{name}'.",
+            file=sys.stderr,
+        )
+        return 2
+
+    workspace = f"lovable-{name}"
+    print(f"==> focusing workspace {workspace}")
+    wid = ensure_workspace(workspace)
+    if wid == -1:
+        print(
+            f"⚠ couldn't claim a niri workspace named {workspace}. "
+            "Spawning the browser on the current workspace anyway.",
+            file=sys.stderr,
+        )
+
+    print(f"==> opening work browser at {LANDING_URL}")
+    # Let browser-dispatch's stderr through so a failure isn't silent.
     subprocess.Popen(
         [BROWSER_DISPATCH, "--profile=work", "--new-window", LANDING_URL],
         stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
-    print(f"→ opened work browser at {LANDING_URL}", file=sys.stderr)
-    print("", file=sys.stderr)
-    print("In the browser:", file=sys.stderr)
-    print("  1. Pick or create the Lovable workspace", file=sys.stderr)
-    print("  2. New Project → toggle Lovable-on-Lovable → submit", file=sys.stderr)
-    print("  3. Copy the project URL (https://lovable.dev/projects/<uuid>)", file=sys.stderr)
-    print("", file=sys.stderr)
-    print("Then back here:", file=sys.stderr)
-    print("  ws-createlovbox <short-name> <project-url>", file=sys.stderr)
+
+    print()
+    print("In the browser:")
+    print("  1. Pick or create the Lovable workspace")
+    print("  2. New Project → toggle Lovable-on-Lovable → submit")
+    print("  3. Copy the project URL (https://lovable.dev/projects/<uuid>)")
+    print()
+    print(f"Then back here, run (same name — the niri workspace is already named):")
+    print(f"  ws-createlovbox {name} <project-url>")
     return 0
 
 

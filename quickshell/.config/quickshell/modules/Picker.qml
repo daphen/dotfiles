@@ -27,7 +27,7 @@ PanelWindow {
         if (open) { closeDelay.stop(); active = true }
         else closeDelay.restart()
     }
-    Timer { id: closeDelay; interval: 220; onTriggered: root.active = false }
+    Timer { id: closeDelay; interval: 300; onTriggered: root.active = false }
 
     onActiveChanged: {
         if (active && search) {
@@ -82,7 +82,7 @@ PanelWindow {
         anchors.fill: parent
         color: "#000000"
         opacity: root.open ? 0.35 : 0
-        Behavior on opacity { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         Keys.onEscapePressed: root.closeRequested()
         MouseArea {
             anchors.fill: parent
@@ -94,28 +94,41 @@ PanelWindow {
         id: notch
         anchors {
             bottom: parent.bottom
+            bottomMargin: root.open ? 80 : -(height + 40)
             horizontalCenter: parent.horizontalCenter
+
+            Behavior on bottomMargin {
+                NumberAnimation {
+                    duration: 280
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: [0.32, 0.72, 0.0, 1.0, 1.0, 1.0]
+                }
+            }
         }
         width: 720
         height: 420
 
         color: Theme.notch
-        topLeftRadius:     Theme.notchRadius
-        topRightRadius:    Theme.notchRadius
-        bottomLeftRadius:  0
-        bottomRightRadius: 0
+        radius: Theme.notchRadius
         border.color: Theme.hairline
         border.width: 1
 
-        property real slideOffset: root.open ? 0 : height + 32
-        Behavior on slideOffset {
+        scale: root.open ? 1.0 : 0.96
+        opacity: root.open ? 1.0 : 0.0
+        Behavior on scale {
             NumberAnimation {
-                duration: 200
+                duration: 190
                 easing.type: Easing.BezierSpline
-                easing.bezierCurve: [0.05, 0.7, 0.1, 1.0, 1.0, 1.0]
+                easing.bezierCurve: [0.26, 0.08, 0.25, 1.0, 1.0, 1.0]
             }
         }
-        transform: Translate { y: notch.slideOffset }
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 190
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: [0.26, 0.08, 0.25, 1.0, 1.0, 1.0]
+            }
+        }
 
         Column {
             anchors.fill: parent
@@ -139,7 +152,6 @@ PanelWindow {
                 }
                 padding: 10
                 Keys.onPressed: event => {
-                    console.log("[picker] key:", event.key, "esc=", Qt.Key_Escape)
                     if (event.key === Qt.Key_Escape) {
                         root.closeRequested()
                         event.accepted = true

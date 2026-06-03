@@ -25,6 +25,26 @@ ShellRoot {
         WorktreePicker {}
     }
 
+    Component {
+        id: worktreeCreatePickerFactory
+        WorktreeCreatePicker {}
+    }
+
+    Component {
+        id: lovboxPickerFactory
+        LovboxPicker {}
+    }
+
+    Component {
+        id: bluetoothPickerFactory
+        BluetoothPicker {}
+    }
+
+    Component {
+        id: networkPickerFactory
+        NetworkPicker {}
+    }
+
     Component.onCompleted: {
         for (const screen of Quickshell.screens) {
             barFactory.createObject(root, { screen: screen })
@@ -32,5 +52,9 @@ ShellRoot {
         }
         launcherFactory.createObject(root)
         worktreePickerFactory.createObject(root)
+        worktreeCreatePickerFactory.createObject(root)
+        lovboxPickerFactory.createObject(root)
+        bluetoothPickerFactory.createObject(root)
+        networkPickerFactory.createObject(root)
     }
 }

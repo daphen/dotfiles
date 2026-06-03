@@ -691,7 +691,7 @@ binds {
     //   Super+Shift+T  — create a NEW worktree (rofi name prompt)
     //   Super+Ctrl+T   — start an EXISTING worktree from disk (fzf picker)
     Super+t       { spawn "qs" "ipc" "call" "worktrees" "toggle"; }
-    Super+Shift+t { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-createwt"; }
+    Super+Shift+t { spawn "qs" "ipc" "call" "worktree-create" "toggle"; }
     Super+Ctrl+t  { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-startwt"; }
 
     // Super+O: toggle to the previously visited worktree (vim ctrl-o style).
@@ -700,7 +700,7 @@ binds {
     // Super+B: jump to an already-running lovbox workspace.
     // Sandbox-from-history picking lives in the unified Super+Ctrl+T picker
     // (ws-startwt — both worktrees and sandboxes shown together).
-    Super+b       { spawn-sh "$HOME/.config/niri/scripts/rofi-lovbox-jump"; }
+    Super+b       { spawn "qs" "ipc" "call" "lovbox" "toggle"; }
 
     // Notes - tiled window like spotify/claude
     Super+n { spawn "/home/daphen/.config/niri/scripts/spawn-notes"; }
@@ -829,7 +829,8 @@ binds {
     // Rofi keybinds
     Super+Ctrl+V { spawn "kitty" "--class" "clipse" "-o" "initial_window_width=1000" "-o" "initial_window_height=750" "clipse"; }  // Open clipboard history (clipse in floating terminal)
     Super+Ctrl+J { spawn "rofimoji" "--action" "copy" "type" "--selector" "rofi"; }  // Open emoji picker (copy + auto-type)
-    Super+Ctrl+B { spawn "rofi-bluetooth"; }  // Open bluetooth menu
+    Super+Ctrl+B { spawn "qs" "ipc" "call" "bluetooth" "toggle"; }  // Open bluetooth menu
+    Super+Ctrl+N { spawn "qs" "ipc" "call" "network" "toggle"; }    // Open wifi picker
     Super+Ctrl+Shift+B { spawn-sh "$HOME/.config/niri/scripts/waybar-theme --cycle"; }  // Cycle waybar theme
     Super+Ctrl+P { spawn "/home/daphen/.config/niri/scripts/rofi-asus-profile"; }  // Switch ASUS performance profile
     Super+Ctrl+A { spawn "/home/daphen/.config/niri/scripts/toggle-headphones"; }  // Toggle whichever headphones are on (Px8 or AirPods)

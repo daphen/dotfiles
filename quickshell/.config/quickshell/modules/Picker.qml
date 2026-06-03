@@ -14,8 +14,11 @@ PanelWindow {
     property string subtitleField: ""
     property string highlightField: ""
     property var onEnter: function(item) {}
+    property var onEnterText: function(text) {}
+    property bool freeText: false
     property var onAltAction: null
     property string altLabel: ""
+    property int altKey: Qt.Key_W
 
     property string query: search ? search.text : ""
     property int selectedIndex: 0
@@ -52,6 +55,13 @@ PanelWindow {
     }
 
     function activate() {
+        if (freeText) {
+            const text = query.trim()
+            if (text.length === 0) return
+            onEnterText(text)
+            closeRequested()
+            return
+        }
         if (filtered.length === 0) return
         const idx = Math.max(0, Math.min(selectedIndex, filtered.length - 1))
         onEnter(filtered[idx])
@@ -166,7 +176,7 @@ PanelWindow {
                         if (root.filtered.length > 0)
                             root.selectedIndex = Math.max(root.selectedIndex - 1, 0)
                         event.accepted = true
-                    } else if (event.key === Qt.Key_W && (event.modifiers & Qt.ControlModifier)) {
+                    } else if (event.key === root.altKey && (event.modifiers & Qt.ControlModifier)) {
                         root.altActivate()
                         event.accepted = true
                     }
@@ -192,32 +202,33 @@ PanelWindow {
                         : "transparent"
                     radius: Theme.radiusSm
 
-                    Row {
-                        anchors.verticalCenter: parent.verticalCenter
+                    Text {
                         anchors.left: parent.left
                         anchors.leftMargin: 10
-                        spacing: 10
-
-                        Text {
-                            text: modelData ? String(modelData.label || "?") : "?"
-                            color: (root.highlightField && modelData && modelData[root.highlightField] === true)
-                                ? Theme.cursor : Theme.fg
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize
-                            font.weight: Theme.fontWeight
-                            renderType: Text.NativeRendering
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        Text {
-                            visible: root.subtitleField && modelData && (modelData[root.subtitleField] || "").length > 0
-                            text: modelData && root.subtitleField ? String(modelData[root.subtitleField] || "") : ""
-                            color: Theme.fg_muted
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize - 2
-                            font.weight: Theme.fontWeight
-                            renderType: Text.NativeRendering
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
+                        anchors.right: subtitleText.left
+                        anchors.rightMargin: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: modelData ? String(modelData.label || "?") : "?"
+                        color: (root.highlightField && modelData && modelData[root.highlightField] === true)
+                            ? Theme.cursor : Theme.fg
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                        font.weight: Theme.fontWeight
+                        renderType: Text.NativeRendering
+                        elide: Text.ElideRight
+                    }
+                    Text {
+                        id: subtitleText
+                        visible: root.subtitleField && modelData && (modelData[root.subtitleField] || "").length > 0
+                        text: modelData && root.subtitleField ? String(modelData[root.subtitleField] || "") : ""
+                        color: Theme.fg_muted
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize - 2
+                        font.weight: Theme.fontWeight
+                        renderType: Text.NativeRendering
+                        anchors.right: parent.right
+                        anchors.rightMargin: 10
+                        anchors.verticalCenter: parent.verticalCenter
                     }
 
                     MouseArea {

@@ -21,3 +21,11 @@ Launcher 1.0 Launcher.qml
 Picker 1.0 Picker.qml
 singleton WorktreePickerState 1.0 WorktreePickerState.qml
 WorktreePicker 1.0 WorktreePicker.qml
+singleton WorktreeCreatePickerState 1.0 WorktreeCreatePickerState.qml
+WorktreeCreatePicker 1.0 WorktreeCreatePicker.qml
+singleton LovboxPickerState 1.0 LovboxPickerState.qml
+LovboxPicker 1.0 LovboxPicker.qml
+singleton BluetoothPickerState 1.0 BluetoothPickerState.qml
+BluetoothPicker 1.0 BluetoothPicker.qml
+singleton NetworkPickerState 1.0 NetworkPickerState.qml
+NetworkPicker 1.0 NetworkPicker.qml

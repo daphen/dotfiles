@@ -1,13 +1,33 @@
 #!/usr/bin/env bash
 # Respond to a kitty OSC-notify notification (Claude Code et al).
 #
-# Kitty's terminal notification protocol attaches a default action to
-# every notification it sends. When invoked, kitty focuses the exact
-# terminal window that emitted the notification.
+# Kitty registers a default action on every notification it sends. We:
+#   1. Find the topmost kitty notification
+#   2. If the summary tags a `lovable.daphen-<name>` directory, focus
+#      the matching niri workspace first (`lovable-<name>`) — so the
+#      workspace becomes active even if niri ignores kitty's window
+#      activation token (focus-stealing prevention).
+#   3. Invoke the notification's default action — kitty focuses the
+#      specific terminal window inside the workspace.
+#   4. Dismiss the notification.
 set -e
 
-kitty_id=$(qs ipc call notifications list 2>/dev/null \
-    | jq -r 'map(select(.app_name == "kitty")) | .[0].id // empty' 2>/dev/null)
+data=$(qs ipc call notifications list 2>/dev/null \
+    | jq -c 'map(select(.app_name == "kitty")) | .[0] // empty' 2>/dev/null)
+
+if [ -z "$data" ] || [ "$data" = "null" ]; then
+    exit 0
+fi
+
+kitty_id=$(printf '%s' "$data" | jq -r '.id // empty')
+summary=$(printf '%s' "$data" | jq -r '.summary // empty')
+
+# Map summary worktree marker → niri workspace name.
+# Summary form: "Claude · lovable.daphen-<short>" → workspace lovable-<short>.
+ws=$(printf '%s' "$summary" | grep -oE 'lovable\.daphen-[^[:space:]]+' | head -1 | sed 's|lovable\.daphen-|lovable-|')
+if [ -n "$ws" ]; then
+    niri msg action focus-workspace "$ws" >/dev/null 2>&1 || true
+fi
 
 if [ -n "$kitty_id" ]; then
     qs ipc call notifications invoke "$kitty_id" >/dev/null 2>&1 || true

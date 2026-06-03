@@ -45,6 +45,16 @@ ShellRoot {
         NetworkPicker {}
     }
 
+    Component {
+        id: asusProfilePickerFactory
+        AsusProfilePicker {}
+    }
+
+    Component {
+        id: emojiPickerFactory
+        EmojiPicker {}
+    }
+
     Component.onCompleted: {
         for (const screen of Quickshell.screens) {
             barFactory.createObject(root, { screen: screen })
@@ -56,5 +66,7 @@ ShellRoot {
         lovboxPickerFactory.createObject(root)
         bluetoothPickerFactory.createObject(root)
         networkPickerFactory.createObject(root)
+        asusProfilePickerFactory.createObject(root)
+        emojiPickerFactory.createObject(root)
     }
 }

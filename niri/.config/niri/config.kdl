@@ -729,7 +729,7 @@ binds {
     F4  allow-when-locked=true { spawn-sh "brightnessctl --device='*kbd_backlight' set 33%+"; }
     F5  allow-when-locked=true { spawn "/home/daphen/.config/niri/scripts/brightness-throttled" "5%-"; }
     F6  allow-when-locked=true { spawn "/home/daphen/.config/niri/scripts/brightness-throttled" "5%+"; }
-    F8  allow-when-locked=true { spawn "rofimoji" "--action" "copy" "type" "--selector" "rofi"; }
+    F8  allow-when-locked=true { spawn "qs" "ipc" "call" "emoji" "toggle"; }
     F9  allow-when-locked=true { spawn-sh "$HOME/.config/niri/scripts/toggle-mic"; }
     F10 allow-when-locked=true { spawn-sh "$HOME/.config/niri/scripts/toggle-camera"; }
 
@@ -828,15 +828,15 @@ binds {
 
     // Rofi keybinds
     Super+Ctrl+V { spawn "kitty" "--class" "clipse" "-o" "initial_window_width=1000" "-o" "initial_window_height=750" "clipse"; }  // Open clipboard history (clipse in floating terminal)
-    Super+Ctrl+J { spawn "rofimoji" "--action" "copy" "type" "--selector" "rofi"; }  // Open emoji picker (copy + auto-type)
+    Super+Ctrl+J { spawn "qs" "ipc" "call" "emoji" "toggle"; }  // Open emoji picker (copy + auto-type)
     Super+Ctrl+B { spawn "qs" "ipc" "call" "bluetooth" "toggle"; }  // Open bluetooth menu
     Super+Ctrl+N { spawn "qs" "ipc" "call" "network" "toggle"; }    // Open wifi picker
     Super+Ctrl+Shift+B { spawn-sh "$HOME/.config/niri/scripts/waybar-theme --cycle"; }  // Cycle waybar theme
-    Super+Ctrl+P { spawn "/home/daphen/.config/niri/scripts/rofi-asus-profile"; }  // Switch ASUS performance profile
+    Super+Ctrl+P { spawn "qs" "ipc" "call" "asus-profile" "toggle"; }  // Switch ASUS performance profile
     Super+Ctrl+A { spawn "/home/daphen/.config/niri/scripts/toggle-headphones"; }  // Toggle whichever headphones are on (Px8 or AirPods)
 
     // Dismiss all notifications
-    Super+Escape { spawn "makoctl" "dismiss" "--all"; }
+    Super+Escape { spawn "qs" "ipc" "call" "notifications" "dismissAll"; }
 }
 
 // Clipboard management with clipse

@@ -40,10 +40,10 @@ Rectangle {
     }
     readonly property real effectiveTimeout: {
         if (!notification) return 5000
-        if (isCritical) return 0
+        if (isCritical) return 30000
         const t = notification.expireTimeout
         if (t < 0) return 5000
-        if (t === 0) return isCritical ? 0 : 5000
+        if (t === 0) return 5000
         return t
     }
 

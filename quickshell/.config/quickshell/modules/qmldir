@@ -30,3 +30,7 @@ singleton BluetoothPickerState 1.0 BluetoothPickerState.qml
 BluetoothPicker 1.0 BluetoothPicker.qml
 singleton NetworkPickerState 1.0 NetworkPickerState.qml
 NetworkPicker 1.0 NetworkPicker.qml
+singleton AsusProfilePickerState 1.0 AsusProfilePickerState.qml
+AsusProfilePicker 1.0 AsusProfilePicker.qml
+singleton EmojiPickerState 1.0 EmojiPickerState.qml
+EmojiPicker 1.0 EmojiPicker.qml

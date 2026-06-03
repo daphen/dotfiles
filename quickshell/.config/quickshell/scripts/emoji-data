@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Locate rofimoji's currently-installed emoji data and emit each CSV concatenated.
+# Each line: <emoji> <name> <small>(<keywords>)</small>
+set -e
+bin=$(command -v rofimoji) || exit 1
+# Resolve to the nix store path of rofimoji, then walk to picker/data.
+real=$(readlink -f "$bin")
+pkg_root=$(dirname "$(dirname "$real")")
+data_dir=$(echo "$pkg_root"/lib/python*/site-packages/picker/data)
+[ -d "$data_dir" ] || { echo "no rofimoji data dir found ($data_dir)" >&2; exit 1; }
+cat "$data_dir"/emojis_*.csv 2>/dev/null

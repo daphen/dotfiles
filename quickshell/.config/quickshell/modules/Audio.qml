@@ -9,6 +9,13 @@ Item {
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property real volume: sink && sink.audio ? sink.audio.volume : 0
     readonly property bool muted: sink && sink.audio ? sink.audio.muted : false
+    readonly property bool bluetooth: {
+        if (!sink) return false
+        const n = (sink.name || "").toLowerCase()
+        const d = (sink.description || "").toLowerCase()
+        return n.indexOf("bluez") >= 0 || n.indexOf("bluetooth") >= 0
+            || d.indexOf("bluetooth") >= 0 || d.indexOf("airpods") >= 0
+    }
 
     implicitWidth: visible ? row.implicitWidth + Theme.modulePadH * 2 : 0
     implicitHeight: parent ? parent.height : Theme.barHeight
@@ -26,7 +33,8 @@ Item {
 
         Text {
             text: {
-                if (muted) return "󰝟"
+                if (muted) return bluetooth ? "󰟎" : "󰝟"
+                if (bluetooth) return "󰋋"
                 if (volume > 0.66) return "󰕾"
                 if (volume > 0.33) return "󰖀"
                 return "󰕿"

@@ -5,6 +5,7 @@ Item {
     id: root
 
     property string output: ""
+    readonly property int maxSlots: 64
 
     implicitWidth: Math.max(row.implicitWidth, 100)
     implicitHeight: parent ? parent.height : Theme.barHeight
@@ -22,16 +23,18 @@ Item {
         spacing: 6
 
         Repeater {
-            model: root.entries
+            model: root.maxSlots
 
             Item {
                 id: cell
-                required property var modelData
+                required property int index
+                readonly property var entry: index < root.entries.length ? root.entries[index] : null
+                visible: entry !== null
 
-                readonly property string kind: cell.modelData ? cell.modelData.kind : "gap"
+                readonly property string kind: entry ? entry.kind : "gap"
                 readonly property bool isBar: kind === "bar"
-                readonly property bool isFocused: isBar && cell.modelData.focused === true
-                readonly property bool isWsActive: isBar && cell.modelData.wsActive === true
+                readonly property bool isFocused: isBar && entry.focused === true
+                readonly property bool isWsActive: isBar && entry.wsActive === true
 
                 width: kind === "gap" ? 12 : 3
                 height: Theme.barHeight - 4
@@ -61,10 +64,28 @@ Item {
                         return baseline - 15
                     }
                     radius: 1
-                    Behavior on width  { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-                    Behavior on height { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-                    Behavior on y      { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-                    Behavior on color  { ColorAnimation { duration: 120 } }
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: 110
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: [0.34, 1.56, 0.64, 1.0, 1.0, 1.0]
+                        }
+                    }
+                    Behavior on height {
+                        NumberAnimation {
+                            duration: 110
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: [0.34, 1.56, 0.64, 1.0, 1.0, 1.0]
+                        }
+                    }
+                    Behavior on y {
+                        NumberAnimation {
+                            duration: 110
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: [0.34, 1.56, 0.64, 1.0, 1.0, 1.0]
+                        }
+                    }
+                    Behavior on color { ColorAnimation { duration: 110 } }
                 }
 
                 Rectangle {

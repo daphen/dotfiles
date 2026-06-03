@@ -55,6 +55,11 @@ ShellRoot {
         EmojiPicker {}
     }
 
+    Component {
+        id: claudeRenamePickerFactory
+        ClaudeRenamePicker {}
+    }
+
     Component.onCompleted: {
         for (const screen of Quickshell.screens) {
             barFactory.createObject(root, { screen: screen })
@@ -68,5 +73,6 @@ ShellRoot {
         networkPickerFactory.createObject(root)
         asusProfilePickerFactory.createObject(root)
         emojiPickerFactory.createObject(root)
+        claudeRenamePickerFactory.createObject(root)
     }
 }

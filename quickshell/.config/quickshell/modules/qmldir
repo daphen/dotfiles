@@ -34,3 +34,5 @@ singleton AsusProfilePickerState 1.0 AsusProfilePickerState.qml
 AsusProfilePicker 1.0 AsusProfilePicker.qml
 singleton EmojiPickerState 1.0 EmojiPickerState.qml
 EmojiPicker 1.0 EmojiPicker.qml
+singleton ClaudeRenamePickerState 1.0 ClaudeRenamePickerState.qml
+ClaudeRenamePicker 1.0 ClaudeRenamePicker.qml

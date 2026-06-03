@@ -1,0 +1,48 @@
+import QtQuick
+import Quickshell
+import Quickshell.Wayland
+import "."
+
+PanelWindow {
+    id: root
+
+    anchors {
+        top: true
+        right: true
+    }
+
+    margins.top: Theme.barHeight
+    margins.right: 16
+
+    visible: Notifications.tracked.values.length > 0
+
+    implicitWidth: 380
+    implicitHeight: Math.max(toastColumn.implicitHeight + 16, 1)
+    color: "transparent"
+
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.namespace: "qs-notifications"
+
+    Column {
+        id: toastColumn
+        anchors {
+            top: parent.top
+            right: parent.right
+            left: parent.left
+            topMargin: 0
+            leftMargin: 8
+            rightMargin: 8
+        }
+        spacing: 8
+
+        Repeater {
+            model: Notifications.tracked
+
+            Toast {
+                required property var modelData
+                notification: modelData
+                width: 360
+            }
+        }
+    }
+}

@@ -383,6 +383,18 @@ PYEOF
                 log_success "Applied clipse theme ($label)"
             fi
             ;;
+        "quickshell")
+            # Dual-theme: the generated Theme.qml inlines both palettes and
+            # picks at runtime via FileView on ~/.config/theme_mode. Written
+            # once to modules/Theme.qml — running the generator twice (light
+            # + dark) produces identical content, so the second cp is a no-op.
+            local dotfiles_path="$DOTFILES_DIR/quickshell/.config/quickshell/modules/Theme.qml"
+            if [[ -d "$DOTFILES_DIR/quickshell" ]]; then
+                mkdir -p "$(dirname "$dotfiles_path")"
+                cp "$generated_file" "$dotfiles_path"
+                log_success "Applied Quickshell theme (managed)"
+            fi
+            ;;
         "kitty")
             local target_dir is_managed
             if get_tool_target "$tool"; then

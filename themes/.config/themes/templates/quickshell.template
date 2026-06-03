@@ -1,0 +1,134 @@
+// AUTO-GENERATED — edit the template, not this file.
+// Driver: themes/.config/themes/theme-processor.py
+// Both palettes are inlined; the active one is selected at runtime by
+// watching ~/.config/theme_mode so theme toggles reflow the shell via
+// QML property binding without restarting `qs`.
+pragma Singleton
+
+import QtQuick
+import Quickshell
+import Quickshell.Io
+
+Singleton {
+    id: theme
+
+    property string mode: "dark"
+
+    readonly property var palettes: ({
+        "light": {
+            "bg":          "{{light.background.primary}}",
+            "bg_alt":      "{{light.background.secondary}}",
+            "tertiary":    "{{light.background.tertiary}}",
+            "selection":   "{{light.background.selection}}",
+            "surface":     "{{light.background.surface}}",
+            "overlay":     "{{light.background.overlay}}",
+            "prompt":      "{{light.background.prompt}}",
+            "success_bg":  "{{light.background.success}}",
+            "error_bg":    "{{light.background.error}}",
+            "warning_bg":  "{{light.background.warning}}",
+            "info_bg":     "{{light.background.info}}",
+            "fg":          "{{light.foreground.primary}}",
+            "fg_secondary":"{{light.foreground.secondary}}",
+            "fg_muted":    "{{light.foreground.muted}}",
+            "fg_subtle":   "{{light.foreground.subtle}}",
+            "red":         "{{light.accent.red}}",
+            "orange":      "{{light.accent.orange}}",
+            "yellow":      "{{light.accent.yellow}}",
+            "green":       "{{light.accent.green}}",
+            "cyan":        "{{light.accent.cyan}}",
+            "blue":        "{{light.accent.blue}}",
+            "sky":         "{{light.accent.sky}}",
+            "purple":      "{{light.accent.purple}}",
+            "pink":        "{{light.accent.pink}}",
+            "cursor":      "{{light.semantic.cursor}}"
+        },
+        "dark": {
+            "bg":          "{{dark.background.primary}}",
+            "bg_alt":      "{{dark.background.secondary}}",
+            "tertiary":    "{{dark.background.tertiary}}",
+            "selection":   "{{dark.background.selection}}",
+            "surface":     "{{dark.background.surface}}",
+            "overlay":     "{{dark.background.overlay}}",
+            "prompt":      "{{dark.background.prompt}}",
+            "success_bg":  "{{dark.background.success}}",
+            "error_bg":    "{{dark.background.error}}",
+            "warning_bg":  "{{dark.background.warning}}",
+            "info_bg":     "{{dark.background.info}}",
+            "fg":          "{{dark.foreground.primary}}",
+            "fg_secondary":"{{dark.foreground.secondary}}",
+            "fg_muted":    "{{dark.foreground.muted}}",
+            "fg_subtle":   "{{dark.foreground.subtle}}",
+            "red":         "{{dark.accent.red}}",
+            "orange":      "{{dark.accent.orange}}",
+            "yellow":      "{{dark.accent.yellow}}",
+            "green":       "{{dark.accent.green}}",
+            "cyan":        "{{dark.accent.cyan}}",
+            "blue":        "{{dark.accent.blue}}",
+            "sky":         "{{dark.accent.sky}}",
+            "purple":      "{{dark.accent.purple}}",
+            "pink":        "{{dark.accent.pink}}",
+            "cursor":      "{{dark.semantic.cursor}}"
+        }
+    })
+
+    readonly property color bg:           palettes[mode].bg
+    readonly property color bg_alt:       palettes[mode].bg_alt
+    readonly property color tertiary:     palettes[mode].tertiary
+    readonly property color selection:    palettes[mode].selection
+    readonly property color surface:      palettes[mode].surface
+    readonly property color overlay:      palettes[mode].overlay
+    readonly property color prompt:       palettes[mode].prompt
+    readonly property color success_bg:   palettes[mode].success_bg
+    readonly property color error_bg:     palettes[mode].error_bg
+    readonly property color warning_bg:   palettes[mode].warning_bg
+    readonly property color info_bg:      palettes[mode].info_bg
+    readonly property color fg:           palettes[mode].fg
+    readonly property color fg_secondary: palettes[mode].fg_secondary
+    readonly property color fg_muted:     palettes[mode].fg_muted
+    readonly property color fg_subtle:    palettes[mode].fg_subtle
+    readonly property color red:          palettes[mode].red
+    readonly property color orange:       palettes[mode].orange
+    readonly property color yellow:       palettes[mode].yellow
+    readonly property color green:        palettes[mode].green
+    readonly property color cyan:         palettes[mode].cyan
+    readonly property color blue:         palettes[mode].blue
+    readonly property color sky:          palettes[mode].sky
+    readonly property color purple:       palettes[mode].purple
+    readonly property color pink:         palettes[mode].pink
+    readonly property color cursor:       palettes[mode].cursor
+
+    readonly property color notch:    bg
+    readonly property color pill:     Qt.rgba(bg.r, bg.g, bg.b, 0.85)
+    readonly property color hairline: Qt.rgba(fg.r, fg.g, fg.b, 0.5)
+
+    readonly property int barHeight:     44
+    readonly property int notchMinWidth: 1200
+    readonly property int notchRadius:   14
+    readonly property int notchPadH:     10
+    readonly property int notchInnerGap: 80
+    readonly property int modulePadH:    5
+    readonly property int modulePadV:    2
+    readonly property int radius:        12
+    readonly property int radiusSm:      6
+    readonly property int padding:       12
+    readonly property int paddingSm:     6
+    readonly property int spacing:       0
+    readonly property int fontSize:      14
+
+    readonly property string fontFamily:     "JetBrainsMono Nerd Font"
+    readonly property string iconFontFamily: "JetBrainsMono Nerd Font"
+    readonly property int fontWeight: 500
+
+    // FileView.text is a function; onLoaded fires on initial read and every
+    // watcher-triggered reload.
+    FileView {
+        id: themeFile
+        path: Quickshell.env("HOME") + "/.config/theme_mode"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            const v = (text() || "").trim()
+            if (v === "light" || v === "dark") theme.mode = v
+        }
+    }
+}

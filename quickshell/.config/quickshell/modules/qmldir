@@ -1,0 +1,23 @@
+singleton Theme 1.0 Theme.qml
+singleton NiriState 1.0 NiriState.qml
+Bar 1.0 Bar.qml
+Clock 1.0 Clock.qml
+DateText 1.0 DateText.qml
+Battery 1.0 Battery.qml
+Audio 1.0 Audio.qml
+Minimap 1.0 Minimap.qml
+Weather 1.0 Weather.qml
+Cpu 1.0 Cpu.qml
+Memory 1.0 Memory.qml
+Network 1.0 Network.qml
+Worktree 1.0 Worktree.qml
+Dnd 1.0 Dnd.qml
+singleton Notifications 1.0 Notifications.qml
+singleton DndState 1.0 DndState.qml
+Toast 1.0 Toast.qml
+NotificationOverlay 1.0 NotificationOverlay.qml
+singleton LauncherState 1.0 LauncherState.qml
+Launcher 1.0 Launcher.qml
+Picker 1.0 Picker.qml
+singleton WorktreePickerState 1.0 WorktreePickerState.qml
+WorktreePicker 1.0 WorktreePicker.qml

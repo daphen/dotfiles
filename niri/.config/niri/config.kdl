@@ -348,10 +348,7 @@ blur {
 // which may be more convenient to use.
 // See the binds section below for more spawn examples.
 
-// This line starts waybar
-// waybar via theme switcher — picks the last-used theme from
-// ~/.local/state/waybar-theme. Cycle themes with Super+Ctrl+Shift+B.
-spawn-sh-at-startup "$HOME/.config/niri/scripts/waybar-theme"
+spawn-at-startup "qs"
 
 // Auto-restore wallpaper on startup with waypaper
 spawn-at-startup "waypaper" "--restore"
@@ -505,6 +502,7 @@ layer-rule {
     geometry-corner-radius 14
 }
 
+
 // Make wallpaper static (doesn't scroll with workspaces)
 // Places swaybg in the backdrop layer so it stays fixed
 // Disabled for now — backdrop layer hides wallpaper from blur sampling.
@@ -637,8 +635,8 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     // Suggested binds for running programs: app launcher, screen locker.
-    Super+Space hotkey-overlay-title="Run an Application" { spawn "rofi" "-show" "drun"; }
-    Super+Return { spawn "rofi" "-show" "drun"; }
+    Super+Space hotkey-overlay-title="Run an Application" { spawn "qs" "ipc" "call" "launcher" "toggle"; }
+    Super+Return { spawn "qs" "ipc" "call" "launcher" "toggle"; }
     Super+P { spawn "1password"; }
     Super+Ctrl+q hotkey-overlay-title="Force Kill Focused Window" { spawn "/home/daphen/.config/niri/scripts/force-kill-focused"; }
     Super+Shift+Ctrl+q hotkey-overlay-title="Lock the Screen" { spawn "swaylock"; }
@@ -692,7 +690,7 @@ binds {
     //   Super+T        — pick an OPEN worktree and focus it
     //   Super+Shift+T  — create a NEW worktree (rofi name prompt)
     //   Super+Ctrl+T   — start an EXISTING worktree from disk (fzf picker)
-    Super+t       { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-jump"; }
+    Super+t       { spawn "qs" "ipc" "call" "worktrees" "toggle"; }
     Super+Shift+t { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-createwt"; }
     Super+Ctrl+t  { spawn-sh "$HOME/.config/niri/scripts/rofi-ws-startwt"; }
 
@@ -825,8 +823,8 @@ binds {
     Super+Ctrl+c { spawn "/home/daphen/.config/niri/scripts/pick-color"; }  // Pick color from screen
     Super+Ctrl+Shift+c { spawn "/home/daphen/.config/niri/scripts/pick-color-format"; }  // Change color picker format
 
-    // Do-not-disturb toggle (mako). Waybar shows an indicator when active.
-    Super+Ctrl+Shift+d { spawn-sh "makoctl mode -t do-not-disturb"; }
+    // Do-not-disturb toggle. Quickshell watches the file via DndState.
+    Super+Ctrl+Shift+d { spawn-sh "f=$HOME/.config/quickshell/dnd; if [ -e \"$f\" ]; then rm -f \"$f\"; else mkdir -p \"$(dirname \"$f\")\" && touch \"$f\"; fi"; }
 
     // Rofi keybinds
     Super+Ctrl+V { spawn "kitty" "--class" "clipse" "-o" "initial_window_width=1000" "-o" "initial_window_height=750" "clipse"; }  // Open clipboard history (clipse in floating terminal)

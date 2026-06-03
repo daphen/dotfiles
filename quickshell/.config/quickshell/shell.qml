@@ -60,6 +60,11 @@ ShellRoot {
         ClaudeRenamePicker {}
     }
 
+    Component {
+        id: colorFormatPickerFactory
+        ColorFormatPicker {}
+    }
+
     Component.onCompleted: {
         for (const screen of Quickshell.screens) {
             barFactory.createObject(root, { screen: screen })
@@ -74,5 +79,6 @@ ShellRoot {
         asusProfilePickerFactory.createObject(root)
         emojiPickerFactory.createObject(root)
         claudeRenamePickerFactory.createObject(root)
+        colorFormatPickerFactory.createObject(root)
     }
 }

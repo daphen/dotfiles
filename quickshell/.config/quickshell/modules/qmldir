@@ -36,3 +36,5 @@ singleton EmojiPickerState 1.0 EmojiPickerState.qml
 EmojiPicker 1.0 EmojiPicker.qml
 singleton ClaudeRenamePickerState 1.0 ClaudeRenamePickerState.qml
 ClaudeRenamePicker 1.0 ClaudeRenamePicker.qml
+singleton ColorFormatPickerState 1.0 ColorFormatPickerState.qml
+ColorFormatPicker 1.0 ColorFormatPicker.qml

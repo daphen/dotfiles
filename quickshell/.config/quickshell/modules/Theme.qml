@@ -40,7 +40,9 @@ Singleton {
             "sky":         "#0284C7",
             "purple":      "#2a618d",
             "pink":        "#516088",
-            "cursor":      "#FF570D"
+            "cursor":      "#FF570D",
+            "hairlineAlpha": 0.5,
+            "dimmedFgAlpha": 0.55
         },
         "dark": {
             "bg":          "#181818",
@@ -67,7 +69,9 @@ Singleton {
             "sky":         "#7DD3FC",
             "purple":      "#8A92A7",
             "pink":        "#8A92A7",
-            "cursor":      "#FF570D"
+            "cursor":      "#FF570D",
+            "hairlineAlpha": 0.15,
+            "dimmedFgAlpha": 0.7
         }
     })
 
@@ -97,9 +101,12 @@ Singleton {
     readonly property color pink:         palettes[mode].pink
     readonly property color cursor:       palettes[mode].cursor
 
+    readonly property real hairlineAlpha: palettes[mode].hairlineAlpha
+    readonly property real dimmedFgAlpha: palettes[mode].dimmedFgAlpha
     readonly property color notch:    bg
     readonly property color pill:     Qt.rgba(bg.r, bg.g, bg.b, 0.85)
-    readonly property color hairline: Qt.rgba(fg.r, fg.g, fg.b, 0.5)
+    readonly property color hairline: Qt.rgba(fg.r, fg.g, fg.b, hairlineAlpha)
+    readonly property color dimmedFg: Qt.rgba(fg.r, fg.g, fg.b, dimmedFgAlpha)
 
     readonly property int barHeight:     44
     readonly property int notchMinWidth: 1200

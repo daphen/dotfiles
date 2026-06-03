@@ -821,7 +821,7 @@ binds {
 
     // Color picker
     Super+Ctrl+c { spawn "/home/daphen/.config/niri/scripts/pick-color"; }  // Pick color from screen
-    Super+Ctrl+Shift+c { spawn "/home/daphen/.config/niri/scripts/pick-color-format"; }  // Change color picker format
+    Super+Ctrl+Shift+c { spawn "qs" "ipc" "call" "color-format" "toggle"; }  // Change color picker format
 
     // Do-not-disturb toggle. Quickshell watches the file via DndState.
     Super+Ctrl+Shift+d { spawn-sh "f=$HOME/.config/quickshell/dnd; if [ -e \"$f\" ]; then rm -f \"$f\"; else mkdir -p \"$(dirname \"$f\")\" && touch \"$f\"; fi"; }
@@ -834,6 +834,7 @@ binds {
     Super+Ctrl+Shift+B { spawn-sh "$HOME/.config/niri/scripts/waybar-theme --cycle"; }  // Cycle waybar theme
     Super+Ctrl+P { spawn "qs" "ipc" "call" "asus-profile" "toggle"; }  // Switch ASUS performance profile
     Super+Ctrl+A { spawn "/home/daphen/.config/niri/scripts/toggle-headphones"; }  // Toggle whichever headphones are on (Px8 or AirPods)
+    Super+Ctrl+R { spawn "/home/daphen/.config/niri/scripts/claude-rename"; }  // Rename focused Claude session via QS prompt
 
     // Dismiss all notifications
     Super+Escape { spawn "qs" "ipc" "call" "notifications" "dismissAll"; }

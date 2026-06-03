@@ -224,15 +224,6 @@ apply_tool_theme() {
                 log_success "Applied spotify-player theme ($label, restart required)"
             fi
             ;;
-        "rofi")
-            local target_dir is_managed
-            if get_tool_target "$tool"; then
-                mkdir -p "$target_dir"
-                cp "$generated_file" "$target_dir/theme.rasi"
-                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
-                log_success "Applied Rofi ${theme_mode} theme ($label)"
-            fi
-            ;;
         "opencode")
             local target_dir is_managed
             if get_tool_target "$tool"; then

@@ -30,6 +30,11 @@ def niri_json(*args: str):
 def is_inactive_lovable(name: str | None, active: str) -> bool:
     if not name or not name.startswith("lovable-") or name == "lovable":
         return False
+    # lovable-main always participates in the Super+J/K nav cycle —
+    # it's pinned at idx M (closest to non-lovables) by ws-reorder, so
+    # Super+K from a non-lovable workspace should land on main next.
+    if name == "lovable-main":
+        return False
     return name != active
 
 

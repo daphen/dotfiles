@@ -168,11 +168,13 @@ PanelWindow {
                     } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                         root.activate()
                         event.accepted = true
-                    } else if (event.key === Qt.Key_Down) {
+                    } else if (event.key === Qt.Key_Down
+                            || (event.key === Qt.Key_J && (event.modifiers & Qt.ControlModifier))) {
                         if (root.filtered.length > 0)
                             root.selectedIndex = Math.min(root.selectedIndex + 1, root.filtered.length - 1)
                         event.accepted = true
-                    } else if (event.key === Qt.Key_Up) {
+                    } else if (event.key === Qt.Key_Up
+                            || (event.key === Qt.Key_K && (event.modifiers & Qt.ControlModifier))) {
                         if (root.filtered.length > 0)
                             root.selectedIndex = Math.max(root.selectedIndex - 1, 0)
                         event.accepted = true

@@ -13,6 +13,9 @@ PanelWindow {
     implicitHeight: Theme.barHeight
     color: "transparent"
 
+    // Outer = hairline-colored backdrop. Inner = notch fill, flush on top
+    // (no top border) but inset 1px on left/right/bottom so those 3 edges
+    // show as borders, including following the bottom rounded corners.
     Rectangle {
         id: notch
         anchors {
@@ -20,21 +23,34 @@ PanelWindow {
             bottom: parent.bottom
             horizontalCenter: parent.horizontalCenter
         }
-        // Anchor-based layout (left/center/right) instead of Row flow so
-        // the center group stays dead-center regardless of side widths.
         width: Math.max(
             leftGroup.implicitWidth + rightGroup.implicitWidth
                 + centerGroup.implicitWidth + Theme.notchInnerGap * 2 + Theme.notchPadH * 2,
             Theme.notchMinWidth
         )
 
-        color: Theme.notch
+        color: Theme.hairline
         topLeftRadius:     0
         topRightRadius:    0
         bottomLeftRadius:  Theme.notchRadius
         bottomRightRadius: Theme.notchRadius
-        border.color: Theme.hairline
-        border.width: 1
+
+        Rectangle {
+            anchors {
+                top: parent.top
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+                leftMargin: 1
+                rightMargin: 1
+                bottomMargin: 1
+            }
+            color: Theme.notch
+            topLeftRadius:     0
+            topRightRadius:    0
+            bottomLeftRadius:  Theme.notchRadius - 1
+            bottomRightRadius: Theme.notchRadius - 1
+        }
 
         Row {
             id: leftGroup
@@ -91,6 +107,11 @@ PanelWindow {
         return name.substring("lovable-".length)
     }
 
+    // Outer = hairline-colored "border" rectangle. Inner = notch-colored
+    // fill, flush on top + right (no border there), inset 1px on the left
+    // + bottom (the 1px gap of outer color reads as a border on those
+    // sides + the rounded bottom-left corner). Pure Rectangle.border is
+    // all-four-sides so this stacked-rect trick is needed for per-side.
     Rectangle {
         id: worktreePill
         anchors {
@@ -101,13 +122,27 @@ PanelWindow {
         width: pillRow.implicitWidth + Theme.notchPadH * 2
         height: Theme.barHeight
 
-        color: Theme.notch
+        color: Theme.hairline
         topLeftRadius:     0
         topRightRadius:    0
         bottomLeftRadius:  Theme.notchRadius
         bottomRightRadius: 0
-        border.color: Theme.hairline
-        border.width: 1
+
+        Rectangle {
+            anchors {
+                top: parent.top
+                right: parent.right
+                left: parent.left
+                bottom: parent.bottom
+                leftMargin: 1
+                bottomMargin: 1
+            }
+            color: Theme.notch
+            topLeftRadius:     0
+            topRightRadius:    0
+            bottomLeftRadius:  Theme.notchRadius - 1
+            bottomRightRadius: 0
+        }
 
         Row {
             id: pillRow

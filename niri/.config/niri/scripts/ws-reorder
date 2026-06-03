@@ -2,19 +2,22 @@
 """
 ws-reorder
 
-Pin every `lovable-*` workspace to the top of its output's workspace
-stack, with the *active* stack workspace at the bottom of that pinned
-group (i.e. closest to the user's normal workspaces below it):
+Pin lovable workspaces to the TOP of each output, but with `active`
+at the BOTTOM of the lovable group (closest to non-lovable workspaces
+below) and the toggle `partner` one slot above active:
 
-    [lovable-stack-inactive]   <- top of output
-    [lovable-stack-inactive]
-    [lovable-ACTIVE]
-    [normal-workspace]
-    [normal-workspace]
+    [other-inactive-worktrees]  <- idx 1..M-2 (current idx order)
+    [partner]                   <- idx M-1   (main, OR most-recent worktree if active==main)
+    [active]                    <- idx M     (the workspace the user is currently on)
+    [normal-workspaces]         <- below
 
-Idempotent: only issues `move-workspace-to-index` for workspaces that
-are not already at their target index. Cheap to invoke on every
-workspace-focus event.
+This keeps Super+O always a one-step focus-workspace-up, and makes
+the picker's "land on this worktree" feel like a single transition
+because the target ends right above the user's previous non-lovable
+position.
+
+Idempotent: only issues `move-workspace-to-index` when an index
+mismatch exists.
 """
 from __future__ import annotations
 import json
@@ -25,9 +28,11 @@ from collections import defaultdict
 from pathlib import Path
 
 ACTIVE_FILE = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws/active"
+RECENCY_FILE = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws/recency"
+MAIN_WS = "lovable-main"
 
 
-def niri_json(*args: str):
+def niri_json(*args):
     out = subprocess.run(
         ["niri", "msg", "--json", *args],
         capture_output=True, text=True, timeout=2,
@@ -35,11 +40,8 @@ def niri_json(*args: str):
     return json.loads(out) if out.strip() else None
 
 
-def niri_action(*args: str) -> int:
-    return subprocess.run(
-        ["niri", "msg", "action", *args],
-        capture_output=True, timeout=2,
-    ).returncode
+def niri_action(*args):
+    subprocess.run(["niri", "msg", "action", *args], capture_output=True, timeout=2)
 
 
 def read_active() -> str:
@@ -49,15 +51,66 @@ def read_active() -> str:
         return ""
 
 
-def is_lovable(name: str | None) -> bool:
+def read_recency() -> list[str]:
+    try:
+        return [n for n in json.loads(RECENCY_FILE.read_text()) if isinstance(n, str)]
+    except Exception:
+        return []
+
+
+def is_lovable(name) -> bool:
     return bool(name) and name.startswith("lovable")
+
+
+def pick_recent_worktree(lovables: list[dict], recency: list[str]) -> str:
+    """Most-recent non-main worktree that still exists on this output."""
+    names = {w.get("name") for w in lovables}
+    for n in recency:
+        if n != MAIN_WS and n.startswith("lovable-") and n in names:
+            return n
+    return ""
+
+
+def desired_order(lovables: list[dict], active: str, recency: list[str]) -> list[dict]:
+    """Layout:
+
+        [other inactive worktrees]   <- top, sorted by current idx
+        [partner]                    <- idx M-1
+        [active]                     <- idx M   (closest to non-lovables below)
+
+    partner = main when active != main, else the most-recent non-main
+    worktree. Super+O swaps active and partner (the active position
+    is always M; toggling main↔worktree means whichever is current
+    active moves to M, the other moves to M-1).
+    """
+    by_name = {w.get("name"): w for w in lovables}
+    active_ws = by_name.get(active)
+
+    if active == MAIN_WS:
+        partner_name = pick_recent_worktree(lovables, recency)
+    elif active and active in by_name:
+        partner_name = MAIN_WS if MAIN_WS in by_name else ""
+    else:
+        partner_name = ""
+    partner_ws = by_name.get(partner_name) if partner_name else None
+
+    bottom: list[dict] = []
+    if partner_ws is not None and (active_ws is None or partner_ws.get("id") != active_ws.get("id")):
+        bottom.append(partner_ws)
+    if active_ws is not None:
+        bottom.append(active_ws)
+
+    bottom_ids = {w.get("id") for w in bottom}
+    top = [w for w in sorted(lovables, key=lambda x: x["idx"])
+           if w.get("id") not in bottom_ids]
+    return top + bottom
 
 
 def main() -> int:
     workspaces = niri_json("workspaces") or []
     active = read_active()
+    recency = read_recency()
 
-    # Group by output.
     by_output: dict[str, list[dict]] = defaultdict(list)
     for w in workspaces:
         by_output[w.get("output") or ""].append(w)
@@ -66,23 +119,11 @@ def main() -> int:
         lovables = [w for w in ws_list if is_lovable(w.get("name"))]
         if not lovables:
             continue
-        lovables.sort(key=lambda w: w["idx"])
-
-        # Desired lovable order: inactives in current idx order, active last.
-        active_ws = next((w for w in lovables if w.get("name") == active), None)
-        desired = [w for w in lovables if w is not active_ws]
-        if active_ws is not None:
-            desired.append(active_ws)
-
-        # Walk in target_idx (1..N) order; only move when current idx
-        # differs. Re-read state after each move because move-to-index
-        # renumbers everyone at >= target_idx.
-        for target_idx, w in enumerate(desired, start=1):
+        order = desired_order(lovables, active, recency)
+        for target_idx, w in enumerate(order, start=1):
             current = niri_json("workspaces") or []
             cur_w = next((c for c in current if c.get("id") == w["id"]), None)
-            if cur_w is None:
-                continue
-            if cur_w["idx"] == target_idx:
+            if cur_w is None or cur_w["idx"] == target_idx:
                 continue
             niri_action(
                 "move-workspace-to-index",

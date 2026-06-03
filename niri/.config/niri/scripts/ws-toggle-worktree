@@ -3,12 +3,16 @@
 ws-toggle-worktree
 
 Two-state toggle between `lovable-main` and the most-recent
-non-main `lovable-<name>` worktree. Different worktrees are reached
-via the picker (Super+Ctrl+T); Super+O just bounces between work
-context and the orchestrator.
+non-main `lovable-<name>` worktree.
 
-The recency list is maintained by ws-tracker (writes most-recently
-focused stack to the front on every Workspace focused event).
+Invariant maintained by ws-reorder: main at idx 1 of its output,
+the toggle partner at idx 2. So the toggle is always exactly one
+focus-workspace step (up from worktree, down from main) — no
+move-workspace dance at toggle time.
+
+If the layout isn't yet in the canonical state (e.g. user just
+returned to a lovable workspace from a non-lovable one), fall back
+to ws-jump-adjacent to set it up before focusing.
 """
 from __future__ import annotations
 import json
@@ -21,9 +25,9 @@ RECENCY_FILE = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws/recency"
 MAIN_WS = "lovable-main"
 
 
-def niri_json(*args: str):
+def niri_json(*args):
     out = subprocess.run(
-        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=2
+        ["niri", "msg", "--json", *args], capture_output=True, text=True, timeout=2,
     )
     return json.loads(out.stdout) if out.stdout.strip() else None
 
@@ -31,16 +35,14 @@ def niri_json(*args: str):
 def main() -> int:
     workspaces = niri_json("workspaces") or []
     existing = {w.get("name") for w in workspaces if w.get("name")}
-    focused_name = next(
-        (w.get("name") for w in workspaces if w.get("is_focused")), None
-    )
+    focused = next((w for w in workspaces if w.get("is_focused")), None)
+    focused_name = focused.get("name") if focused else None
 
     if focused_name == MAIN_WS:
         try:
             recent = json.loads(RECENCY_FILE.read_text())
         except Exception:
             recent = []
-        # Skip MAIN_WS and any vanished workspaces; first survivor wins.
         target = next(
             (n for n in recent
              if isinstance(n, str)
@@ -56,10 +58,22 @@ def main() -> int:
             return 0
         target = MAIN_WS
 
-    subprocess.run(
-        ["niri", "msg", "action", "focus-workspace", target],
-        check=False, timeout=2,
-    )
+    # If target is directly adjacent (partner/active relationship per
+    # ws-reorder's invariant), step by one — same animation as Super+J/K.
+    target_ws = next((w for w in workspaces if w.get("name") == target), None)
+    if target_ws is not None and focused is not None \
+            and target_ws.get("output") == focused.get("output"):
+        diff = (target_ws.get("idx") or 0) - (focused.get("idx") or 0)
+        if diff == -1:
+            subprocess.run(["niri", "msg", "action", "focus-workspace-up"])
+            return 0
+        if diff == 1:
+            subprocess.run(["niri", "msg", "action", "focus-workspace-down"])
+            return 0
+
+    # Otherwise, set up the canonical layout and focus.
+    script = Path(os.environ["HOME"]) / ".config/niri/scripts/ws-jump-adjacent"
+    subprocess.run([str(script), target], check=False, timeout=2)
     return 0
 
 

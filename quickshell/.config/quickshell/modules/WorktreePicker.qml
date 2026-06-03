@@ -14,7 +14,7 @@ Picker {
     highlightField: "active"
     items: buildItems(NiriState.version, recencyFile.recency, NiriState.activeStack)
 
-    onEnter: item => Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", "lovable-" + item.name])
+    onEnter: item => Quickshell.execDetached([Quickshell.env("HOME") + "/.config/niri/scripts/ws-jump-adjacent", "lovable-" + item.name])
     onAltAction: item => Quickshell.execDetached([Quickshell.env("HOME") + "/.config/niri/scripts/ws-close-worktree", item.name])
 
     FileView {

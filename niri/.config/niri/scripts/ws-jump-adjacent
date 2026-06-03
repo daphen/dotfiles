@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""
+ws-jump-adjacent <target_workspace_name>
+
+Set up the canonical lovable layout assuming `target` is becoming the
+new active workspace, then focus it:
+
+    [other-inactive-worktrees]  <- idx 1..M-2 (current idx order)
+    [partner]                   <- idx M-1
+    [target = new active]       <- idx M
+
+Where partner = main when target is a worktree, OR most-recent
+non-main worktree when target IS main.
+
+This matches what ws-reorder produces, so the reorder fired by
+ws-tracker after the focus event is a no-op — no extra moves shake
+the workspace stack after the user lands on target.
+"""
+from __future__ import annotations
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+ACTIVE_FILE = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws/active"
+RECENCY_FILE = Path(os.environ["HOME"]) / ".local/state/wt-stacks/ws/recency"
+MAIN_WS = "lovable-main"
+
+
+def niri_json(*args):
+    out = subprocess.run(
+        ["niri", "msg", "--json", *args],
+        capture_output=True, text=True, timeout=2,
+    )
+    return json.loads(out.stdout) if out.stdout.strip() else None
+
+
+def niri_action(*args):
+    subprocess.run(["niri", "msg", "action", *args], capture_output=True, timeout=2)
+
+
+def read_recency():
+    try:
+        return [n for n in json.loads(RECENCY_FILE.read_text()) if isinstance(n, str)]
+    except Exception:
+        return []
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print("usage: ws-jump-adjacent <target_workspace_name>", file=sys.stderr)
+        return 2
+    target_name = sys.argv[1]
+
+    workspaces = niri_json("workspaces") or []
+    target = next((w for w in workspaces if w.get("name") == target_name), None)
+    if not target:
+        return 0
+    output = target.get("output")
+
+    lovables = [w for w in workspaces
+                if (w.get("name") or "").startswith("lovable")
+                and w.get("output") == output]
+    by_name = {w.get("name"): w for w in lovables}
+
+    # Canonical layout (matches ws-reorder so the reorder fired by
+    # ws-tracker after focus is a no-op):
+    #     [other-inactive-worktrees]   <- idx 1..M-2
+    #     [partner]                    <- idx M-1
+    #     [target = new active]        <- idx M  (closest to non-lovables)
+    #
+    # partner = main when target is a worktree, OR the most-recent
+    # non-main worktree when target IS main.
+    main_ws = by_name.get(MAIN_WS)
+    if target_name == MAIN_WS:
+        existing = set(by_name.keys())
+        partner_name = next(
+            (n for n in read_recency()
+             if n != MAIN_WS and n.startswith("lovable-") and n in existing),
+            None,
+        )
+        partner_ws = by_name.get(partner_name) if partner_name else None
+    else:
+        partner_ws = main_ws
+
+    used = set()
+    bottom: list[dict] = []
+    if partner_ws is not None and partner_ws.get("id") != target.get("id"):
+        bottom.append(partner_ws)
+        used.add(partner_ws.get("id"))
+    bottom.append(target)
+    used.add(target.get("id"))
+
+    top = [w for w in sorted(lovables, key=lambda x: x["idx"])
+           if w.get("id") not in used]
+
+    order = top + bottom
+
+    # Apply moves to put each workspace at its target index.
+    for target_idx, w in enumerate(order, start=1):
+        current = niri_json("workspaces") or []
+        cur_w = next((c for c in current if c.get("id") == w["id"]), None)
+        if cur_w is None or cur_w["idx"] == target_idx:
+            continue
+        niri_action(
+            "move-workspace-to-index",
+            "--reference", w.get("name"),
+            str(target_idx),
+        )
+
+    # Finally focus the target. After the layout pass, the target's idx
+    # is M (bottom of lovable group), so the focus animation is at most
+    # one step up from whatever non-lovable workspace the user was on.
+    niri_action("focus-workspace", target_name)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

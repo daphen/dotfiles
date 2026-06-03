@@ -42,11 +42,9 @@ Item {
                 Rectangle {
                     visible: cell.isBar
                     anchors.horizontalCenter: parent.horizontalCenter
-                    color: {
-                        if (cell.isFocused) return Theme.cursor
-                        if (cell.isWsActive) return Theme.fg
-                        return Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.55)
-                    }
+                    color: cell.isFocused ? Theme.cursor
+                         : cell.isWsActive ? Theme.fg
+                         : Theme.dimmedFg
                     width: {
                         if (cell.isFocused) return 3
                         if (cell.isWsActive) return 2

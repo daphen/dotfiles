@@ -15,16 +15,15 @@ Item {
         const _ = root._notifTick
         const model = Notifications.server ? Notifications.server.trackedNotifications : null
         const tracked = model ? model.values : []
-        const counts = { slack: 0, endcord: 0, kitty: 0 }
+        const counts = { slack: 0, endcord: 0 }
         for (let i = 0; i < tracked.length; i++) {
             const app = (tracked[i].appName || "").toLowerCase()
             if (app === "slack") counts.slack++
             else if (app === "endcord") counts.endcord++
-            else if (app === "kitty") counts.kitty++
         }
         return counts
     }
-    readonly property int total: inboxCounts.slack + inboxCounts.endcord + inboxCounts.kitty
+    readonly property int total: inboxCounts.slack + inboxCounts.endcord
 
     implicitWidth: visible ? row.implicitWidth + Theme.modulePadH * 2 : 0
     implicitHeight: parent ? parent.height : Theme.barHeight
@@ -44,8 +43,7 @@ Item {
         Repeater {
             model: [
                 { app: "slack",   icon: "󰒱", count: root.inboxCounts.slack },
-                { app: "endcord", icon: "󰙯", count: root.inboxCounts.endcord },
-                { app: "kitty",   icon: "󰆍", count: root.inboxCounts.kitty }
+                { app: "endcord", icon: "󰙯", count: root.inboxCounts.endcord }
             ]
             delegate: Row {
                 required property var modelData

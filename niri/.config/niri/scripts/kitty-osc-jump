@@ -2,25 +2,14 @@
 # Respond to a kitty OSC-notify notification (Claude Code et al).
 #
 # Kitty's terminal notification protocol attaches a default action to
-# every notification it sends. When invoked, the daemon focuses the
-# exact kitty terminal window that emitted the notification — so we
-# don't need to figure out which Claude session / project / window
-# fired it. The OS compositor just gets a focus request.
-#
-# Sequence:
-#   1. Find the topmost kitty-app-name notification
-#   2. makoctl invoke its default action → kitty focuses the window
-#   3. Dismiss the notification
+# every notification it sends. When invoked, kitty focuses the exact
+# terminal window that emitted the notification.
 set -e
 
-kitty_id=$(makoctl list -j 2>/dev/null \
+kitty_id=$(qs ipc call notifications list 2>/dev/null \
     | jq -r 'map(select(.app_name == "kitty")) | .[0].id // empty' 2>/dev/null)
 
 if [ -n "$kitty_id" ]; then
-    makoctl invoke -n "$kitty_id" 2>/dev/null || true
-    makoctl dismiss -n "$kitty_id" 2>/dev/null || true
-else
-    # Already expired — nothing to invoke. No useful fallback because
-    # we can't tell which kitty window was the originator.
-    :
+    qs ipc call notifications invoke "$kitty_id" >/dev/null 2>&1 || true
+    qs ipc call notifications dismiss "$kitty_id" >/dev/null 2>&1 || true
 fi

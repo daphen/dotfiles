@@ -27,4 +27,4 @@ wtype -k Escape || true
 wtype N || true
 
 # Clear the notification we were responding to.
-makoctl dismiss 2>/dev/null || true
+qs ipc call notifications dismissAll >/dev/null 2>&1 || true

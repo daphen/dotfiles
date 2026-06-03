@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Notifications
 
 Singleton {
@@ -18,17 +19,70 @@ Singleton {
         bodyHyperlinksSupported: true
         bodyImagesSupported: true
         imageSupported: true
-        actionsSupported: false
+        actionsSupported: true
 
         onNotification: notification => {
-            console.log("[qs-notif] received:", notification.appName, "/", notification.summary, "/ body:", notification.body)
             if (DndState.active && notification.urgency !== NotificationUrgency.Critical) {
-                console.log("[qs-notif] dismissed by DND")
                 notification.dismiss()
                 return
             }
             notification.tracked = true
-            console.log("[qs-notif] tracked. count:", notifServer.trackedNotifications.values.length)
+        }
+    }
+
+    function _findById(id) {
+        const num = parseInt(id)
+        const all = notifServer.trackedNotifications.values
+        for (let i = 0; i < all.length; i++) if (all[i].id === num) return all[i]
+        return null
+    }
+
+    IpcHandler {
+        target: "notifications"
+
+        function list(): string {
+            const all = notifServer.trackedNotifications.values
+            const out = []
+            for (let i = 0; i < all.length; i++) {
+                const n = all[i]
+                out.push({
+                    id: n.id,
+                    app_name: n.appName,
+                    summary: n.summary,
+                    body: n.body
+                })
+            }
+            return JSON.stringify(out)
+        }
+
+        function invoke(id: string): string {
+            const n = root._findById(id)
+            if (!n) return "no-such-notification"
+            const actions = n.actions || []
+            for (let i = 0; i < actions.length; i++) {
+                if (actions[i].identifier === "default" || actions[i].name === "default") {
+                    actions[i].invoke()
+                    return "invoked"
+                }
+            }
+            if (actions.length > 0) {
+                actions[0].invoke()
+                return "invoked-first"
+            }
+            return "no-actions"
+        }
+
+        function dismiss(id: string): string {
+            const n = root._findById(id)
+            if (!n) return "no-such-notification"
+            n.dismiss()
+            return "dismissed"
+        }
+
+        function dismissAll(): string {
+            const all = notifServer.trackedNotifications.values.slice()
+            for (let i = 0; i < all.length; i++) all[i].dismiss()
+            return "dismissed " + all.length
         }
     }
 }

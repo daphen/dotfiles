@@ -74,6 +74,7 @@ PanelWindow {
             }
             spacing: 8
 
+            Inbox {}
             Dnd {}
             Network {}
             Audio {}

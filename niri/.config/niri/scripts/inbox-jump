@@ -1,25 +1,16 @@
 #!/usr/bin/env bash
-# Single-keybind notification responder. Looks at the topmost mako
-# notification (or, if none is visible, the most-recent history entry)
-# to decide which chat app to focus + jump to unread.
+# Single-keybind notification responder. Looks at the topmost tracked
+# Quickshell notification to decide which chat app to focus + jump to
+# unread.
 #
-# Each mako notification carries an `app_name` set by notify-send's
-# --app-name; we dispatch on that.
+# Each notification carries an `app_name`; we dispatch on that.
 set -e
 
 DIR=$(dirname "$0")
 
 pick_app() {
-    # Visible notifications first (top of stack is what the user is
-    # currently looking at).
-    app=$(makoctl list -j 2>/dev/null | jq -r '.[0].app_name // empty' 2>/dev/null)
-    if [ -z "$app" ]; then
-        # Fall through to the most recent history entry — handles the
-        # case where the notification already expired before the user
-        # got to press the keybind.
-        app=$(makoctl history -j 2>/dev/null | jq -r '.[0].app_name // empty' 2>/dev/null)
-    fi
-    printf '%s' "$app"
+    qs ipc call notifications list 2>/dev/null \
+        | jq -r '.[0].app_name // empty' 2>/dev/null
 }
 
 app=$(pick_app)
@@ -33,16 +24,12 @@ case "$app" in
         ;;
     kitty)
         # Any TUI app using kitty's OSC notify protocol — most often
-        # Claude Code ("Claude is waiting for your input"), but kitty
-        # registers the default action regardless. Invoking it tells
-        # kitty to focus the originating terminal window, so we don't
-        # need to know which Claude/session it was.
+        # Claude Code. Invoking the notification's default action tells
+        # kitty to focus the originating terminal window.
         exec "$DIR/kitty-osc-jump"
         ;;
     *)
-        # No matching notification — default to endcord (the more
-        # frequent notifier in this setup). Override here if that
-        # changes.
+        # No matching tracked notification — default to endcord.
         exec "$DIR/endcord-jump-inbox"
         ;;
 esac

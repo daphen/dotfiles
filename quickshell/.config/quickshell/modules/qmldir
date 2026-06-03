@@ -12,6 +12,7 @@ Memory 1.0 Memory.qml
 Network 1.0 Network.qml
 Worktree 1.0 Worktree.qml
 Dnd 1.0 Dnd.qml
+Inbox 1.0 Inbox.qml
 singleton Notifications 1.0 Notifications.qml
 singleton DndState 1.0 DndState.qml
 Toast 1.0 Toast.qml

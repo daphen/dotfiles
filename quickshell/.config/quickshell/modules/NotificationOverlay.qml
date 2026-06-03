@@ -11,7 +11,7 @@ PanelWindow {
         right: true
     }
 
-    margins.top: Theme.barHeight
+    margins.top: Theme.barHeight / 2
     margins.right: 16
 
     visible: Notifications.tracked.values.length > 0

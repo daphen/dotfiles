@@ -10,9 +10,14 @@ Rectangle {
 
     property bool shown: false
     property bool dismissing: false
+    property bool collapsed: false
 
-    opacity: (shown && !dismissing) ? 1 : 0
+    opacity: (shown && !dismissing && !collapsed) ? 1 : 0
     Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+
+    height: collapsed ? 0 : implicitHeight
+    Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+    clip: true
 
     Component.onCompleted: shown = true
 
@@ -29,6 +34,10 @@ Rectangle {
     }
 
     readonly property bool isCritical: notification && notification.urgency === NotificationUrgency.Critical
+    readonly property bool isInboxApp: {
+        const a = (notification && notification.appName || "").toLowerCase()
+        return a === "slack" || a === "endcord" || a === "kitty"
+    }
     readonly property real effectiveTimeout: {
         if (!notification) return 5000
         if (isCritical) return 0
@@ -103,8 +112,11 @@ Rectangle {
     }
 
     Timer {
-        running: effectiveTimeout > 0 && !root.dismissing
+        running: effectiveTimeout > 0 && !root.dismissing && !root.collapsed
         interval: effectiveTimeout
-        onTriggered: root.beginDismiss()
+        onTriggered: {
+            if (root.isInboxApp) root.collapsed = true
+            else root.beginDismiss()
+        }
     }
 }

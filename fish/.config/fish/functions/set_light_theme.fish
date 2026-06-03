@@ -84,23 +84,6 @@ function set_light_theme --description "Set light theme"
       systemctl --user restart xdg-desktop-portal.service 2>/dev/null &
   end
 
-  # Update Mako notification daemon
-  set -l mako_theme ~/.config/themes/generated/mako/light.theme
-  if test -f $mako_theme
-      cp $mako_theme ~/.config/mako/config
-      if pgrep -x mako >/dev/null 2>&1
-          makoctl reload 2>/dev/null &
-      end
-  end
-
-  # Update Waybar
-  set -l waybar_theme ~/.config/themes/generated/waybar/light.theme
-  if test -f $waybar_theme
-      cp $waybar_theme ~/.config/waybar/style.css
-      if pgrep -x waybar >/dev/null 2>&1
-          killall -SIGUSR2 waybar 2>/dev/null &
-      end
-  end
 
   # Update spotify-player (restart to apply theme)
   set -l spotify_theme ~/.config/themes/generated/spotify-player/light.theme

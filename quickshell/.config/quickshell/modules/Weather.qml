@@ -15,7 +15,7 @@ Item {
     Process {
         id: proc
         running: true
-        command: ["bash", Quickshell.env("HOME") + "/.config/waybar/scripts/weather.sh"]
+        command: ["bash", Quickshell.env("HOME") + "/.config/quickshell/scripts/weather.sh"]
         stdout: StdioCollector {
             onStreamFinished: root.output = this.text.trim()
         }

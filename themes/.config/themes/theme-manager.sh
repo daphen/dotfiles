@@ -178,66 +178,6 @@ apply_tool_theme() {
                 log_success "Applied Neovim ${theme_mode} theme ($label)"
             fi
             ;;
-        "mako")
-            local target_dir is_managed
-            if get_tool_target "$tool"; then
-                mkdir -p "$target_dir"
-                rm -f "$target_dir/config"
-                cp "$generated_file" "$target_dir/config"
-                if pgrep mako > /dev/null; then
-                    makoctl reload
-                    log_success "Applied and reloaded Mako theme"
-                else
-                    log_success "Applied Mako theme (not running)"
-                fi
-            fi
-            ;;
-        "waybar")
-            local target_dir is_managed
-            if get_tool_target "$tool"; then
-                mkdir -p "$target_dir"
-                cp "$generated_file" "$target_dir/style.css"
-                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
-                if pgrep waybar > /dev/null; then
-                    pkill -USR2 -x .waybar-wrapped 2>/dev/null || pkill -USR2 -x waybar
-                    log_success "Applied and reloaded Waybar theme ($label)"
-                else
-                    log_success "Applied Waybar theme ($label, not running)"
-                fi
-            fi
-            ;;
-        "waybar-notch")
-            # The notch theme lives at ~/.config/waybar/themes/notch/.
-            # We resolve `waybar`'s target_dir then drop the alt theme
-            # alongside; this way home-manager's symlink chain doesn't
-            # need to know about the notch as a distinct app.
-            local target_dir is_managed
-            if get_tool_target "waybar"; then
-                mkdir -p "$target_dir/themes/notch"
-                cp "$generated_file" "$target_dir/themes/notch/style.css"
-                local label=$([[ "$is_managed" == true ]] && echo "managed" || echo "local")
-                # SIGUSR2 reloads the running waybar's CSS in place — fires
-                # whether the notch theme is the active one or not (harmless
-                # for the default theme, which has its own style.css).
-                if pgrep waybar > /dev/null; then
-                    pkill -USR2 -x .waybar-wrapped 2>/dev/null || pkill -USR2 -x waybar
-                fi
-                # SIGUSR1 nudges niri-minimap.sh to re-read theme_mode and
-                # re-render. Without this, the minimap keeps emitting bars
-                # in the OLD mode's foreground colour until the next niri
-                # event fires — visible as light bars on a light notch
-                # after a dark→light switch. Filter to python processes so
-                # we don't accidentally kill a shell that happens to have
-                # "niri-minimap.sh" in its cmdline (e.g. this script).
-                for _wt_mm_pid in $(pgrep -f 'niri-minimap\.sh' 2>/dev/null); do
-                    case "$(readlink /proc/$_wt_mm_pid/exe 2>/dev/null)" in
-                        */python*) kill -USR1 "$_wt_mm_pid" 2>/dev/null ;;
-                    esac
-                done
-                unset _wt_mm_pid
-                log_success "Applied Waybar notch theme ($label)"
-            fi
-            ;;
         "fish")
             if command -v fish &> /dev/null; then
                 # Persist the generated fish colors to a conf.d file so every

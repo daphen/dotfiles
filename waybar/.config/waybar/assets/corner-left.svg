@@ -1,5 +1,0 @@
-<svg width="32" height="18" xmlns="http://www.w3.org/2000/svg">
-  <!-- 16px wide for frame, 16px for curve, 2px top overshoot for border -->
-  <path d="M 0,0 L 0,18 L 16,18 A 16,16 0 0 1 32,2 L 32,0 Z" fill="#181818"/>
-  <path d="M 16,18 A 16,16 0 0 1 32,2" fill="none" stroke="#2a2a2a" stroke-width="1"/>
-</svg>

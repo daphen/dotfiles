@@ -1,5 +1,0 @@
-<svg width="32" height="32" xmlns="http://www.w3.org/2000/svg">
-  <!-- Full rectangle covering frame width and bottom frame height, with curved cutout -->
-  <path d="M 0,32 L 0,0 L 16,0 A 16,16 0 0 0 32,16 L 32,32 Z" fill="#181818"/>
-  <path d="M 16,0 A 16,16 0 0 0 32,16" fill="none" stroke="#2a2a2a" stroke-width="1"/>
-</svg>

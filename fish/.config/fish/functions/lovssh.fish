@@ -180,7 +180,7 @@ function lovssh --description "SSH into the existing lovbox for a Lovable projec
                 set timeout_opt -o ConnectTimeout=5
             end
             echo "→ Connecting to $target"
-            ssh -A -p 2222 -t \
+            ssh -A -p 2222 -tt \
                 -o StrictHostKeyChecking=no \
                 -o UserKnownHostsFile=/dev/null \
                 $timeout_opt \

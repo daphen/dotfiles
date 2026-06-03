@@ -6,6 +6,27 @@
 add_newline = true
 palette = "custom"
 
+# Format MUST stay above the first [section] header — otherwise TOML
+# absorbs it into that section's table and starship silently ignores it.
+# Single dark bar, rounded left, rounded right:
+#   (dir · git · langs              ·   duration  time)
+#                                                    ❯
+format = """
+[](fg:prompt)\
+[  ](bg:prompt fg:fg_muted)\
+${env_var.SANDBOX_LABEL}\
+$git_branch\
+$git_status\
+$nodejs\
+$golang\
+$rust\
+$fill\
+$cmd_duration\
+[](fg:prompt)\
+$line_break\
+$directory\
+$character"""
+
 [palettes.custom]
 bg         = "#181818"
 bg_alt     = "#1B1B1B"
@@ -22,32 +43,14 @@ blue       = "#CCD5E4"
 # purple and pink are #8A92A7 (muted gray-blue) — deliberately not used
 # for backgrounds since they don't read as distinct from cyan/blue.
 
-# Single dark bar, rounded left, rounded right:
-#   (dir · git · langs              ·   duration  time)
-#                                                    ❯
-format = """
-[](fg:prompt)\
-${env_var.SANDBOX_LABEL}\
-$directory\
-$git_branch\
-$git_status\
-$nodejs\
-$golang\
-$rust\
-$fill\
-$cmd_duration\
-$time\
-[](fg:prompt)\
-$line_break\
-$character"""
 
 [fill]
 symbol = " "
 style = "bg:prompt"
 
 [directory]
-style = "bg:prompt fg:fg bold"
-format = "[ $path ]($style)"
+style = "fg:fg_muted"
+format = "[$path]($style) "
 truncation_length = 3
 truncation_symbol = "…/"
 read_only = " "

@@ -5,80 +5,28 @@ import "modules"
 ShellRoot {
     id: root
 
-    Component {
-        id: barFactory
-        Bar {}
+    // Per-screen surfaces — Variants reconciles when monitors come and
+    // go, so undocking doesn't leave an orphan layer-shell window from
+    // the disconnected screen (which niri then framed as a regular
+    // toplevel with an empty transparent body).
+    Variants {
+        model: Quickshell.screens
+        Bar { required property var modelData; screen: modelData }
     }
 
-    Component {
-        id: overlayFactory
-        NotificationOverlay {}
+    Variants {
+        model: Quickshell.screens
+        NotificationOverlay { required property var modelData; screen: modelData }
     }
 
-    Component {
-        id: launcherFactory
-        Launcher {}
-    }
-
-    Component {
-        id: worktreePickerFactory
-        WorktreePicker {}
-    }
-
-    Component {
-        id: worktreeCreatePickerFactory
-        WorktreeCreatePicker {}
-    }
-
-    Component {
-        id: lovboxPickerFactory
-        LovboxPicker {}
-    }
-
-    Component {
-        id: bluetoothPickerFactory
-        BluetoothPicker {}
-    }
-
-    Component {
-        id: networkPickerFactory
-        NetworkPicker {}
-    }
-
-    Component {
-        id: asusProfilePickerFactory
-        AsusProfilePicker {}
-    }
-
-    Component {
-        id: emojiPickerFactory
-        EmojiPicker {}
-    }
-
-    Component {
-        id: claudeRenamePickerFactory
-        ClaudeRenamePicker {}
-    }
-
-    Component {
-        id: colorFormatPickerFactory
-        ColorFormatPicker {}
-    }
-
-    Component.onCompleted: {
-        for (const screen of Quickshell.screens) {
-            barFactory.createObject(root, { screen: screen })
-            overlayFactory.createObject(root, { screen: screen })
-        }
-        launcherFactory.createObject(root)
-        worktreePickerFactory.createObject(root)
-        worktreeCreatePickerFactory.createObject(root)
-        lovboxPickerFactory.createObject(root)
-        bluetoothPickerFactory.createObject(root)
-        networkPickerFactory.createObject(root)
-        asusProfilePickerFactory.createObject(root)
-        emojiPickerFactory.createObject(root)
-        claudeRenamePickerFactory.createObject(root)
-        colorFormatPickerFactory.createObject(root)
-    }
+    Launcher {}
+    WorktreePicker {}
+    WorktreeCreatePicker {}
+    LovboxPicker {}
+    BluetoothPicker {}
+    NetworkPicker {}
+    AsusProfilePicker {}
+    EmojiPicker {}
+    ClaudeRenamePicker {}
+    ColorFormatPicker {}
 }

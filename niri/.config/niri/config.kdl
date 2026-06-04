@@ -3,6 +3,17 @@
 // Check the wiki for a full description of the configuration:
 // https://yalter.github.io/niri/Configuration:-Introduction
 
+// Env applied to commands niri spawns (Super+E yazi, claude, etc).
+// Pinning FZF_DEFAULT_OPTS_FILE here means fzf reads the current
+// theme's options from disk on every invocation, so light/dark
+// toggles reach already-running yazi without a relogin. Also clear
+// any inherited FZF_DEFAULT_OPTS — when set it would override the
+// file path.
+environment {
+    FZF_DEFAULT_OPTS_FILE "/home/daphen/.config/fzf/opts.conf"
+    FZF_DEFAULT_OPTS null
+}
+
 cursor {
     xcursor-theme "Adwaita"
     xcursor-size 24

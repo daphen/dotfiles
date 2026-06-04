@@ -26,20 +26,34 @@ fi
 mode="${1:-region}"
 out="$OUT_DIR/$(date +%F-%H%M%S).mp4"
 
+# Match the focused output's actual refresh rate. wf-recorder defaults
+# to 60fps, which duplicates frames on a 120Hz laptop screen.
+read -r out_name fps <<<"$(niri msg --json focused-output 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+name = d.get("name", "")
+modes = d.get("modes", [])
+cur = d.get("current_mode")
+hz = 60
+if isinstance(cur, int) and 0 <= cur < len(modes):
+    hz = round(modes[cur].get("refresh_rate", 60000) / 1000)
+print(name, hz)
+' 2>/dev/null)"
+fps="${fps:-60}"
+
 case "$mode" in
     region)
         geom=$(slurp) || exit 1
-        notify-send -a "screen-recorder" "Recording region" "Same shortcut to stop."
-        exec wf-recorder -g "$geom" -f "$out"
+        notify-send -a "screen-recorder" "Recording region (${fps}fps)" "Same shortcut to stop."
+        exec wf-recorder -g "$geom" -r "$fps" -f "$out"
         ;;
     screen)
-        out_name=$(niri msg --json focused-output 2>/dev/null \
-            | python3 -c 'import sys,json;print(json.load(sys.stdin).get("name",""))' 2>/dev/null)
-        notify-send -a "screen-recorder" "Recording screen${out_name:+ ($out_name)}" "Same shortcut to stop."
+        notify-send -a "screen-recorder" "Recording screen${out_name:+ ($out_name)} (${fps}fps)" "Same shortcut to stop."
         if [ -n "$out_name" ]; then
-            exec wf-recorder -o "$out_name" -f "$out"
+            exec wf-recorder -o "$out_name" -r "$fps" -f "$out"
         else
-            exec wf-recorder -f "$out"
+            exec wf-recorder -r "$fps" -f "$out"
         fi
         ;;
     *)

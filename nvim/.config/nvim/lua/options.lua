@@ -36,8 +36,7 @@ opt.smartcase = true
 vim.opt.undofile = true
 
 -- Cursor settings
--- Set cursor to blink in all modes while preserving terminal colors
-opt.guicursor = "n-c-sm:block-blinkon400-blinkoff250," .. "i-ci:ver25," .. "v-ve:hor20," .. "r-cr-o:hor20"
+opt.guicursor = "n-c-sm:block," .. "i-ci:ver25," .. "v-ve:hor20," .. "r-cr-o:hor20"
 
 -- Highlight when yanking (copying) text and sync to primary selection
 vim.api.nvim_create_autocmd("TextYankPost", {

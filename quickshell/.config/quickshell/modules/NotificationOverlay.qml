@@ -14,7 +14,13 @@ PanelWindow {
     margins.top: Theme.barHeight / 2
     margins.right: 16
 
-    visible: Notifications.tracked.values.length > 0
+    // Only render on the focused output — duplicate toasts across monitors
+    // are distracting when working on one screen.
+    readonly property bool onFocusedScreen: {
+        const _ = NiriState.version
+        return screen && screen.name === NiriState.focusedOutput()
+    }
+    visible: onFocusedScreen && Notifications.tracked.values.length > 0
 
     implicitWidth: 380
     implicitHeight: Math.max(toastColumn.implicitHeight + 16, 1)

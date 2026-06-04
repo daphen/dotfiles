@@ -173,6 +173,14 @@ Singleton {
         return ""
     }
 
+    function focusedOutput() {
+        const _ = version
+        for (const id in workspaces) {
+            if (workspaces[id].is_focused) return workspaces[id].output || ""
+        }
+        return ""
+    }
+
     function visibleWorkspaces(output) {
         const _ = version
         const result = []

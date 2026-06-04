@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Toggle a screen recording. Usage:
+#   record-toggle           — region (slurp), if no recording is active; else stop
+#   record-toggle screen    — active monitor; else stop
+#
+# Saves to ~/Videos/Recordings/. Sends a notification + copies the path
+# to the clipboard when stopped.
+set -u
+
+OUT_DIR="$HOME/Videos/Recordings"
+mkdir -p "$OUT_DIR"
+
+if pgrep -x wf-recorder >/dev/null; then
+    pkill -INT -x wf-recorder
+    sleep 0.3
+    latest=$(ls -t "$OUT_DIR"/*.mp4 2>/dev/null | head -1)
+    if [ -n "$latest" ]; then
+        printf '%s' "$latest" | wl-copy
+        notify-send -a "screen-recorder" "Recording stopped" "$latest (path copied)"
+    else
+        notify-send -a "screen-recorder" "Recording stopped"
+    fi
+    exit 0
+fi
+
+mode="${1:-region}"
+out="$OUT_DIR/$(date +%F-%H%M%S).mp4"
+
+case "$mode" in
+    region)
+        geom=$(slurp) || exit 1
+        notify-send -a "screen-recorder" "Recording region" "Same shortcut to stop."
+        exec wf-recorder -g "$geom" -f "$out"
+        ;;
+    screen)
+        out_name=$(niri msg --json focused-output 2>/dev/null \
+            | python3 -c 'import sys,json;print(json.load(sys.stdin).get("name",""))' 2>/dev/null)
+        notify-send -a "screen-recorder" "Recording screen${out_name:+ ($out_name)}" "Same shortcut to stop."
+        if [ -n "$out_name" ]; then
+            exec wf-recorder -o "$out_name" -f "$out"
+        else
+            exec wf-recorder -f "$out"
+        fi
+        ;;
+    *)
+        echo "usage: record-toggle [region|screen]" >&2
+        exit 2
+        ;;
+esac

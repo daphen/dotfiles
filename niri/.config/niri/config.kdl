@@ -241,7 +241,7 @@ layout {
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#3A3A3A"
+        inactive-color "#999999"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -268,7 +268,7 @@ layout {
         active-color "#FF570D"
         // Matches waybar-notch light theme hairline
         // (foreground.primary @ 50% alpha).
-        inactive-color "#3A3A3A"
+        inactive-color "#999999"
 
         // Color of the border around windows that request your attention.
         urgent-color "#9b0000"
@@ -818,6 +818,10 @@ binds {
     Super+Print { screenshot-screen; }       // Screenshot entire screen
     Super+Ctrl+e { screenshot-screen; }      // Screenshot active monitor
     Super+Ctrl+Shift+e { spawn "/home/daphen/.config/niri/scripts/screenshot-to-clipboard"; }  // Screenshot selection to clipboard
+
+    // Screen recording (wf-recorder + slurp). Same keybind toggles start/stop.
+    Super+Shift+r { spawn "/home/daphen/.config/niri/scripts/record-toggle" "region"; }   // Record region
+    Super+Ctrl+Shift+r { spawn "/home/daphen/.config/niri/scripts/record-toggle" "screen"; }  // Record current monitor
 
     // Color picker
     Super+Ctrl+c { spawn "/home/daphen/.config/niri/scripts/pick-color"; }  // Pick color from screen

@@ -26,6 +26,22 @@ print('yes' if any(str(w['id']) == '$stored_id' and w.get('app_id') in ('$BROWSE
     fi
 fi
 
+# Stored id is stale (e.g. after a Helium restart issued new window ids).
+# Before spawning anything, look for any live personal-class window and
+# adopt it.
+existing_id=$(niri msg --json windows | python3 -c "
+import json, sys
+for w in json.load(sys.stdin):
+    if w.get('app_id') == '$BROWSER_CLASS_PERSONAL':
+        print(w['id'])
+        break
+" 2>/dev/null)
+if [[ -n "$existing_id" ]]; then
+    echo "$existing_id" > "$PERSONAL_ID_FILE"
+    niri msg action focus-window --id "$existing_id"
+    exit 0
+fi
+
 # Snapshot existing browser IDs before launch (exclude known work window)
 work_id=$(cat "$WORK_ID_FILE" 2>/dev/null || echo "")
 before=$(niri msg --json windows | python3 -c "

@@ -1,7 +1,5 @@
-# FZF color scheme
-# Generated from centralized theme system
-
-set -gx FZF_DEFAULT_OPTS "
+# FZF options — read fresh on every fzf invocation via FZF_DEFAULT_OPTS_FILE.
+# Plain options format: one --flag per line, no shell wrapper.
 --color=bg+:{{background.tertiary}}
 --color=bg:{{background.primary}}
 --color=spinner:{{accent.cyan}}
@@ -14,4 +12,3 @@ set -gx FZF_DEFAULT_OPTS "
 --color=fg+:{{foreground.primary}}
 --color=prompt:{{accent.cyan}}
 --color=hl+:{{accent.red}}
-"

@@ -17,7 +17,4 @@ function sync_theme --description "Sync themes with current theme setting"
             set -g THEME_MODE "light"
         end
     end
-    
-    # Update FZF colors
-    set_fzf_colors
 end

@@ -32,9 +32,6 @@ function set_light_theme --description "Set light theme"
       set -g fish_pager_color_selected_background --background=f4eeee
   end
 
-  # Update FZF colors
-  set_fzf_colors
-
   # Update Tide prompt colors
   set -l tide_theme_file ~/.config/themes/generated/tide/light.theme
   if test -f $tide_theme_file

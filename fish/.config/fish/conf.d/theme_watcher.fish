@@ -21,12 +21,6 @@ function __theme_watcher_check --on-event fish_prompt
             if test -f $fish_theme
                 source $fish_theme
             end
-
-            # Source the fzf theme
-            set -l fzf_theme "$themes_dir/fzf/$current_mode.theme"
-            if test -f $fzf_theme
-                source $fzf_theme
-            end
         end
     end
 end

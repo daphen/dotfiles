@@ -18,7 +18,6 @@ Picker {
         const safeName = name.replace(/'/g, "'\\''")
         const inner =
             "set -e; " +
-            "[ -f \"$HOME/.config/themes/load-fzf-bash.sh\" ] && source \"$HOME/.config/themes/load-fzf-bash.sh\"; " +
             "mode=$(printf 'new\\nresume\\nfork\\n' | fzf --prompt='claude session> ' --height=8 --reverse --no-sort); " +
             "[ -z \"${mode:-}\" ] && mode=new; " +
             "args=( '" + safeName + "' --mode \"$mode\" ); " +

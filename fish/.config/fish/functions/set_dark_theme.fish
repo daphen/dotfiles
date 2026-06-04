@@ -31,9 +31,6 @@ function set_dark_theme --description "Set dark theme"
         set -g fish_pager_color_selected_background --background=121E42
     end
 
-    # Update FZF colors
-    set_fzf_colors
-
     # Update Tide prompt colors
     set -l tide_theme_file ~/.config/themes/generated/tide/dark.theme
     if test -f $tide_theme_file

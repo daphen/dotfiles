@@ -206,7 +206,13 @@ apply_tool_theme() {
             ;;
         "fzf")
             if command -v fzf &> /dev/null; then
-                log_success "FZF theme generated (will be applied by Fish shells)"
+                # Point FZF_DEFAULT_OPTS_FILE (set globally by home-manager) at
+                # this mode's options. fzf re-reads on every invocation, so
+                # already-running yazi/nvim/etc. see the toggle without
+                # relaunching.
+                mkdir -p "$HOME/.config/fzf"
+                ln -sfn "$generated_file" "$HOME/.config/fzf/opts.conf"
+                log_success "Applied FZF theme (symlinked to $HOME/.config/fzf/opts.conf)"
             fi
             ;;
         "tide")

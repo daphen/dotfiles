@@ -49,7 +49,6 @@ else
         set_light_theme
     end
 end
-set_fzf_colors
 
 # Disabled automatic theme signal handler to prevent crashes
 # Use manual theme switching instead: toggle_theme, set_dark_theme, set_light_theme

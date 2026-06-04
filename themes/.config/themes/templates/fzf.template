@@ -1,5 +1,3 @@
-# FZF options — read fresh on every fzf invocation via FZF_DEFAULT_OPTS_FILE.
-# Plain options format: one --flag per line, no shell wrapper.
 --color=bg+:{{background.tertiary}}
 --color=bg:{{background.primary}}
 --color=spinner:{{accent.cyan}}

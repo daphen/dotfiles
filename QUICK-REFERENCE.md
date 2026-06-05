@@ -1,57 +1,46 @@
 # Quick Reference: Dotfiles Management
 
-## Check What's Managed
+## Check what's managed
 
 ```bash
-ls -la ~/.config/ | grep "^l"  # Shows all symlinks (managed apps)
-ls -la ~/.config/ | grep "^d"  # Shows all directories (local apps)
+ls -la ~/.config/ | grep '^l'   # symlinks = managed
+ls -la ~/.config/ | grep '^d'   # plain dirs = local
 ```
 
-## Promote New App to Managed
+## Promote a new app
 
 ```bash
-# 1. Install and configure the app first
-# 2. Run the helper script
-~/dotfiles/promote-app-to-managed.sh <app-name>
-
-# 3. Add to home-manager config
-# 4. Rebuild
-sudo nixos-rebuild switch
+~/dotfiles/promote-app-to-managed.sh <app>
+# then add the symlink target in ~/nixos/common/home/symlinks.nix
+sudo nixos-rebuild switch --flake ~/nixos
 ```
 
-## Theme Management
+## Theme management
 
 ```bash
 cd ~/dotfiles/themes/.config/themes
 
-# Generate and apply dark theme
-./theme-manager.sh switch dark
-
-# Generate and apply light theme
-./theme-manager.sh switch light
-
-# Toggle between modes
-./theme-manager.sh toggle
-
-# Check status
-./theme-manager.sh status
+./theme-manager.sh apply dark    # apply dark mode now
+./theme-manager.sh apply light   # apply light mode now
+./theme-manager.sh toggle        # flip current mode
+./theme-manager.sh generate dark # regenerate (no apply) — after editing colors.json / templates
+./theme-manager.sh status        # report what's managed
 ```
 
-## Git Workflow for Managed Apps
+## Git workflow
+
+Configs under `~/.config/` that are symlinks point at this repo. Edit
+either side; the change is immediately live.
 
 ```bash
-# Edit any config in ~/.config (changes go to ~/dotfiles automatically)
-vim ~/.config/kitty/kitty.conf
-
-# Commit from dotfiles
-cd ~/dotfiles
-git add .
-git commit -m "Update kitty config"
-git push
+nvim ~/.config/kitty/kitty.conf
+cd ~/dotfiles && git add kitty && git commit -m "kitty: ..." && git push
 ```
 
-## See Full Guide
+## More
 
-```bash
-cat ~/dotfiles/MANAGING-APPS.md
-```
+- `README.md` — directory layout overview
+- `SYSTEM.md` — full architecture map (daemons, QS, theme system, niri)
+- `MANAGING-APPS.md` — local-vs-managed decision flow
+- `KEYBOARD_LAYOUT.md` — kanata + XKB Swedish-on-ANSI scheme
+- `ai/instructions.md` — what an agent landing fresh should know

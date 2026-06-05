@@ -1,159 +1,65 @@
 # Managing Apps: Local vs Managed
 
-## Quick Reference
+Quick model:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  Is ~/.config/app a SYMLINK?                                │
-│                                                             │
-│  YES → Managed (deployed by home-manager)                  │
-│  NO  → Local (machine-specific, not version controlled)    │
-└─────────────────────────────────────────────────────────────┘
+Is ~/.config/<app> a symlink?
+  YES → managed (deployed via home-manager / nixos-config symlinks.nix)
+  NO  → local (machine-specific, possibly not even in this repo)
 ```
 
-## The Complete Flow
+This machine is NixOS — everything installs via `nixos-rebuild`, and most
+configs get symlinked from `~/dotfiles/<app>/.config/<app>/` into
+`~/.config/<app>/` by home-manager.
 
-### 🆕 Scenario 1: You Found a New Tool
+## When a new app shows up
 
-```
-1. Install the tool
-   └─> pacman -S newtool / nix-env -iA newtool
+1. **Install via nix**. Either system-wide in `~/nixos/common/default.nix`
+   (`environment.systemPackages`) or per-user in
+   `~/nixos/common/home/programs.nix`. Rebuild.
+2. **Configure normally** — let it write to `~/.config/<app>/…`.
+3. **Decide**: keep local or promote.
 
-2. Configure it normally
-   └─> Creates ~/.config/newtool/config
-   └─> Edit and tweak until you like it
+   - **Keep local**: do nothing. Config stays only on this machine,
+     not in git.
+   - **Promote to managed**: move the config into
+     `~/dotfiles/<app>/.config/<app>/`, add a symlink target in
+     `~/nixos/common/home/symlinks.nix`, rebuild.
 
-3. DECISION POINT: Keep local or make managed?
+The helper script `~/dotfiles/promote-app-to-managed.sh <app>` does the
+move + sets you up to wire the symlink.
 
-   Option A: Keep Local (Machine-Specific)
-   ├─> Do nothing!
-   ├─> Config stays in ~/.config/newtool/
-   ├─> Not version controlled
-   └─> Won't sync to other machines
-   
-   Option B: Make Managed (Version Controlled)
-   ├─> Run: bash /tmp/promote-app-to-managed.sh newtool
-   ├─> Add home-manager configuration
-   ├─> Rebuild: sudo nixos-rebuild switch
-   ├─> Now ~/.config/newtool/ is symlinked
-   └─> Automatically backed up in git!
-```
+## Adding theme support
 
-### 🎨 Scenario 2: Adding Theme Support
+Optional but cheap if the app reads color values from a config file.
 
-```
-After making an app managed, optionally add theme support:
+1. Drop a template at `~/dotfiles/themes/.config/themes/templates/<app>.template`
+   using placeholders like `{{background.primary}}`, `{{accent.cyan}}`.
+2. Hook it into `theme-manager.sh apply` — there's a `case "$tool" in …`
+   block; add a branch that copies/symlinks the generated file to wherever
+   `<app>` reads it from.
+3. Regenerate: `theme-manager.sh generate dark` (and `light`).
 
-1. Create theme template
-   └─> ~/dotfiles/themes/.config/themes/templates/newtool.template
+For tools that need a runtime poke after the file changes (kitty's
+`load-config`, fish reload, etc.) the apply branch can shell out to do it.
 
-2. Template uses placeholders like:
-   └─> background={{background.primary}}
-   └─> foreground={{foreground.primary}}
+## Currently managed (representative)
 
-3. Theme generator creates:
-   └─> generated/newtool/dark.theme
-   └─> generated/newtool/light.theme
+- `kitty`, `nvim`, `fish`, `niri`, `quickshell`, `starship`, `git`,
+  `kanata`, `yazi`, `qutebrowser`, `spotify-player`, `claude`, `themes`,
+  `systemd`.
 
-4. Theme manager applies to:
-   └─> ~/dotfiles/newtool/.config/newtool/theme.conf
-   └─> (Instantly visible in ~/.config via symlink)
-```
+## Local (not in this repo)
 
-### 🔄 Scenario 3: Editing Managed App Config
+Stuff that's machine-specific, contains secrets, or syncs via account:
+- 1Password, Chrome / Helium user data, Slack, Discord-sync stuff.
 
-```
-When app is MANAGED:
+## Pro tips
 
-1. Edit in ~/.config/newtool/config
-   └─> (Following the symlink)
+- **Start local, promote when stable** — install, tweak, *then* move.
+- **Managed apps get free theme switching** — if a template exists,
+  `theme-manager.sh toggle` covers them automatically.
+- **.gitignore secrets** — if you must keep a config with credentials in
+  this repo, ignore the sensitive file. Better: use sops-nix / agenix.
 
-2. Changes automatically go to:
-   └─> ~/dotfiles/newtool/.config/newtool/config
-
-3. Commit to git:
-   └─> cd ~/dotfiles
-   └─> git add newtool
-   └─> git commit -m "Update newtool config"
-   └─> git push
-
-4. On another machine:
-   └─> git pull
-   └─> sudo nixos-rebuild switch
-   └─> ✓ Config synced!
-```
-
-### 📦 Scenario 4: New Machine Setup
-
-```
-On a brand new NixOS machine:
-
-1. Clone dotfiles:
-   └─> git clone https://github.com/you/dotfiles ~/dotfiles
-
-2. Set up home-manager with all managed apps
-
-3. Run nixos-rebuild:
-   └─> sudo nixos-rebuild switch
-
-4. All managed apps automatically:
-   ├─> Symlinked to ~/dotfiles
-   ├─> Configs deployed
-   └─> Themes applied
-
-No manual copying needed! 🎉
-```
-
-## Examples from Your System
-
-### Currently Managed ✓
-- **kitty** - Terminal emulator (you use daily)
-- **nvim** - Editor (essential, want on all machines)
-- **waybar** - Status bar (part of your WM setup)
-- **rofi** - Launcher (part of your workflow)
-- **qutebrowser** - Browser (custom config)
-
-### Currently Local (Not Managed)
-- **mako** - Notifications (exists in dotfiles but not deployed yet)
-- **opencode** - AI assistant (exists in dotfiles but not deployed yet)
-- **clipse** - Clipboard (exists in dotfiles but not deployed yet)
-- **ghostty** - Terminal (testing/experimental)
-- **1Password** - Contains secrets/machine-specific
-- **google-chrome** - Generic browser, no custom config
-
-## Decision Examples
-
-| Tool | Managed? | Reason |
-|------|----------|--------|
-| **nvim** | ✅ Yes | Use on all machines, heavily customized |
-| **kitty** | ✅ Yes | Primary terminal, custom theme |
-| **mako** | ⏳ Should be | Want consistent notifications everywhere |
-| **lazygit** | ❌ No | Machine-specific git repos |
-| **google-chrome** | ❌ No | Synced via Google account |
-| **1Password** | ❌ No | Contains secrets, different per machine |
-
-## Tools to Help
-
-1. **Check status**: `bash /tmp/check-managed-status.sh`
-2. **Promote to managed**: `bash /tmp/promote-app-to-managed.sh <app-name>`
-3. **Verify symlink**: `ls -la ~/.config/<app-name>`
-4. **Check theme support**: `ls ~/dotfiles/themes/.config/themes/templates/<app-name>.template`
-
-## Pro Tips
-
-💡 **Start local, promote when stable**
-   - Install and configure in ~/.config first
-   - Once happy with config, promote to managed
-
-💡 **Use .gitignore for secrets**
-   - If an app config has secrets, add to .gitignore
-   - Or use sops-nix/agenix for encrypted secrets
-
-💡 **Not everything needs to be managed**
-   - Browser profiles synced by account → keep local
-   - Machine-specific paths/settings → keep local
-   - Testing/experimental tools → keep local
-
-💡 **Managed apps get free theme updates**
-   - If app has a template, theme switching is automatic
-   - No manual config needed, just `theme-manager.sh toggle`
+See `QUICK-REFERENCE.md` for the common one-liners.

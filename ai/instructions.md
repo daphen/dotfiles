@@ -25,7 +25,7 @@ ws-createwt:
 Naming has two distinct shapes — don't conflate them:
 
 - **Local short-name** (niri workspace, ws-* script arg, fish history,
-  rofi pickers) drops the team prefix: `1234-fix-button-overflow`. The
+  QS pickers) drops the team prefix: `1234-fix-button-overflow`. The
   prefix adds noise in pickers and we already know it's a Lovable
   ticket. ws-createwt creates a niri workspace `lovable-1234-fix-button-overflow`.
 - **Git branch name** (committed, pushed, referenced in PRs) KEEPS the
@@ -146,3 +146,22 @@ Specifically don't write:
 - Multi-paragraph explanations — if needed, they belong in the PR or a doc
 
 When you DO write one, one line. Two lines max.
+
+# Subsystems map (proart)
+
+For anything touching the desktop, look here before guessing:
+
+- **NixOS config** — `~/nixos/` (flake). System + home-manager.
+- **Dotfiles** — `~/dotfiles/` (stow-style; many paths home-manager-symlinked).
+  See `~/dotfiles/SYSTEM.md` for the full architecture overview.
+- **Quickshell (bar / pickers / notifications)** — `~/dotfiles/quickshell/.config/quickshell/`.
+  Singletons in `modules/*State.qml`, pickers in `modules/*Picker.qml`, bar in `Bar.qml`.
+- **Theme system** — `~/dotfiles/themes/.config/themes/`. `colors.json` → templates →
+  `generated/<tool>/<mode>.theme` → `theme-manager.sh apply`.
+- **Niri config + scripts** — `~/dotfiles/niri/.config/niri/`. Workspace stack scripts
+  in `scripts/ws-*`. Window-jumping in `niri-jump-or-exec`.
+- **palette-daemon** (cmd-palette overlay, source) — `~/personal/palette-daemon/`.
+- **wpm-daemon** (bar WPM counter, source) — `~/personal/wpm-daemon/`.
+- **endcord fork** (Discord TUI) — `~/personal/endcord-fork/`. Built into the NixOS
+  package at `~/nixos/pkgs/endcord/`.
+- **Charybdis firmware fork** — `~/work/bastardkb-qmk/keyboards/bastardkb/charybdis/3x6/keymaps/daphen/`.

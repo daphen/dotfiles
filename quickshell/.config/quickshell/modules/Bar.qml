@@ -148,7 +148,18 @@ PanelWindow {
         Row {
             id: wpmPillRow
             anchors.centerIn: parent
-            spacing: 6
+            spacing: 8
+
+            Text {
+                text: "󰌌" // nf-md-keyboard
+                color: Theme.fg
+                font.family: Theme.iconFontFamily
+                font.pixelSize: Theme.fontSize + 2
+                font.weight: Theme.fontWeight
+                font.hintingPreference: Font.PreferFullHinting
+                renderType: Text.NativeRendering
+                anchors.verticalCenter: parent.verticalCenter
+            }
 
             Text {
                 text: WpmState.value + " wpm"

@@ -62,6 +62,7 @@ PanelWindow {
             }
             spacing: 8
 
+            Wpm {}
             DateText {}
             Weather {}
             Cpu {}

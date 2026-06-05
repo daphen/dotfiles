@@ -9,6 +9,8 @@ Minimap 1.0 Minimap.qml
 Weather 1.0 Weather.qml
 Cpu 1.0 Cpu.qml
 Memory 1.0 Memory.qml
+singleton WpmState 1.0 WpmState.qml
+Wpm 1.0 Wpm.qml
 Network 1.0 Network.qml
 Worktree 1.0 Worktree.qml
 Dnd 1.0 Dnd.qml

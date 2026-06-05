@@ -62,7 +62,6 @@ PanelWindow {
             }
             spacing: 8
 
-            Wpm {}
             DateText {}
             Weather {}
             Cpu {}
@@ -106,6 +105,62 @@ PanelWindow {
         if (!name.startsWith("lovable-")) return ""
         if (name === "lovable" || name === "lovable-deps") return ""
         return name.substring("lovable-".length)
+    }
+
+    // WPM pill — mirror of worktreePill on the left side. Inner inset on
+    // right + bottom + rounded bottom-right corner.
+    Rectangle {
+        id: wpmPill
+        anchors {
+            top: parent.top
+            left: parent.left
+        }
+        opacity: WpmState.value > 0 ? 1 : 0
+        visible: opacity > 0
+        Behavior on opacity {
+            NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+        }
+        width: wpmPillRow.implicitWidth + Theme.notchPadH * 2
+        height: Theme.barHeight
+
+        color: Theme.hairline
+        topLeftRadius:     0
+        topRightRadius:    0
+        bottomLeftRadius:  0
+        bottomRightRadius: Theme.notchRadius
+
+        Rectangle {
+            anchors {
+                top: parent.top
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+                rightMargin: 1
+                bottomMargin: 1
+            }
+            color: Theme.notch
+            topLeftRadius:     0
+            topRightRadius:    0
+            bottomLeftRadius:  0
+            bottomRightRadius: Theme.notchRadius - 1
+        }
+
+        Row {
+            id: wpmPillRow
+            anchors.centerIn: parent
+            spacing: 6
+
+            Text {
+                text: WpmState.value + " wpm"
+                color: Theme.fg
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSize
+                font.weight: Theme.fontWeight
+                font.hintingPreference: Font.PreferFullHinting
+                renderType: Text.NativeRendering
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
     }
 
     // Outer = hairline-colored "border" rectangle. Inner = notch-colored

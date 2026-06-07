@@ -105,6 +105,10 @@ return {
 			return project_name, relative_path
 		end
 
+		-- Deferred: snacks' dashboard.open() does nvim_win_set_buf in setup(),
+		-- which races with textlock during certain startup orderings (raises
+		-- E565). vim.schedule runs setup after the current event chain.
+		vim.schedule(function()
 		require("snacks").setup({
 			bigfile = { enabled = true },
 			dashboard = { enabled = true },
@@ -155,6 +159,7 @@ return {
 
 			return ret
 		end
+		end)
 	end,
 	keys = {
 		-- {

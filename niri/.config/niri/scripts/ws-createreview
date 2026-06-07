@@ -141,6 +141,21 @@ def gh_pr_title(num: int) -> str:
         return ""
 
 
+def latest_claude_session(worktree_path: Path) -> str | None:
+    """Return the most recent claude session id for this worktree, or None.
+    Encoding mirrors `~/.claude/projects/<path-with-/-and-.-as-->`."""
+    encoded = "-" + str(worktree_path).strip("/").replace("/", "-").replace(".", "-")
+    sess_dir = Path(HOME) / ".claude" / "projects" / encoded
+    if not sess_dir.is_dir():
+        return None
+    sessions = sorted(
+        sess_dir.glob("*.jsonl"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    return sessions[0].stem if sessions else None
+
+
 def fetch_pr_head(num: int) -> str:
     """`git fetch origin pull/<num>/head` and return the fetched SHA."""
     subprocess.run(
@@ -158,6 +173,11 @@ def fetch_pr_head(num: int) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("pr", help="PR number or github.com PR URL")
+    ap.add_argument(
+        "--no-resume",
+        action="store_true",
+        help="Start a fresh claude session even if a prior one exists.",
+    )
     args = ap.parse_args()
 
     num = parse_pr(args.pr)
@@ -210,12 +230,21 @@ def main() -> int:
         preview_url,
     ])
 
-    print("==> spawning claude")
+    claude_cmd = ["claude"]
+    if not args.no_resume:
+        sid = latest_claude_session(worktree_path)
+        if sid:
+            claude_cmd = ["claude", "--resume", sid]
+            print(f"==> spawning claude (resume {sid[:8]})")
+        else:
+            print("==> spawning claude (no prior session)")
+    else:
+        print("==> spawning claude (fresh, --no-resume)")
     spawn_and_wait([
         "kitty",
         "--class", "claude",
         "--working-directory", str(worktree_path),
-        "-e", "claude",
+        "-e", *claude_cmd,
     ])
 
     print("==> spawning nvim")

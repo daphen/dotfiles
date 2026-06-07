@@ -165,3 +165,34 @@ For anything touching the desktop, look here before guessing:
 - **endcord fork** (Discord TUI) — `~/personal/endcord-fork/`. Built into the NixOS
   package at `~/nixos/pkgs/endcord/`.
 - **Charybdis firmware fork** — `~/work/bastardkb-qmk/keyboards/bastardkb/charybdis/3x6/keymaps/daphen/`.
+
+# Memory routing
+
+I maintain a personal notes vault at `~/personal/notes/storage/` that's
+indexed by an MCP server (`notes-memory`, registered globally). The vault
+is the canonical store for memories, notes, plans, and todos across every
+environment I work in — proart, lovbox SSH sandboxes, the Lovable agent,
+mobile clients.
+
+When the `notes-memory` MCP is available (check the available MCP servers
+list), prefer its tools over the filesystem-local auto-memory:
+
+- **Saving memory** — call `notes-memory.save_memory(name, description, type, content)`
+  instead of writing to `~/.claude/projects/<hash>/memory/`. The MCP version
+  is reachable from every environment; the filesystem one is per-machine.
+- **Recalling memory** — call `notes-memory.search_notes(query)` to surface
+  saved memories, plans, meeting notes, and references. Stems words; ranks
+  by relevance. Especially valuable in lovbox/Lovable sessions where there's
+  no auto-loaded context from prior conversations.
+- **Saving a note** — `notes-memory.save_note(content, type, title?)` for
+  longer artifacts (plans, references, meeting briefs).
+- **Adding a todo** — `notes-memory.add_todo(text)` appends to today's daily.
+
+When the user mentions ongoing projects (Lovable design system work, the
+notes webapp, dotfiles), proactively search the MCP for relevant context
+before answering. The auto-loaded memory only contains a handful of
+profile facts; the bulk of context lives in the vault.
+
+The filesystem auto-memory at `~/.claude/projects/-home-daphen/memory/`
+still works on proart for backward compatibility, but it's deprecated.
+New memories should go through the MCP.

@@ -649,7 +649,6 @@ switch_theme() {
     # — re-applying the active theme shouldn't disrupt chats.
     if [[ "$previous_theme" != "$theme_mode" ]]; then
         restart_electron_apps
-        restart_browsers
     fi
 
     log_success "Theme switched to $theme_mode mode"
@@ -683,29 +682,6 @@ restart_electron_apps() {
     fi
 }
 
-# Helium doesn't subscribe to the XDG portal SettingChanged signal, so
-# the system color-scheme toggle only takes effect on next launch. Kill
-# any running Helium profile and relaunch via its niri wrapper; session
-# restore brings tabs back (requires "Continue where you left off" in
-# chrome://settings/onStartup).
-restart_browsers() {
-    local restarted=0
-    for profile in personal work; do
-        local class="browser-$profile"
-        local data_dir="$HOME/.config/helium-$profile"
-        if pgrep -f "user-data-dir=$data_dir" >/dev/null 2>&1; then
-            log_info "Restarting Helium ($profile)…"
-            pkill -f "user-data-dir=$data_dir" 2>/dev/null
-            sleep 1
-            pkill -KILL -f "user-data-dir=$data_dir" 2>/dev/null
-            sleep 0.3
-            setsid -f "$HOME/.config/niri/scripts/browser-$profile" </dev/null >/dev/null 2>&1 &
-            disown 2>/dev/null || true
-            restarted=1
-        fi
-    done
-    [ "$restarted" = 1 ] && log_success "Helium relaunched (tabs restored via session)"
-}
 
 # Toggle between light and dark
 toggle_theme() {

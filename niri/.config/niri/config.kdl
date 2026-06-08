@@ -713,9 +713,9 @@ binds {
     // (ws-startwt — both worktrees and sandboxes shown together).
     Super+b       { spawn "qs" "ipc" "call" "lovbox" "toggle"; }
 
-    // Notes - tiled window like spotify/claude
-    Super+n { spawn "/home/daphen/.config/niri/scripts/spawn-notes"; }
-    Super+Shift+n { spawn "/home/daphen/.config/niri/scripts/spawn-new-note"; }
+    // Notes capture picker — type chooses routing into the vault
+    Super+n       hotkey-overlay-title="Capture note" { spawn "qs" "ipc" "call" "notes" "toggle"; }
+    Super+Shift+n hotkey-overlay-title="Quick inbox note" { spawn "/home/daphen/.config/quickshell/scripts/notes-capture" "note"; }
 
     // Theme toggle is now reachable from the app launcher
     // ("Toggle Theme") — Super+Ctrl+T was repurposed for ws-startwt.

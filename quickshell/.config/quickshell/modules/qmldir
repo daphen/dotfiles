@@ -40,3 +40,5 @@ singleton ClaudeRenamePickerState 1.0 ClaudeRenamePickerState.qml
 ClaudeRenamePicker 1.0 ClaudeRenamePicker.qml
 singleton ColorFormatPickerState 1.0 ColorFormatPickerState.qml
 ColorFormatPicker 1.0 ColorFormatPicker.qml
+singleton NotesPickerState 1.0 NotesPickerState.qml
+NotesPicker 1.0 NotesPicker.qml

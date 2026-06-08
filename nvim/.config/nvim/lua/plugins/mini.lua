@@ -97,6 +97,10 @@ return {
 				setup_mini_files()
 				mini_files.open()
 			end, { desc = "Open file explorer (cwd)" })
+
+			-- mini.files initial setup happens lazily on first open; expose
+			-- it so the init.lua BufEnter hijack can call into it.
+			_G._mini_files_setup = setup_mini_files
 		end,
 	},
 }

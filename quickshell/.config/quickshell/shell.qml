@@ -29,4 +29,5 @@ ShellRoot {
     EmojiPicker {}
     ClaudeRenamePicker {}
     ColorFormatPicker {}
+    NotesPicker {}
 }

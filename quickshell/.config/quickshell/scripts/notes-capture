@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+# Opens nvim on the right vault path for a given capture type.
+# Pre-creates the file with minimal frontmatter if it doesn't exist.
+# Called by the QS NotesPicker.
+
+set -euo pipefail
+
+VAULT="$HOME/personal/notes/storage"
+TYPE="${1:-note}"
+DATE="$(date +%Y-%m-%d)"
+HHMM="$(date +%H%M)"
+
+# Resolve path + frontmatter for the chosen capture type.
+case "$TYPE" in
+  note)
+    PATH_REL="inbox/${DATE}-${HHMM}.md"
+    FRONTMATTER="---
+type: note
+created: ${DATE}
+tags: []
+---
+
+"
+    ;;
+  daily)
+    PATH_REL="journal/${DATE}.md"
+    FRONTMATTER="---
+type: daily
+created: ${DATE}
+tags: [daily]
+---
+
+# ${DATE}
+
+## Focus
+
+-
+
+## Tasks
+
+- [ ]
+
+## Notes
+
+"
+    ;;
+  todo)
+    # Append a fresh checkbox to today's daily; ensure the file + Tasks section exist.
+    PATH_REL="journal/${DATE}.md"
+    FRONTMATTER="---
+type: daily
+created: ${DATE}
+tags: [daily]
+---
+
+# ${DATE}
+
+## Focus
+
+-
+
+## Tasks
+
+- [ ]
+
+## Notes
+
+"
+    ;;
+  plan)
+    PATH_REL="plans/${DATE}-${HHMM}.md"
+    FRONTMATTER="---
+type: plan
+status: active
+created: ${DATE}
+tags: [plan]
+project:
+---
+
+# Untitled plan
+
+Rename via :saveas plans/<slug>.md after the first paragraph.
+
+## Why
+
+
+## What to build
+
+-
+
+## Open decisions
+
+-
+
+"
+    ;;
+  meeting)
+    PATH_REL="meetings/${DATE}-${HHMM}.md"
+    FRONTMATTER="---
+type: meeting
+status: active
+created: ${DATE}
+tags: [meeting]
+attendees: []
+project:
+---
+
+# Untitled meeting
+
+Rename via :saveas meetings/${DATE}-<slug>.md.
+
+**Date**: ${DATE} $(date +%H:%M)
+**Attendees**:
+
+## Agenda
+
+-
+
+## Notes
+
+
+## Action items
+
+- [ ]
+
+"
+    ;;
+  ref|reference)
+    PATH_REL="references/${DATE}-${HHMM}.md"
+    FRONTMATTER="---
+type: reference
+created: ${DATE}
+tags: [reference]
+---
+
+# Untitled reference
+
+"
+    ;;
+  browse)
+    # nvim hijacks the directory arg → mini.files opens on the vault root.
+    exec kitty --class notes_capture --working-directory "$VAULT" -- nvim "$VAULT"
+    ;;
+  *)
+    echo "unknown capture type: $TYPE" >&2
+    exit 1
+    ;;
+esac
+
+TARGET="$VAULT/$PATH_REL"
+mkdir -p "$(dirname "$TARGET")"
+
+if [ ! -f "$TARGET" ]; then
+  printf '%s' "$FRONTMATTER" > "$TARGET"
+fi
+
+# For 'todo', ensure a ## Tasks section exists. Other tools (Obsidian's
+# Daily Notes, obsidian.nvim's ObsidianToday) may have created the file
+# with their own template that lacks this section.
+if [ "$TYPE" = "todo" ] && ! grep -q "^## Tasks" "$TARGET"; then
+  printf '\n## Tasks\n\n' >> "$TARGET"
+fi
+
+# Open in kitty+nvim. For 'todo', jump to the Tasks section and start an unchecked item in insert mode.
+case "$TYPE" in
+  todo)
+    exec kitty --class notes_capture --working-directory "$VAULT" -- \
+      nvim "+/^## Tasks" "+normal! jo- [ ] " "+startinsert!" "$TARGET"
+    ;;
+  *)
+    exec kitty --class notes_capture --working-directory "$VAULT" -- \
+      nvim "+normal! Go" "+startinsert" "$TARGET"
+    ;;
+esac

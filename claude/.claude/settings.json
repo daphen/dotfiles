@@ -70,7 +70,8 @@
     ]
   },
   "enabledPlugins": {
-    "graphite-workflow@lovable-internal": true
+    "graphite-workflow@lovable-internal": true,
+    "vercel@claude-plugins-official": true
   },
   "syntaxHighlightingDisabled": true,
   "alwaysThinkingEnabled": true,

@@ -22,6 +22,7 @@ ShellRoot {
     Launcher {}
     WorktreePicker {}
     WorktreeCreatePicker {}
+    WorktreeNameInputPicker {}
     LovboxPicker {}
     BluetoothPicker {}
     NetworkPicker {}

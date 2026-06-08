@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import "."
 
 Picker {
@@ -8,37 +9,72 @@ Picker {
     open: WorktreeCreatePickerState.open
     onCloseRequested: WorktreeCreatePickerState.open = false
 
-    placeholder: "new workspace name (e.g. 1905-infer-path-b-source-type)"
-    freeText: true
-    altLabel: "Enter: pick local worktree or Lovable-on-Lovable, then provide details"
+    placeholder: "workspace"
+    altLabel: "Enter: open / create    Ctrl+W: close worktree"
+    subtitleField: "kind"
+    highlightField: "active"
+    altKey: Qt.Key_W
 
-    onEnterText: text => {
-        const name = text.replace(/[^a-zA-Z0-9-]/g, "")
-        if (name.length === 0) return
-        const safeName = name.replace(/'/g, "'\\''")
-        const inner =
-            "set -e; " +
-            "NAME='" + safeName + "'; " +
-            "kind=$(printf 'local-worktree\\nlovable-on-lovable\\n' | fzf --prompt='workspace type> ' --height=8 --reverse --no-sort); " +
-            "[ -z \"${kind:-}\" ] && exit 0; " +
-            "if [ \"$kind\" = 'local-worktree' ]; then " +
-            "  mode=$(printf 'new\\nresume\\nfork\\n' | fzf --prompt='claude session> ' --height=8 --reverse --no-sort); " +
-            "  [ -z \"${mode:-}\" ] && mode=new; " +
-            "  args=( \"$NAME\" --mode \"$mode\" ); " +
-            "  if [ \"$mode\" != 'new' ]; then " +
-            "    sid=$(\"$HOME/.config/niri/scripts/spawn-claude-session-picker\" --id-only); " +
-            "    [ -z \"${sid:-}\" ] && exit 0; " +
-            "    args+=( --session-id \"$sid\" ); " +
-            "  fi; " +
-            "  \"$HOME/.config/niri/scripts/ws-createwt\" \"${args[@]}\" 2>&1 | tee -a /tmp/ws-spawn.log; " +
-            "else " +
-            "  \"$HOME/.config/niri/scripts/ws-newlol\" \"$NAME\"; " +
-            "  echo; echo 'In the browser: create the project, copy the URL, paste it here:'; " +
-            "  read -r url; " +
-            "  [ -z \"${url:-}\" ] && { echo 'no URL, aborting'; sleep 2; exit 1; }; " +
-            "  \"$HOME/.config/niri/scripts/ws-createlovbox\" \"$NAME\" \"$url\" 2>&1 | tee -a /tmp/ws-spawn.log; " +
-            "fi"
+    items: buildItems(NiriState.version, namesFile.labels, NiriState.activeStack)
 
-        Quickshell.execDetached(["kitty", "--class", "lovable_picker", "bash", "-c", inner])
+    onEnter: item => {
+        if (!item) return
+        if (item.action === "create-local") {
+            WorktreeCreatePickerState.open = false
+            WorktreeNameInputPickerState.show("local")
+            return
+        }
+        if (item.action === "create-lol") {
+            WorktreeCreatePickerState.open = false
+            WorktreeNameInputPickerState.show("lol")
+            return
+        }
+        Quickshell.execDetached([Quickshell.env("HOME") + "/.config/niri/scripts/ws-jump-adjacent", "lovable-" + item.name])
+    }
+
+    onAltAction: item => {
+        if (!item || item.action) return
+        Quickshell.execDetached([Quickshell.env("HOME") + "/.config/niri/scripts/ws-close-worktree", item.name])
+    }
+
+    FileView {
+        id: namesFile
+        path: Quickshell.env("HOME") + "/.local/state/lovssh/names.json"
+        watchChanges: true
+        onFileChanged: reload()
+
+        property var labels: ({})
+        onLoaded: {
+            try { labels = JSON.parse(text() || "{}") } catch (e) { labels = {} }
+        }
+        onLoadFailed: labels = ({})
+    }
+
+    function buildItems(_version, lovboxLabels, activeStack) {
+        const _ = _version
+        const lolNames = {}
+        for (const claim in lovboxLabels) lolNames[lovboxLabels[claim]] = true
+
+        const existing = []
+        const wsMap = NiriState.workspaces
+        for (const id in wsMap) {
+            const n = wsMap[id].name || ""
+            if (!n.startsWith("lovable-")) continue
+            if (n === "lovable" || n === "lovable-main") continue
+            existing.push(n.substring("lovable-".length))
+        }
+
+        const activeBare = (activeStack || "").replace(/^lovable-/, "")
+        const create = [
+            { action: "create-local", label: "+ Create local worktree", kind: "WT" },
+            { action: "create-lol",   label: "+ Create Lovable-on-Lovable", kind: "LoL" },
+        ]
+        const wsItems = existing.map(n => ({
+            name: n,
+            label: n,
+            kind: lolNames[n] ? "LoL" : "WT",
+            active: n === activeBare,
+        }))
+        return create.concat(wsItems)
     }
 }

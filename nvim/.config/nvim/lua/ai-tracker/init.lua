@@ -235,9 +235,10 @@ function M.setup()
 			total = total + 1
 			if watchable(b) then watchable_count = watchable_count + 1 end
 		end
-		print(("ai-tracker: %d buffer fs_events, %d/%d watchable buffers, follow=%s")
-			:format(watching, watchable_count, total, state.follow and "ON" or "OFF"))
-		if state.last_skip then print(("  last navigate skip: %s"):format(state.last_skip)) end
+		local msg = ("ai-tracker: %d buffer fs_events, %d/%d watchable buffers, follow=%s")
+			:format(watching, watchable_count, total, state.follow and "ON" or "OFF")
+		if state.last_skip then msg = msg .. "\n  last navigate skip: " .. state.last_skip end
+		vim.notify(msg)
 	end, {})
 	vim.api.nvim_create_user_command("AITrackerFollow", function() M.toggle_follow() end, {})
 	vim.api.nvim_create_user_command("AITrackerClearCache", function() M.clear_base_cache() end, {})

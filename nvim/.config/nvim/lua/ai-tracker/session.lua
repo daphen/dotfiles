@@ -125,13 +125,29 @@ local function attach_to_dir(dir)
 	end)
 end
 
-function M.setup()
+local function try_attach()
 	local hash = path_to_hash(vim.fn.getcwd())
 	local dir = vim.fn.expand("~/.claude/projects/" .. hash)
-	if not uv.fs_stat(dir) then return end
+	if not uv.fs_stat(dir) then return false end
 	local latest = find_latest_jsonl(dir)
 	if latest then attach_to_file(latest, false) end
 	attach_to_dir(dir)
+	return true
+end
+
+function M.setup()
+	if try_attach() then return end
+	-- Worktree just spawned; Claude may create its projects dir a
+	-- moment after nvim runs setup(). Retry at 2s, 10s, 30s.
+	for _, delay in ipairs({ 2000, 10000, 30000 }) do
+		vim.defer_fn(function()
+			if state.dir == nil then try_attach() end
+		end, delay)
+	end
+end
+
+function M.reattach()
+	try_attach()
 end
 
 function M.touched_files()

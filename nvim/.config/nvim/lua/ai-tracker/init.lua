@@ -201,6 +201,7 @@ local function scan_all_buffers()
 end
 
 function M.setup()
+	require("ai-tracker.session").setup()
 	local group = vim.api.nvim_create_augroup("AITracker", { clear = true })
 	vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile", "BufFilePost" }, {
 		group = group,
@@ -243,6 +244,22 @@ function M.setup()
 	vim.api.nvim_create_user_command("AITrackerDebug", function()
 		state.debug = not state.debug
 		vim.notify("ai-tracker debug " .. (state.debug and "ON" or "OFF"))
+	end, {})
+	vim.api.nvim_create_user_command("AITrackerTouched", function()
+		local files = require("ai-tracker.session").touched_files()
+		if #files == 0 then print("ai-tracker.session: no touched files this session") return end
+		for _, e in ipairs(files) do
+			print(("%s  %s  %s"):format(e.tool, e.ts or "", e.path))
+		end
+	end, {})
+	vim.api.nvim_create_user_command("AITrackerRescan", function()
+		require("ai-tracker.session").rescan()
+		vim.notify("ai-tracker.session: rescanned current jsonl")
+	end, {})
+	vim.api.nvim_create_user_command("AITrackerSessionStatus", function()
+		local s = require("ai-tracker.session").status()
+		print(("dir:    %s\nfile:   %s\noffset: %d\ncount:  %d")
+			:format(s.dir or "(none)", s.file or "(none)", s.offset, s.count))
 	end, {})
 	vim.api.nvim_create_user_command("AITrackerDiagnose", function()
 		local cwd = vim.fn.getcwd()

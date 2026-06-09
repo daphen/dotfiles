@@ -247,18 +247,28 @@ function M.setup()
 	end, {})
 	vim.api.nvim_create_user_command("AITrackerTouched", function()
 		local files = require("ai-tracker.session").touched_files()
-		if #files == 0 then print("ai-tracker.session: no touched files this session") return end
-		for _, e in ipairs(files) do
-			print(("%s  %s  %s"):format(e.tool, e.ts or "", e.path))
+		vim.cmd("new")
+		vim.bo.buftype = "nofile"
+		vim.bo.bufhidden = "wipe"
+		vim.bo.filetype = "ai-tracker-touched"
+		if #files == 0 then
+			vim.api.nvim_buf_set_lines(0, 0, -1, false, { "(no touched files this session)" })
+			return
 		end
+		local lines = {}
+		for _, e in ipairs(files) do
+			lines[#lines + 1] = ("%-8s %-26s %s"):format(e.tool, e.ts or "", e.path)
+		end
+		vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
 	end, {})
 	vim.api.nvim_create_user_command("AITrackerRescan", function()
 		require("ai-tracker.session").rescan()
-		vim.notify("ai-tracker.session: rescanned current jsonl")
+		local s = require("ai-tracker.session").status()
+		vim.notify(("ai-tracker.session: rescanned, %d touched files"):format(s.count))
 	end, {})
 	vim.api.nvim_create_user_command("AITrackerSessionStatus", function()
 		local s = require("ai-tracker.session").status()
-		print(("dir:    %s\nfile:   %s\noffset: %d\ncount:  %d")
+		vim.notify(("ai-tracker.session\n  dir:    %s\n  file:   %s\n  offset: %d\n  count:  %d")
 			:format(s.dir or "(none)", s.file or "(none)", s.offset, s.count))
 	end, {})
 	vim.api.nvim_create_user_command("AITrackerDiagnose", function()

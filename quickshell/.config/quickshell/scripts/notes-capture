@@ -161,14 +161,23 @@ if [ "$TYPE" = "todo" ] && ! grep -q "^## Tasks" "$TARGET"; then
   printf '\n## Tasks\n\n' >> "$TARGET"
 fi
 
+# Per-launch profile log so a hot-looping nvim leaves evidence. Zero
+# overhead when nothing is slow; populated when functions burn cycles.
+PROF="/tmp/nvim-prof-$(date +%s%N).log"
+PROF_ARGS=(
+  "+profile start $PROF"
+  "+profile func *"
+  "+profile file *"
+)
+
 # Open in kitty+nvim. For 'todo', jump to the Tasks section and start an unchecked item in insert mode.
 case "$TYPE" in
   todo)
     exec kitty --class notes_capture --working-directory "$VAULT" -- \
-      nvim "+/^## Tasks" "+normal! jo- [ ] " "+startinsert!" "$TARGET"
+      nvim "${PROF_ARGS[@]}" "+/^## Tasks" "+normal! jo- [ ] " "+startinsert!" "$TARGET"
     ;;
   *)
     exec kitty --class notes_capture --working-directory "$VAULT" -- \
-      nvim "+normal! Go" "+startinsert" "$TARGET"
+      nvim "${PROF_ARGS[@]}" "+normal! Go" "+startinsert" "$TARGET"
     ;;
 esac

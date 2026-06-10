@@ -65,6 +65,9 @@ input {
     mouse {
         // off
         natural-scroll
+        // natural-scroll inverts vertical; horizontal tilt-wheel stays
+        // at hardware default and feels backwards. Flip explicitly.
+        scroll-factor horizontal=-1.0 vertical=1.0
         // accel-speed 0.2
         // accel-profile "flat"
         // scroll-method "no-scroll"

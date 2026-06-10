@@ -201,8 +201,6 @@ local function scan_all_buffers()
 end
 
 function M.setup()
-	require("ai-tracker.session").setup()
-	require("ai-tracker.git_status").setup()
 	local group = vim.api.nvim_create_augroup("AITracker", { clear = true })
 	vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile", "BufFilePost" }, {
 		group = group,
@@ -246,57 +244,6 @@ function M.setup()
 	vim.api.nvim_create_user_command("AITrackerDebug", function()
 		state.debug = not state.debug
 		vim.notify("ai-tracker debug " .. (state.debug and "ON" or "OFF"))
-	end, {})
-	vim.api.nvim_create_user_command("AITrackerTouched", function()
-		local files = require("ai-tracker.session").touched_files()
-		vim.cmd("new")
-		vim.bo.buftype = "nofile"
-		vim.bo.bufhidden = "wipe"
-		vim.bo.filetype = "ai-tracker-touched"
-		if #files == 0 then
-			vim.api.nvim_buf_set_lines(0, 0, -1, false, { "(no touched files this session)" })
-			return
-		end
-		local lines = {}
-		for _, e in ipairs(files) do
-			lines[#lines + 1] = ("%-8s %-26s %s"):format(e.tool, e.ts or "", e.path)
-		end
-		vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
-	end, {})
-	vim.api.nvim_create_user_command("AITrackerRescan", function()
-		require("ai-tracker.session").rescan()
-		local s = require("ai-tracker.session").status()
-		vim.notify(("ai-tracker.session: rescanned, %d touched files"):format(s.count))
-	end, {})
-	vim.api.nvim_create_user_command("AITrackerReattach", function()
-		require("ai-tracker.session").reattach()
-		local s = require("ai-tracker.session").status()
-		vim.notify(("ai-tracker.session: dir=%s file=%s"):format(s.dir or "(none)", s.file or "(none)"))
-	end, {})
-	vim.api.nvim_create_user_command("AITrackerGitStatus", function()
-		local s = require("ai-tracker.git_status").status()
-		vim.notify(("ai-tracker.git_status\n  cwd:   %s\n  poll:  %dms\n  count: %d")
-			:format(s.cwd or "(none)", s.poll_ms, s.count))
-	end, {})
-	vim.api.nvim_create_user_command("AITrackerGitTouched", function()
-		local files = require("ai-tracker.git_status").touched_files()
-		vim.cmd("new")
-		vim.bo.buftype = "nofile"
-		vim.bo.bufhidden = "wipe"
-		vim.bo.filetype = "ai-tracker-touched"
-		if #files == 0 then
-			vim.api.nvim_buf_set_lines(0, 0, -1, false, { "(no files touched since session start)" })
-			return
-		end
-		local lines = {}
-		for _, e in ipairs(files) do
-			lines[#lines + 1] = ("%s  %s  %s"):format(e.code or "  ", os.date("%H:%M:%S", e.ts), e.path)
-		end
-		vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
-	end, {})
-	vim.api.nvim_create_user_command("AITrackerGitRebaseline", function()
-		require("ai-tracker.git_status").rebaseline()
-		vim.notify("ai-tracker.git_status: rebaselined — only future changes count")
 	end, {})
 	vim.api.nvim_create_user_command("AITrackerSessionStatus", function()
 		local s = require("ai-tracker.session").status()

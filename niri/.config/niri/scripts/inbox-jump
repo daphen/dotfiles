@@ -28,8 +28,37 @@ case "$app" in
         # kitty to focus the originating terminal window.
         exec "$DIR/kitty-osc-jump"
         ;;
-    *)
-        # No matching tracked notification — default to endcord.
+    "")
+        # No tracked notification — idle press, treat as "check my inbox".
         exec "$DIR/endcord-jump-inbox"
+        ;;
+    *)
+        # Unknown app: invoke the notification's default action — any
+        # well-behaved notifier focuses its own window/context.
+        id=$(qs ipc call notifications list 2>/dev/null | jq -r '.[0].id // empty' 2>/dev/null)
+        if [ -n "$id" ]; then
+            qs ipc call notifications invoke "$id" >/dev/null 2>&1 || true
+            qs ipc call notifications dismiss "$id" >/dev/null 2>&1 || true
+            sleep 0.05
+        fi
+        # If the action didn't land focus on the app, best-effort match a
+        # window by app id.
+        la=$(printf %s "$app" | tr '[:upper:]' '[:lower:]')
+        # Browser windows carry launch-class app ids (browser-work/-personal),
+        # which never substring-match the browser's own name.
+        case "$la" in
+            helium|chromium|chrome|firefox) la="browser" ;;
+        esac
+        focused=$(niri msg --json focused-window 2>/dev/null | jq -r '.app_id // empty' | tr '[:upper:]' '[:lower:]')
+        if [ -n "$focused" ]; then
+            case "$focused" in *"$la"*) exit 0 ;; esac
+            case "$la" in *"$focused"*) exit 0 ;; esac
+        fi
+        win=$(niri msg --json windows 2>/dev/null | jq -r --arg a "$la" \
+            '[.[] | (.app_id // "" | ascii_downcase) as $id
+              | select($id != "" and (($id | contains($a)) or ($a | contains($id))))][0].id // empty')
+        if [ -n "$win" ]; then
+            niri msg action focus-window --id "$win" >/dev/null 2>&1
+        fi
         ;;
 esac

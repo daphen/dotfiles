@@ -26,7 +26,13 @@ local state = {
 	defer_late = nil,
 	content_sig = {},
 	ignored_dirs = {},
+	trace = {},
 }
+
+local function trace(msg)
+	table.insert(state.trace, os.date("%H:%M:%S ") .. msg)
+	if #state.trace > 100 then table.remove(state.trace, 1) end
+end
 
 local IGNORED_PATTERNS = {
 	"%.tsbuildinfo$",
@@ -158,7 +164,11 @@ local function queue_nav(fullpath)
 	-- Filter junk BEFORE coalescing — guards run on the pending slot, so an
 	-- artifact event arriving after a real edit would displace and kill the
 	-- good jump.
-	if should_skip(fullpath) then return end
+	if should_skip(fullpath) then
+		trace("skip-pattern " .. fullpath)
+		return
+	end
+	trace("queue " .. fullpath)
 	-- Coalesce bursts: one navigation per quiet 150ms, newest change wins.
 	state.pending_nav = fullpath
 	state.nav_timer = state.nav_timer or vim.uv.new_timer()
@@ -166,7 +176,10 @@ local function queue_nav(fullpath)
 	state.nav_timer:start(150, 0, vim.schedule_wrap(function()
 		local p = state.pending_nav
 		state.pending_nav = nil
-		if p then navigate_to_path(p) end
+		if p then
+			navigate_to_path(p)
+			trace((state.last_skip and ("skip: " .. state.last_skip) or "JUMP") .. " " .. p)
+		end
 	end))
 end
 
@@ -274,6 +287,14 @@ function M.setup(opts)
 		group = group,
 		callback = function() state.last_user_move = vim.uv.now() end,
 	})
+
+	vim.api.nvim_create_user_command("FileWatcherLog", function()
+		vim.cmd("botright 15new")
+		local b = vim.api.nvim_get_current_buf()
+		vim.api.nvim_buf_set_lines(b, 0, -1, false, state.trace)
+		vim.bo[b].buftype = "nofile"
+		vim.bo[b].bufhidden = "wipe"
+	end, {})
 
 	vim.api.nvim_create_user_command("FileWatcherStatus", function()
 		local msg = ("file-watcher: %s, follow=%s, dirs=%d"):format(

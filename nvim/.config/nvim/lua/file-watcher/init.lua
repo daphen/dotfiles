@@ -130,10 +130,18 @@ local function navigate_to_path(path)
 		state.last_skip = "content unchanged"
 		return
 	end
+	local rel = path:sub(#state.root + 2)
+	-- Tracked and identical to HEAD/index = no-op write (boot-time codegen,
+	-- tools rewriting committed output). git is the authority on "changed".
+	local porcelain = vim.fn.systemlist({ "git", "-C", state.root, "status", "--porcelain", "--", rel })[1]
+	if vim.v.shell_error == 0 and not porcelain then
+		state.last_skip = "clean in git (no-op write)"
+		return
+	end
 	state.last_skip = nil
 	state.last_jump = vim.uv.now()
 	-- Line lookup shells out to git — only pay after every guard passed.
-	local line = git_first_changed_line(state.root, path:sub(#state.root + 2))
+	local line = git_first_changed_line(state.root, rel)
 	local target = pick_target_window()
 	pcall(vim.api.nvim_set_current_win, target)
 	pcall(vim.cmd, "edit " .. vim.fn.fnameescape(path))

@@ -15,8 +15,10 @@ Rectangle {
     opacity: (shown && !dismissing && !collapsed) ? 1 : 0
     Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
-    height: collapsed ? 0 : implicitHeight
-    Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+    // Never animate height: it propagates to the PanelWindow's
+    // implicitHeight, and per-frame layer-shell resizes render at ~10fps.
+    // Fade first, snap the height once fully invisible.
+    height: (collapsed && opacity === 0) ? 0 : implicitHeight
     clip: true
 
     Component.onCompleted: shown = true

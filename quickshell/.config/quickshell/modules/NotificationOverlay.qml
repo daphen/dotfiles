@@ -41,6 +41,10 @@ PanelWindow {
         }
         spacing: 8
 
+        move: Transition {
+            NumberAnimation { properties: "y"; duration: 150; easing.type: Easing.OutCubic }
+        }
+
         Repeater {
             model: Notifications.tracked
 

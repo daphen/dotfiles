@@ -64,8 +64,11 @@ local function content_unchanged(path)
 	if not stat or stat.size > 2 * 1024 * 1024 then return false end
 	local f = io.open(path, "rb")
 	if not f then return false end
-	local sig = vim.fn.sha256(f:read("*a") or "")
+	local data = f:read("*a") or ""
 	f:close()
+	-- NUL bytes turn the string into a Blob, which sha256() rejects.
+	if data:find("\0", 1, true) then return false end
+	local sig = vim.fn.sha256(data)
 	if state.content_sig[path] == sig then return true end
 	state.content_sig[path] = sig
 	return false

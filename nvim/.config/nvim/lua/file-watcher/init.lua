@@ -9,7 +9,7 @@ M.opts = {
 	ignore_patterns = {},
 	-- Suppress auto-jump for this long after a jump, so cascading tool
 	-- reactions (gopls rewriting go.work.sum etc.) can't chain-yank focus.
-	jump_cooldown_ms = 5000,
+	jump_cooldown_ms = 2000,
 }
 
 local state = {
@@ -25,6 +25,7 @@ local state = {
 	nav_timer = nil,
 	defer_late = nil,
 	content_sig = {},
+	ignored_dirs = {},
 }
 
 local IGNORED_PATTERNS = {
@@ -45,6 +46,7 @@ local IGNORED_PATTERNS = {
 	"/coverage/",
 	"%.snap$",
 	"/%.git/",
+	"/%.wrangler/",
 }
 
 local function should_skip(path)
@@ -150,6 +152,10 @@ local function navigate_to_path(path)
 end
 
 local function queue_nav(fullpath)
+	-- Filter junk BEFORE coalescing — guards run on the pending slot, so an
+	-- artifact event arriving after a real edit would displace and kill the
+	-- good jump.
+	if should_skip(fullpath) then return end
 	-- Coalesce bursts: one navigation per quiet 150ms, newest change wins.
 	state.pending_nav = fullpath
 	state.nav_timer = state.nav_timer or vim.uv.new_timer()
@@ -168,6 +174,14 @@ local function on_change(fullpath)
 	if stat and stat.type == "directory" then
 		-- Walking an already-watched dir would cascade on every entry change.
 		if state.handles[fullpath] then return end
+		if should_skip(fullpath .. "/") then return end
+		-- Never watch gitignored trees (wrangler tmp, build output): one
+		-- new-dir event here once ballooned the watch set 5k → 30k dirs.
+		if state.ignored_dirs[fullpath] == nil then
+			vim.fn.system({ "git", "-C", state.root, "check-ignore", "-q", fullpath:sub(#state.root + 2) })
+			state.ignored_dirs[fullpath] = (vim.v.shell_error == 0)
+		end
+		if state.ignored_dirs[fullpath] then return end
 		watch_dir(fullpath)
 		for name, t in vim.fs.dir(fullpath, { depth = 8 }) do
 			local child = vim.fs.joinpath(fullpath, name)

@@ -135,6 +135,12 @@ local function navigate_to_path(path)
 		state.last_skip = "jump cooldown"
 		return
 	end
+	-- Atomic-rename temp files (sedXXXXXX, editor swaps) are gone by the
+	-- time the coalescer fires — never navigate to a dead path.
+	if not vim.uv.fs_stat(path) then
+		state.last_skip = "vanished"
+		return
+	end
 	-- No-op rewrites (gopls touching go.work.sum, formatters) change
 	-- mtime but not content — never worth a jump.
 	if content_unchanged(path) then

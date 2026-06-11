@@ -175,6 +175,24 @@ function lovssh --description "SSH into the existing lovbox for a Lovable projec
     # Single-line ';' chain because the lovbox sshd truncates multi-line args.
     set -l remote_cmd "$token_export""export TERM=xterm-256color SANDBOX_LABEL='$sandbox_label'; echo '[lovssh] connected as '\$(whoami)'@'\$(hostname); mkdir -p ~/.config; echo '$proart_theme' > ~/.config/theme_mode; echo '[lovssh] theme: $proart_theme'; cd ~/lovable 2>/dev/null; echo '[lovssh] launching dev env via nix run...'; exec nix run --refresh --option require-sigs false github:daphen/nixos-portable-config#daphen-env"
 
+    # Pre-seed the sandbox's nix store from proart. The cluster cache misses
+    # most of our env closure, so a fresh sandbox compiles neovim from source
+    # (~10 min); pushing proart's already-built paths turns that into a
+    # transfer. Every failure here is non-fatal — remote nix run still works,
+    # just slower.
+    echo "[lovssh] resolving env closure locally…"
+    set -l env_path (nix build --no-link --print-out-paths github:daphen/nixos-portable-config#daphen-env 2>/dev/null | tail -1)
+    if test -n "$env_path"
+        for t in $candidates
+            echo "[lovssh] pre-seeding nix store on $t…"
+            if env NIX_SSHOPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=5 -p 2222" \
+                    nix copy --to "ssh://lovable@$t" "$env_path" 2>/dev/null
+                echo "[lovssh] closure pushed"
+                break
+            end
+        end
+    end
+
     # Try direct first (lower latency when DNS works), gateway on failure.
     # Exit 255 = SSH-level connection failure → try the next candidate.
     # Anything else = remote command exit → respect the reconnect loop.

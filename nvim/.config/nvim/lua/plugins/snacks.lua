@@ -5,13 +5,7 @@ local function open_changed_files_picker()
 		vim.notify("hunk-nvim.signs unavailable", vim.log.levels.ERROR)
 		return
 	end
-	local base
-	local tok, tracker = pcall(require, "ai-tracker")
-	if tok and tracker.resolve_base_cached then
-		local repo = vim.fn.systemlist({ "git", "-C", vim.fn.getcwd(), "rev-parse", "--show-toplevel" })[1]
-		if repo and repo ~= "" then base = tracker.resolve_base_cached(repo) end
-	end
-	if not base then base = signs.resolve_base() end
+	local base = signs.resolve_base()
 	if not base or base == "" then
 		vim.notify("Couldn't infer base commit", vim.log.levels.ERROR)
 		return
@@ -53,11 +47,15 @@ local function open_changed_files_picker()
 			},
 		},
 		finder = function()
-			return vim.tbl_map(function(f) return { text = f, file = f } end, files)
+			-- file must be absolute: git paths are repo-root-relative and
+			-- nvim's cwd may be a subdir (e.g. dotfiles/nvim/.config/nvim).
+			return vim.tbl_map(function(f)
+				return { text = f, file = (repo_root or ".") .. "/" .. f }
+			end, files)
 		end,
 		-- Strip the default workspace-package prefix; show plain paths.
 		format = function(item)
-			return { { item.file or item.text or "", "SnacksPickerFile" } }
+			return { { item.text or "", "SnacksPickerFile" } }
 		end,
 		preview = function(ctx)
 			ctx.preview:reset()
@@ -67,12 +65,12 @@ local function open_changed_files_picker()
 				return false
 			end
 			local diff = vim.fn.systemlist({
-				"git", "-C", repo_root, "diff", base, "--", item.file,
+				"git", "-C", repo_root, "diff", base, "--", item.text,
 			})
 			local ft = "diff"
 			if vim.v.shell_error ~= 0 or #diff == 0 then
 				-- Untracked: fall back to file contents.
-				local ok2, lines = pcall(vim.fn.readfile, repo_root .. "/" .. item.file)
+				local ok2, lines = pcall(vim.fn.readfile, item.file)
 				if ok2 then
 					diff = lines
 					ft = vim.filetype.match({ filename = item.file }) or ""

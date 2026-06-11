@@ -139,7 +139,7 @@ tags: [reference]
     ;;
   browse)
     # nvim hijacks the directory arg → mini.files opens on the vault root.
-    exec kitty --class notes_capture --working-directory "$VAULT" -- nvim "$VAULT"
+    exec kitty --class notes_capture --working-directory "$VAULT" --env FS_MONITOR_DISABLED=1 -- nvim "$VAULT"
     ;;
   *)
     echo "unknown capture type: $TYPE" >&2
@@ -173,11 +173,11 @@ PROF_ARGS=(
 # Open in kitty+nvim. For 'todo', jump to the Tasks section and start an unchecked item in insert mode.
 case "$TYPE" in
   todo)
-    exec kitty --class notes_capture --working-directory "$VAULT" -- \
+    exec kitty --class notes_capture --working-directory "$VAULT" --env FS_MONITOR_DISABLED=1 -- \
       nvim "${PROF_ARGS[@]}" "+/^## Tasks" "+normal! jo- [ ] " "+startinsert!" "$TARGET"
     ;;
   *)
-    exec kitty --class notes_capture --working-directory "$VAULT" -- \
+    exec kitty --class notes_capture --working-directory "$VAULT" --env FS_MONITOR_DISABLED=1 -- \
       nvim "${PROF_ARGS[@]}" "+normal! Go" "+startinsert" "$TARGET"
     ;;
 esac

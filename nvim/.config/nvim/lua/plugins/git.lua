@@ -9,7 +9,7 @@ return {
 			{ "<C-g>j", function() require("hunk-nvim.signs").next_hunk() end, desc = "Next hunk" },
 			{ "<C-g>k", function() require("hunk-nvim.signs").prev_hunk() end, desc = "Prev hunk" },
 			-- Stay on gitsigns — these only matter on proart where gitsigns attaches.
-			{ "<C-g>d", function() require("gitsigns").preview_hunk_inline() end, desc = "Preview hunk (inline)" },
+			{ "<C-g>p", function() require("gitsigns").preview_hunk_inline() end, desc = "Preview hunk (inline)" },
 			{ "<C-g>o", function() require("gitsigns").toggle_linehl() end, desc = "Toggle linehl" },
 		},
 		config = function()
@@ -96,6 +96,15 @@ return {
 		keys = {
 			{ "<leader>gv", "<cmd>DiffviewOpen<cr>", desc = "DiffView Open" },
 			{ "<leader>gV", "<cmd>DiffviewClose<cr>", desc = "DiffView Close" },
+			{ "<C-g>d", function()
+				if require("diffview.lib").get_current_view() then
+					vim.cmd("DiffviewClose")
+					return
+				end
+				local ok, signs = pcall(require, "hunk-nvim.signs")
+				local base = ok and signs.resolve_base and signs.resolve_base()
+				vim.cmd("DiffviewOpen " .. (base or "HEAD"))
+			end, desc = "DiffView vs branch base (toggle)" },
 			{ "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", desc = "File History" },
 			{ "<leader>gH", "<cmd>DiffviewFileHistory<cr>", desc = "Branch History" },
 		},

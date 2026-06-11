@@ -119,8 +119,6 @@ end, { noremap = true, silent = true })
 
 -- Copy entire file with <C-g><C-g>
 
-
-
 vim.keymap.set("v", "p", function()
 	vim.cmd("normal! p")
 	indent_after_paste()

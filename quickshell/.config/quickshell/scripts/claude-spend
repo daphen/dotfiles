@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+# Hypothetical API cost of today's Claude Code usage, printed as a float.
+# Only reads session files modified since local midnight — cheap enough
+# to poll from the bar.
+import json
+import glob
+import os
+import sys
+from datetime import datetime, timezone
+
+PRICES = {
+    "fable":       (10.0, 50.0),
+    "opus-4-8":    (5.0, 25.0),
+    "opus-4-7":    (5.0, 25.0),
+    "opus-4-6":    (5.0, 25.0),
+    "opus-4-5":    (5.0, 25.0),
+    "opus-4-1":    (15.0, 75.0),
+    "sonnet":      (3.0, 15.0),
+    "haiku":       (1.0, 5.0),
+}
+
+
+def price_for(model):
+    for key, p in PRICES.items():
+        if key in model:
+            return p
+    return None
+
+
+mode = sys.argv[1] if len(sys.argv) > 1 else "day"
+now = datetime.now().astimezone()
+if mode == "day":
+    cutoff = now.replace(hour=0, minute=0, second=0, microsecond=0)
+elif mode == "month":
+    cutoff = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+else:
+    cutoff = None
+cutoff_utc = cutoff.astimezone(timezone.utc) if cutoff else None
+cutoff_ts = cutoff.timestamp() if cutoff else 0
+
+seen = set()
+total = 0.0
+
+for f in glob.glob(os.path.expanduser("~/.claude/projects/**/*.jsonl"), recursive=True):
+    try:
+        if cutoff_ts and os.path.getmtime(f) < cutoff_ts:
+            continue
+        with open(f) as fh:
+            for line in fh:
+                if '"usage"' not in line:
+                    continue
+                try:
+                    d = json.loads(line)
+                except (json.JSONDecodeError, ValueError):
+                    continue
+                ts = d.get("timestamp") or ""
+                if not ts:
+                    continue
+                try:
+                    when = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                except ValueError:
+                    continue
+                if cutoff_utc and when < cutoff_utc:
+                    continue
+                m = d.get("message") or {}
+                u = m.get("usage")
+                if not u:
+                    continue
+                mid = m.get("id") or d.get("requestId")
+                if mid:
+                    if mid in seen:
+                        continue
+                    seen.add(mid)
+                model = m.get("model") or ""
+                p = price_for(model)
+                if not p:
+                    continue
+                pi, po = p
+                cc = u.get("cache_creation") or {}
+                cw5 = cc.get("ephemeral_5m_input_tokens")
+                cw1 = cc.get("ephemeral_1h_input_tokens", 0) or 0
+                if cw5 is None:
+                    cw5 = u.get("cache_creation_input_tokens", 0) or 0
+                    cw1 = 0
+                total += (
+                    (u.get("input_tokens", 0) or 0) * pi
+                    + (u.get("output_tokens", 0) or 0) * po
+                    + cw5 * pi * 1.25
+                    + cw1 * pi * 2.0
+                    + (u.get("cache_read_input_tokens", 0) or 0) * pi * 0.1
+                ) / 1e6
+    except OSError:
+        continue
+
+print(f"{total:.2f}")

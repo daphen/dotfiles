@@ -115,11 +115,6 @@ PanelWindow {
             top: parent.top
             left: parent.left
         }
-        opacity: WpmState.value > 0 ? 1 : 0
-        visible: opacity > 0
-        Behavior on opacity {
-            NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
-        }
         width: wpmPillRow.implicitWidth + Theme.notchPadH * 2
         height: Theme.barHeight
 
@@ -148,28 +143,100 @@ PanelWindow {
         Row {
             id: wpmPillRow
             anchors.centerIn: parent
-            spacing: 8
+            // Matches the notch's effective inter-module gap:
+            // modulePadH + group spacing + modulePadH.
+            spacing: Theme.modulePadH * 2 + 8
 
-            Text {
-                text: "󰌌" // nf-md-keyboard
-                color: Theme.fg
-                font.family: Theme.iconFontFamily
-                font.pixelSize: Theme.fontSize + 2
-                font.weight: Theme.fontWeight
-                font.hintingPreference: Font.PreferFullHinting
-                renderType: Text.NativeRendering
+            Row {
+                spacing: 8
                 anchors.verticalCenter: parent.verticalCenter
+
+                Text {
+                    text: "󰌌" // nf-md-keyboard
+                    color: Theme.fg
+                    font.family: Theme.iconFontFamily
+                    font.pixelSize: Theme.fontSize + 2
+                    font.weight: Theme.fontWeight
+                    font.hintingPreference: Font.PreferFullHinting
+                    renderType: Text.NativeRendering
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    visible: WpmState.value === 0
+                    text: "∞"
+                    color: Theme.fg
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize + 7
+                    font.weight: Theme.fontWeight
+                    font.hintingPreference: Font.PreferFullHinting
+                    renderType: Text.NativeRendering
+                    anchors.verticalCenter: parent.verticalCenter
+                    // The glyph sits in the x-height band; its box's empty
+                    // descender space makes true-center look high.
+                    anchors.verticalCenterOffset: 1
+                }
+
+                Text {
+                    text: (WpmState.value > 0 ? WpmState.value + " " : "") + "wpm"
+                    color: Theme.fg
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                    font.weight: Theme.fontWeight
+                    font.hintingPreference: Font.PreferFullHinting
+                    renderType: Text.NativeRendering
+                    anchors.verticalCenter: parent.verticalCenter
+                }
             }
 
-            Text {
-                text: WpmState.value + " wpm"
-                color: Theme.fg
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize
-                font.weight: Theme.fontWeight
-                font.hintingPreference: Font.PreferFullHinting
-                renderType: Text.NativeRendering
+            Item {
+                visible: SpendState.current >= 0
+                width: spendRow.implicitWidth
+                height: spendRow.implicitHeight
                 anchors.verticalCenter: parent.verticalCenter
+
+                Row {
+                    id: spendRow
+                    spacing: 8
+
+                    Text {
+                        text: "󰚩" // nf-md-robot
+                        color: Theme.fg_muted
+                        font.family: Theme.iconFontFamily
+                        font.pixelSize: Theme.fontSize + 2
+                        font.weight: Theme.fontWeight
+                        font.hintingPreference: Font.PreferFullHinting
+                        renderType: Text.NativeRendering
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: {
+                            const v = SpendState.current
+                            const amount = v >= 1000
+                                ? (v / 1000).toFixed(1) + "k"
+                                : v >= 100 ? Math.round(v)
+                                : v >= 10 ? v.toFixed(1)
+                                : v.toFixed(2)
+                            const tag = SpendState.mode === "day" ? "d"
+                                : SpendState.mode === "month" ? "m" : "∀"
+                            return "$" + amount + " " + tag
+                        }
+                        color: Theme.fg_muted
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                        font.weight: Theme.fontWeight
+                        font.hintingPreference: Font.PreferFullHinting
+                        renderType: Text.NativeRendering
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: SpendState.cycle()
+                }
             }
         }
     }

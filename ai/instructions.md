@@ -168,31 +168,43 @@ For anything touching the desktop, look here before guessing:
 
 # Memory routing
 
-I maintain a personal notes vault at `~/personal/notes/storage/` that's
-indexed by an MCP server (`notes-memory`, registered globally). The vault
-is the canonical store for memories, notes, plans, and todos across every
-environment I work in — proart, lovbox SSH sandboxes, the Lovable agent,
-mobile clients.
+I maintain a personal notes vault at `~/personal/notes/storage/`. The
+canonical model is **local-file-first**: notes live as markdown files in
+the vault; a push-only watcher (`notes-cli -watch`, a systemd user
+service) auto-syncs file changes UP to the backend (Neon via `/api/sync`),
+where the `notes-memory` MCP indexes them for semantic search. Backend →
+local is the rare direction, pulled on demand.
 
-When the `notes-memory` MCP is available (check the available MCP servers
-list), prefer its tools over the filesystem-local auto-memory:
+## Saving — write a FILE when the vault exists; MCP only as fallback
 
-- **Saving memory** — call `notes-memory.save_memory(name, description, type, content)`
-  instead of writing to `~/.claude/projects/<hash>/memory/`. The MCP version
-  is reachable from every environment; the filesystem one is per-machine.
-- **Recalling memory** — call `notes-memory.search_notes(query)` to surface
-  saved memories, plans, meeting notes, and references. Stems words; ranks
-  by relevance. Especially valuable in lovbox/Lovable sessions where there's
-  no auto-loaded context from prior conversations.
-- **Saving a note** — `notes-memory.save_note(content, type, title?)` for
-  longer artifacts (plans, references, meeting briefs).
-- **Adding a todo** — `notes-memory.add_todo(text)` appends to today's daily.
+The MCP `save_memory`/`save_note`/`add_todo` tools write straight to the
+backend and SKIP the local file — that makes phantom notes: searchable but
+never in the vault, and they don't come down on their own. So:
 
-When the user mentions ongoing projects (Lovable design system work, the
-notes webapp, dotfiles), proactively search the MCP for relevant context
-before answering. The auto-loaded memory only contains a handful of
-profile facts; the bulk of context lives in the vault.
+- **When `~/personal/notes/storage/` exists locally** (proart, any machine
+  with the vault): save by writing a markdown file into the right subdir —
+  `inbox/` (quick notes), `journal/<YYYY-MM-DD>.md` (daily + todos),
+  `plans/`, `references/`, `meetings/`, `memory/` (memories, with
+  `name`/`description`/`metadata.type` frontmatter). The watcher syncs it
+  up. Do NOT call the MCP `save_*` tools here.
+- **When the vault dir is absent** (lovbox SSH sandboxes, the Lovable
+  agent, mobile): use the MCP `save_*` tools — the backend is the only
+  reachable store there.
 
-The filesystem auto-memory at `~/.claude/projects/-home-daphen/memory/`
-still works on proart for backward compatibility, but it's deprecated.
-New memories should go through the MCP.
+## Recalling — pull-then-search
+
+When the user asks to recall/find a memory or note and the vault exists
+locally, **run `notes-cli -pull` first**, then search/read the vault
+(`rg`/Read over `~/personal/notes/storage/`). The pull syncs down anything
+written elsewhere (a lovbox, mobile) so recall sees the full picture; it's
+authenticated, idempotent (path-keyed upserts, server mtime preserved),
+and cheap, so a no-op pull when nothing changed is harmless. Where the
+vault is absent, recall via `notes-memory.search_notes(query)` instead.
+
+When the user mentions ongoing projects (design system work, the notes
+webapp, dotfiles), proactively pull-then-search for relevant context
+before answering — the auto-loaded memory holds only a few profile facts;
+the bulk lives in the vault.
+
+The filesystem auto-memory at `~/.claude/projects/-home-daphen/memory/` is
+deprecated — the vault is canonical.

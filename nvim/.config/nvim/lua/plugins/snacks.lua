@@ -10,28 +10,10 @@ local function open_changed_files_picker()
 		vim.notify("Couldn't infer base commit", vim.log.levels.ERROR)
 		return
 	end
-	local files = vim.fn.systemlist("git diff --name-only " .. base)
-	-- git diff doesn't show untracked files; query them separately.
-	local untracked = vim.fn.systemlist("git ls-files --others --exclude-standard")
-	local seen = {}
-	for _, f in ipairs(files) do seen[f] = true end
-	for _, f in ipairs(untracked) do
-		if not seen[f] then table.insert(files, f); seen[f] = true end
-	end
-	if #files == 0 then
-		vim.notify("No changes vs " .. base:sub(1, 8), vim.log.levels.INFO)
-		return
-	end
 	local uv = vim.loop or vim.uv
 	local repo_root = vim.fn.systemlist({ "git", "-C", vim.fn.getcwd(), "rev-parse", "--show-toplevel" })[1]
-	local mtime_of = {}
-	for _, f in ipairs(files) do
-		local st = uv.fs_stat((repo_root or ".") .. "/" .. f)
-		mtime_of[f] = st and (st.mtime.sec * 1000 + math.floor((st.mtime.nsec or 0) / 1e6)) or 0
-	end
-	table.sort(files, function(a, b) return mtime_of[a] > mtime_of[b] end)
 	Snacks.picker.pick({
-		title = "Changed: " .. base:sub(1, 8) .. "..working tree (" .. #files .. " files)",
+		title = "Changed vs " .. base:sub(1, 8),
 		layout = {
 			layout = {
 				backdrop = false,
@@ -46,7 +28,24 @@ local function open_changed_files_picker()
 				{ win = "list", border = "none" },
 			},
 		},
+		-- A function finder runs async: snacks opens the picker frame
+		-- instantly and the git work (diff + untracked scan + mtime sort)
+		-- populates rows after, instead of blocking the open ~150ms.
 		finder = function()
+			local files = vim.fn.systemlist("git diff --name-only " .. base)
+			-- git diff omits untracked files; query them separately.
+			local untracked = vim.fn.systemlist("git ls-files --others --exclude-standard")
+			local seen = {}
+			for _, f in ipairs(files) do seen[f] = true end
+			for _, f in ipairs(untracked) do
+				if not seen[f] then table.insert(files, f); seen[f] = true end
+			end
+			local mtime_of = {}
+			for _, f in ipairs(files) do
+				local st = uv.fs_stat((repo_root or ".") .. "/" .. f)
+				mtime_of[f] = st and (st.mtime.sec * 1000 + math.floor((st.mtime.nsec or 0) / 1e6)) or 0
+			end
+			table.sort(files, function(a, b) return mtime_of[a] > mtime_of[b] end)
 			-- file must be absolute: git paths are repo-root-relative and
 			-- nvim's cwd may be a subdir (e.g. dotfiles/nvim/.config/nvim).
 			return vim.tbl_map(function(f)

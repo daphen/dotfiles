@@ -42,22 +42,34 @@ return {
 				cmd = { "oxlint", "--lsp" },
 			})
 
+			local eslint_configs = {
+				".eslintrc",
+				".eslintrc.js",
+				".eslintrc.cjs",
+				".eslintrc.json",
+				".eslintrc.yml",
+				".eslintrc.yaml",
+				"eslint.config.js",
+				"eslint.config.cjs",
+				"eslint.config.mjs",
+				"eslint.config.ts",
+			}
 			local base_eslint_attach = vim.lsp.config.eslint and vim.lsp.config.eslint.on_attach
 			vim.lsp.config("eslint", {
-				-- Only attach in projects with an actual eslint config —
-				-- default root matches any package.json.
-				root_markers = {
-					".eslintrc",
-					".eslintrc.js",
-					".eslintrc.cjs",
-					".eslintrc.json",
-					".eslintrc.yml",
-					".eslintrc.yaml",
-					"eslint.config.js",
-					"eslint.config.cjs",
-					"eslint.config.mjs",
-					"eslint.config.ts",
-				},
+				-- Attach only where there's an eslint config AND eslint is
+				-- actually installed. The lovable monorepo lints with oxlint
+				-- and has stray eslint.config.mjs files but no eslint package,
+				-- which otherwise spams "Unable to find ESLint library".
+				root_dir = function(bufnr, on_dir)
+					local fname = vim.api.nvim_buf_get_name(bufnr)
+					local cfg = vim.fs.find(eslint_configs, { path = fname, upward = true })[1]
+					if not cfg then return end
+					local dir = vim.fs.dirname(cfg)
+					if not vim.fs.find("node_modules/eslint", { path = dir, upward = true })[1] then
+						return
+					end
+					on_dir(dir)
+				end,
 				on_attach = function(client, bufnr)
 					if base_eslint_attach then
 						base_eslint_attach(client, bufnr)

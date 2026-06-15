@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Launch slk (Slack TUI) in a dedicated kitty window with no padding —
+# the global window_padding_width (30) wastes screen edge on a full-window
+# TUI. Mirrors launch-endcord; the --class lets niri-jump-or-exec focus it.
+exec kitty \
+    --class slk \
+    -o font_size=11 \
+    -o window_padding_width=0 \
+    -e slk

@@ -405,6 +405,25 @@ PYEOF
             fi
             log_success "Applied endcord ${theme_mode} theme to $endcord_root (restart endcord to see it)"
             ;;
+        "slk")
+            # slk scans ~/.config/slk/themes/*.toml at launch and selects by
+            # the `theme` name in config.toml. Reads both only on launch, so a
+            # running instance needs a restart (or Ctrl+Shift+y) to pick it up.
+            local slk_config_dir="$HOME/.config/slk"
+            local slk_config="$slk_config_dir/config.toml"
+            local slk_theme_name="Custom Dark"
+            [[ "$theme_mode" == "light" ]] && slk_theme_name="Custom Light"
+            mkdir -p "$slk_config_dir/themes"
+            cp "$generated_file" "$slk_config_dir/themes/custom-${theme_mode}.toml"
+            if [[ -f "$slk_config" ]] && grep -qE '^theme = ' "$slk_config"; then
+                sed -i "s|^theme = .*|theme = \"$slk_theme_name\"|" "$slk_config"
+            elif [[ -f "$slk_config" ]] && grep -qE '^\[appearance\]' "$slk_config"; then
+                sed -i "s|^\[appearance\]|[appearance]\ntheme = \"$slk_theme_name\"|" "$slk_config"
+            else
+                printf '[appearance]\ntheme = "%s"\n' "$slk_theme_name" >> "$slk_config"
+            fi
+            log_success "Applied slk ${theme_mode} theme (restart slk to see it)"
+            ;;
         "qutebrowser")
             local target_dir is_managed
             if get_tool_target "$tool"; then

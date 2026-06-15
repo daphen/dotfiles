@@ -677,7 +677,8 @@ binds {
     Super+g { spawn-sh "$HOME/.config/niri/scripts/ws-focus claude"; }
     Super+d { spawn-sh "$HOME/.config/niri/scripts/ws-focus term"; }
     Super+Shift+d { spawn-sh "SHOW_FASTFETCH=1 kitty"; }
-    Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack slack"; }
+    Super+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec slk $HOME/.config/niri/scripts/launch-slk"; }
+    Super+Shift+s { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec Slack slack"; }
     Super+a { spawn-sh "$HOME/.config/niri/scripts/niri-jump-or-exec 'title:spotify_player' 'kitty --class spotify_player spotify_player'"; }
     // Browser keybinds. Browser binary lives in browser-config.sh —
     // these scripts are browser-agnostic.

@@ -18,7 +18,7 @@ Item {
         const counts = { slack: 0, endcord: 0 }
         for (let i = 0; i < tracked.length; i++) {
             const app = (tracked[i].appName || "").toLowerCase()
-            if (app === "slack") counts.slack++
+            if (app === "slack" || app === "slk") counts.slack++
             else if (app === "endcord") counts.endcord++
         }
         return counts

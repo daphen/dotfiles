@@ -1,0 +1,24 @@
+{
+  "name": "custom-snippets",
+  "version": "1.0.0",
+  "contributes": {
+    "snippets": [
+      {
+        "language": "typescriptreact",
+        "path": "./typescriptreact.json"
+      },
+      {
+        "language": "typescript",
+        "path": "./typescript.json"
+      },
+      {
+        "language": "javascriptreact",
+        "path": "./javascriptreact.json"
+      },
+      {
+        "language": "markdown",
+        "path": "./markdown.json"
+      }
+    ]
+  }
+}

@@ -1,12 +1,8 @@
 return {
-	"nvim-lualine/lualine.nvim",
-	dependencies = {
-		"meuter/lualine-so-fancy.nvim",
-		"yavorski/lualine-macro-recording.nvim",
-	},
+	"lualine.nvim",
 	lazy = false,
-	event = { "BufReadPost", "BufNewFile", "VeryLazy" },
-	config = function()
+	event = { "BufReadPost", "BufNewFile", "VimEnter" },
+	after = function()
 		-- local icons = require("config.icons")
 		local function get_scrollbar()
 			local sbar_chars = {
@@ -115,7 +111,7 @@ return {
 					{
 						"fancy_diagnostics",
 						sources = { "nvim_lsp" },
-						symbols = { error = " ", warn = " ", info = " " },
+						symbols = { error = " ", warn = " ", info = " " },
 						diagnostics_color = {
 							error = "DiagnosticError",
 							warn = "DiagnosticWarn",

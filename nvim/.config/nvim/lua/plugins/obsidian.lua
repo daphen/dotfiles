@@ -1,5 +1,7 @@
 local VAULT = vim.fn.expand("~") .. "/personal/notes/storage"
 
+-- Snacks-based "vault notes by recency" picker. Independent of
+-- obsidian.nvim — pure snacks, available at startup.
 local function open_vault_recent_picker()
 	local uv = vim.loop or vim.uv
 	local files = vim.fn.systemlist({ "find", VAULT, "-type", "f", "-name", "*.md", "-not", "-path", "*/.obsidian/*", "-not", "-path", "*/templates/*" })
@@ -16,10 +18,6 @@ local function open_vault_recent_picker()
 	end
 	table.sort(entries, function(a, b) return a.mtime > b.mtime end)
 
-	-- Use require() instead of the Snacks global — setup() in snacks.lua is
-	-- wrapped in vim.schedule, so the global may not exist when keybinds
-	-- fire. The picker submodule is reachable via require independent of
-	-- setup state.
 	require("snacks").picker.pick({
 		title = "Vault notes (recency, " .. #entries .. " files)",
 		layout = {
@@ -66,9 +64,8 @@ end
 
 vim.api.nvim_create_user_command("VaultRecent", open_vault_recent_picker, {})
 
--- Auto-continue markdown lists. Enter on "- [ ] foo" inserts a fresh
--- "- [ ] " on the next line. Enter on an empty "- [ ] " breaks out of the
--- list (replaces the empty marker with a plain newline).
+-- Markdown list auto-continue + checkbox toggle. obsidian.nvim's own
+-- mappings are disabled (mappings = {} below) so they don't fight these.
 local function t(keys)
 	return vim.api.nvim_replace_termcodes(keys, true, true, true)
 end
@@ -76,7 +73,6 @@ end
 vim.api.nvim_create_autocmd("FileType", {
 	pattern = "markdown",
 	callback = function()
-		-- Insert mode: continue lists on Enter.
 		vim.keymap.set("i", "<CR>", function()
 			local line = vim.api.nvim_get_current_line()
 			if line:match("^%s*- %[[%sx]%]%s*$") then
@@ -96,8 +92,6 @@ vim.api.nvim_create_autocmd("FileType", {
 			return t("<CR>")
 		end, { buffer = true, expr = true, desc = "Continue markdown lists" })
 
-		-- <leader>x toggles a checkbox done/undone on the current line.
-		-- (<CR> is owned by treesitter's incremental selection.)
 		vim.keymap.set("n", "<leader>x", function()
 			local line = vim.api.nvim_get_current_line()
 			local prefix, state, rest = line:match("^(.-)%- %[([%sx])%] (.*)$")
@@ -108,90 +102,61 @@ vim.api.nvim_create_autocmd("FileType", {
 			local new_state = state == "x" and " " or "x"
 			vim.api.nvim_set_current_line(prefix .. "- [" .. new_state .. "] " .. rest)
 		end, { buffer = true, desc = "Toggle checkbox done/undone" })
+
+		-- gf follows wikilinks; obsidian.nvim is loaded by the ft trigger.
+		vim.keymap.set("n", "gf", "<cmd>Obsidian follow_link<cr>", { buffer = true, desc = "Obsidian: follow link" })
 	end,
 })
 
 return {
-	"epwalsh/obsidian.nvim",
-	version = "*",
-	lazy = true,
-	event = {
-		"BufReadPre " .. VAULT .. "/**.md",
-		"BufNewFile " .. VAULT .. "/**.md",
-	},
-	dependencies = {
-		"nvim-lua/plenary.nvim",
-	},
-	opts = {
-		workspaces = {
-			{
-				name = "personal",
-				path = "~/personal/notes/storage",
-			},
+	{
+		"obsidian.nvim",
+		ft = { "markdown" },
+		keys = {
+			{ "<leader>oo", "<cmd>Obsidian open<cr>",         desc = "Obsidian: open in app" },
+			{ "<leader>oR", "<cmd>VaultRecent<cr>",           desc = "Vault: all notes by recency" },
+			{ "<leader>on", "<cmd>Obsidian new<cr>",          desc = "Obsidian: new note" },
+			{ "<leader>od", "<cmd>Obsidian today<cr>",        desc = "Obsidian: today's journal" },
+			{ "<leader>oy", "<cmd>Obsidian yesterday<cr>",    desc = "Obsidian: yesterday's journal" },
+			{ "<leader>ot", "<cmd>Obsidian tomorrow<cr>",     desc = "Obsidian: tomorrow's journal" },
+			{ "<leader>os", "<cmd>Obsidian search<cr>",       desc = "Obsidian: full-text search" },
+			{ "<leader>oq", "<cmd>Obsidian quick_switch<cr>", desc = "Obsidian: quick switch" },
+			{ "<leader>ob", "<cmd>Obsidian backlinks<cr>",    desc = "Obsidian: show backlinks" },
+			{ "<leader>oT", "<cmd>Obsidian tags<cr>",         desc = "Obsidian: list tags" },
+			{ "<leader>or", "<cmd>Obsidian rename<cr>",       desc = "Obsidian: rename + update links" },
 		},
-
-		-- Skip obsidian.nvim's wikilink/UI concealing — needs conceallevel
-		-- 1/2 and we use Obsidian app for visual rendering anyway.
-		ui = { enable = false },
-
-		-- Disable obsidian.nvim's auto-mappings (binds <CR> to a "smart
-		-- action" that toggles checkboxes etc — fights our list-continue
-		-- mapping). User keybinds in `keys = {...}` below still apply.
-		mappings = {},
-
-		-- frontmatter convention — keep aligned with the categorisation
-		-- scheme in SYSTEM.md / the obsidian app config.
-		new_notes_location = "notes_subdir",
-		notes_subdir = "inbox",
-		daily_notes = {
-			folder = "journal",
-			date_format = "%Y-%m-%d",
-			default_tags = { "daily" },
-		},
-
-		-- wikilinks: prefer markdown-style links so files stay portable
-		-- and the vault works fine outside Obsidian-flavoured tools.
-		preferred_link_style = "wiki",
-		wiki_link_func = "use_alias_only",
-
-		-- completion via nvim-cmp when wikilinking
-		completion = {
-			nvim_cmp = true,
-			min_chars = 2,
-		},
-
-		-- open files from Obsidian's "tags" or "links" picker in nvim
-		picker = {
-			name = "snacks.pick",
-		},
-
-		-- generate sensible frontmatter on new notes
-		note_frontmatter_func = function(note)
-			return {
-				type = note.metadata and note.metadata.type or "note",
-				status = note.metadata and note.metadata.status or "active",
-				tags = note.tags,
-				created = os.date("%Y-%m-%d"),
-			}
+		after = function()
+			require("obsidian").setup({
+				workspaces = {
+					{ name = "personal", path = "~/personal/notes/storage" },
+				},
+				ui = { enable = false },
+				-- Disable obsidian's auto-mappings so its <CR> handler doesn't
+				-- fight the list-continue map above.
+				mappings = {},
+				new_notes_location = "notes_subdir",
+				notes_subdir = "inbox",
+				daily_notes = {
+					folder = "journal",
+					date_format = "%Y-%m-%d",
+					default_tags = { "daily" },
+				},
+				preferred_link_style = "wiki",
+				wiki_link_func = "use_alias_only",
+				completion = { nvim_cmp = true, min_chars = 2 },
+				picker = { name = "snacks.pick" },
+				note_frontmatter_func = function(note)
+					return {
+						type = note.metadata and note.metadata.type or "note",
+						status = note.metadata and note.metadata.status or "active",
+						tags = note.tags,
+						created = os.date("%Y-%m-%d"),
+					}
+				end,
+				follow_url_func = function(url)
+					vim.fn.jobstart({ "xdg-open", url })
+				end,
+			})
 		end,
-
-		-- open `obsidian://` URIs in the real Obsidian app when desired
-		follow_url_func = function(url)
-			vim.fn.jobstart({ "xdg-open", url })
-		end,
-	},
-	keys = {
-		{ "<leader>oo", "<cmd>ObsidianOpen<cr>",        desc = "Obsidian: open in app" },
-		{ "<leader>oR", "<cmd>VaultRecent<cr>",         desc = "Vault: all notes by recency" },
-		{ "<leader>on", "<cmd>ObsidianNew<cr>",         desc = "Obsidian: new note" },
-		{ "<leader>od", "<cmd>ObsidianToday<cr>",       desc = "Obsidian: today's journal" },
-		{ "<leader>oy", "<cmd>ObsidianYesterday<cr>",   desc = "Obsidian: yesterday's journal" },
-		{ "<leader>ot", "<cmd>ObsidianTomorrow<cr>",    desc = "Obsidian: tomorrow's journal" },
-		{ "<leader>os", "<cmd>ObsidianSearch<cr>",      desc = "Obsidian: full-text search" },
-		{ "<leader>oq", "<cmd>ObsidianQuickSwitch<cr>", desc = "Obsidian: quick switch" },
-		{ "<leader>ob", "<cmd>ObsidianBacklinks<cr>",   desc = "Obsidian: show backlinks" },
-		{ "<leader>oT", "<cmd>ObsidianTags<cr>",        desc = "Obsidian: list tags" },
-		{ "<leader>or", "<cmd>ObsidianRename<cr>",      desc = "Obsidian: rename + update links" },
-		{ "gf",         "<cmd>ObsidianFollowLink<cr>",  desc = "Obsidian: follow link under cursor", ft = "markdown" },
 	},
 }

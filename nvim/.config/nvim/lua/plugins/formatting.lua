@@ -1,22 +1,22 @@
 return {
-	"stevearc/conform.nvim",
-	event = "VeryLazy",  -- Defer loading to avoid startup lag in large projects
-	config = function()
+	"conform.nvim",
+	event = "VimEnter",  -- Defer loading to avoid startup lag in large projects
+	after = function()
 		local conform = require("conform")
 		local utils = require("utils")
 
 		-- Cache expensive lookups to avoid repeated filesystem checks
 		local project_cache = {}
-		
+
 		local function find_project_root(path)
 			if project_cache[path] then
 				return project_cache[path]
 			end
 			-- Try monorepo/project root markers first
 			local root = utils.find_root_with_markers(path, { ".prettierrc", ".prettierrc.json", "pnpm-workspace.yaml", ".git" })
-			if root then 
+			if root then
 				project_cache[path] = root
-				return root 
+				return root
 			end
 			-- Fallback to package.json for simple projects
 			local fallback = utils.find_root_with_markers(path, { "package.json" })
@@ -102,18 +102,18 @@ return {
 					_cache = {},
 					condition = function(self)
 						local current_path = utils.current_path()
-						
+
 						-- Check cache first
 						if self._cache[current_path] ~= nil then
 							return self._cache[current_path]
 						end
-						
+
 						-- Don't use prettier in Lovable project (lovable_format handles it)
 						if is_lovable_project(current_path) then
 							self._cache[current_path] = false
 							return false
 						end
-						
+
 						local root_path = find_project_root(current_path)
 
 						-- Check global prettier first

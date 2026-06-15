@@ -1,7 +1,7 @@
 return {
-	"mfussenegger/nvim-lint",
-	event = "VeryLazy",  -- Defer loading to avoid startup lag
-	config = function()
+	"nvim-lint",
+	event = "VimEnter",  -- Defer loading to avoid startup lag
+	after = function()
 		local lint = require("lint")
 
 		lint.linters_by_ft = {

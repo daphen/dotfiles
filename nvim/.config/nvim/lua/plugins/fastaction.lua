@@ -1,6 +1,6 @@
 return {
-	"Chaitanyabsprip/fastaction.nvim",
-	config = function()
+	"fastaction.nvim",
+	after = function()
 		require("fastaction").setup({
 			keys = "asdfghlzxcvbnm",
 			popup = {

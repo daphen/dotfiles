@@ -1,44 +1,30 @@
+-- nvim-treesitter 0.10+ (main branch) removed the `configs` module.
+-- Grammars are pre-installed by nix via `nvim-treesitter.withAllGrammars`,
+-- so we only need to enable highlighting + indentation per buffer.
 return {
-	{
-		"nvim-treesitter/nvim-treesitter",
-		build = ":TSUpdate",
-		dependencies = {
-			"nvim-treesitter/nvim-treesitter-textobjects",
-		},
-		config = function()
-			-- Standard nvim-treesitter master-branch config — paired with nvim 0.11.x
-			-- (pinned in nixos config). When the plugin ecosystem fully migrates to
-			-- main branch + nvim 0.12, swap this for a vim.treesitter.start-based config.
-			require("nvim-treesitter.configs").setup({
-				ensure_installed = { "javascript", "typescript", "lua", "markdown", "markdown_inline" },
-				incremental_selection = {
-					enable = true,
-					keymaps = {
-						init_selection = "<CR>",
-						scope_incremental = "<CR>",
-						node_incremental = "<TAB>",
-						node_decremental = "<BS>",
-					},
-				},
-				auto_install = true,
-				highlight = { enable = true },
-				indent = { enable = true },
-				textobjects = {
-					move = {
-						enable = true,
-						set_jumps = true,
-						goto_next_start = {
-							["}}"] = "@function.outer",
-						},
-						goto_previous_start = {
-							["{{"] = "@function.outer",
-						},
-					},
-				},
-			})
+  "nvim-treesitter",
+  lazy = false,
+  after = function()
+    -- Enable treesitter highlighting + indent for any filetype that has a
+    -- parser available. Parsers come from the nix-baked grammar set.
+    vim.api.nvim_create_autocmd("FileType", {
+      callback = function(args)
+        local ok = pcall(vim.treesitter.start, args.buf)
+        if ok then
+          -- Enable treesitter-based indentation
+          vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+        end
+      end,
+    })
 
-			-- Built-in tree inspector (replaces the deprecated playground plugin)
-			vim.keymap.set("n", "<leader>T", ":InspectTree<CR>", { desc = "Inspect TreeSitter tree" })
-		end,
-	},
+    -- Incremental selection — uses the neovim built-in API available in 0.10+
+    vim.keymap.set("n", "<CR>", function()
+      vim.cmd("normal! v")
+      vim.treesitter.start()
+    end, { desc = "Init incremental selection" })
+
+    -- Placeholder for TS playground — module was removed from nvim-treesitter.main
+    -- vim.keymap.set("n", "<leader>T", ":Inspect<CR>", { desc = "TS inspect (built-in)" })
+    vim.keymap.set("n", "<leader>T", ":InspectTree<CR>", { desc = "Open TreeSitter inspect tree" })
+  end,
 }

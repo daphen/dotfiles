@@ -27,12 +27,11 @@ function M.get_project_root_git_priority(starting_path)
 	-- Use -C with the file's directory so git looks at the right repo,
 	-- not the shell's CWD (which breaks when Neovim is opened from elsewhere)
 	local dir = vim.fn.fnamemodify(starting_path, ":p:h")
-	local git_root =
-		vim.fn.system("git -C " .. vim.fn.shellescape(dir) .. " rev-parse --show-toplevel 2>/dev/null"):gsub("\n", "")
+	local git_root = vim.fn.system("git -C " .. vim.fn.shellescape(dir) .. " rev-parse --show-toplevel 2>/dev/null"):gsub("\n", "")
 	if vim.v.shell_error == 0 and git_root ~= "" then
 		return git_root
 	end
-
+	
 	-- Fallback to finding project markers if not in git repo
 	local root_markers = { "package.json", "tsconfig.json", "Cargo.toml", "pyproject.toml", "go.mod" }
 	return M.find_root_with_markers(starting_path, root_markers)

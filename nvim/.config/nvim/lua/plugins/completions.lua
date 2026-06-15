@@ -1,16 +1,13 @@
 ---@diagnostic disable: undefined-global
 return {
   {
-    "hrsh7th/cmp-nvim-lsp",
+    "cmp-nvim-lsp",
   },
   {
-    "L3MON4D3/LuaSnip",
-    dependencies = {
-      "saadparwaiz1/cmp_luasnip",
-    },
-    config = function()
+    "luasnip",
+    after = function()
       local luasnip = require("luasnip")
-      
+
       -- Tab to jump forward
       vim.keymap.set({ "i", "s" }, "<Tab>", function()
         if luasnip.expand_or_jumpable() then
@@ -19,7 +16,7 @@ return {
           vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), "n", false)
         end
       end, { silent = true })
-      
+
       -- Shift-Tab to jump backward
       vim.keymap.set({ "i", "s" }, "<S-Tab>", function()
         if luasnip.jumpable(-1) then
@@ -31,8 +28,8 @@ return {
     end,
   },
   {
-    "hrsh7th/nvim-cmp",
-    config = function()
+    "nvim-cmp",
+    after = function()
       local cmp = require("cmp")
       require("luasnip.loaders.from_vscode").lazy_load({ paths = { vim.fn.stdpath("config") .. "/snippets" } })
 

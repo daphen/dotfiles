@@ -1,43 +1,18 @@
 return {
 	{
-		"lewis6991/gitsigns.nvim",
+		"gitsigns.nvim",
 		event = { "BufReadPre", "BufNewFile" },
-		keys = {
-			-- Hunk navigation goes to hunk-nvim/signs.lua so it works
-			-- everywhere (proart + LoL sandboxes where gitsigns can't attach
-			-- due to broken/shallow git history). Signs visible = nav works.
-			{ "<C-g>j", function() require("hunk-nvim.signs").next_hunk() end, desc = "Next hunk" },
-			{ "<C-g>k", function() require("hunk-nvim.signs").prev_hunk() end, desc = "Prev hunk" },
-			-- Stay on gitsigns — these only matter on proart where gitsigns attaches.
-			{ "<C-g>p", function() require("gitsigns").preview_hunk_inline() end, desc = "Preview hunk (inline)" },
-			{ "<C-g>o", function() require("gitsigns").toggle_linehl() end, desc = "Toggle linehl" },
-		},
-		config = function()
-			-- Compute diff base at config time so gitsigns starts with the
-			-- merge-base-with-trunk instead of its default (':0' staged index).
-			-- on_attach's change_base call had a race window we couldn't
-			-- close reliably; passing `base` in setup avoids it.
-			local base
-			local ok, signs = pcall(require, "hunk-nvim.signs")
-			if ok and signs.resolve_base then
-				local resolved = signs.resolve_base()
-				if resolved and resolved ~= "" and resolved ~= "HEAD" then
-					base = resolved
-				end
-			end
-
+		after = function()
 			require("gitsigns").setup({
 				signs = {
-					add = { text = "▎" },
-					change = { text = "▎" },
-					delete = { text = "▁" },
-					topdelete = { text = "▔" },
-					changedelete = { text = "▎" },
+					add = { text = "│" },
+					change = { text = "│" },
+					delete = { text = "_" },
+					topdelete = { text = "‾" },
+					changedelete = { text = "│" },
 				},
-				base = base,
-				linehl = false,
 				on_attach = function(bufnr)
-					local gs = require("gitsigns")
+					local gs = package.loaded.gitsigns
 
 					local function map(mode, l, r, opts)
 						opts = opts or {}
@@ -91,11 +66,10 @@ return {
 		end,
 	},
 	{
-		"sindrets/diffview.nvim",
+		"diffview.nvim",
 		cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewToggleFiles", "DiffviewFocusFiles", "DiffviewFileHistory" },
 		keys = {
 			{ "<leader>gv", "<cmd>DiffviewOpen<cr>", desc = "DiffView Open" },
-			{ "<leader>gV", "<cmd>DiffviewClose<cr>", desc = "DiffView Close" },
 			{ "<C-g>d", function()
 				if require("diffview.lib").get_current_view() then
 					vim.cmd("DiffviewClose")
@@ -105,6 +79,7 @@ return {
 				local base = ok and signs.resolve_base and signs.resolve_base()
 				vim.cmd("DiffviewOpen " .. (base or "HEAD"))
 			end, desc = "DiffView vs branch base (toggle)" },
+			{ "<leader>gV", "<cmd>DiffviewClose<cr>", desc = "DiffView Close" },
 			{ "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", desc = "File History" },
 			{ "<leader>gH", "<cmd>DiffviewFileHistory<cr>", desc = "Branch History" },
 		},
